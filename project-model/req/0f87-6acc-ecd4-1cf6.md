@@ -1,0 +1,17 @@
+---
+schema_version: 2
+id: 0f87-6acc-ecd4-1cf6
+alias: mirror-drop-failing
+type: req
+status: confirmed
+origin: user statement, 2026-10-12: delay changes apply to all connections to the same server regardless of the connection pool; delay is maintained by service; if a service has multiple servers (a, b, c for OpenTopoMap) and one fails but not the others, drop that server for a given time
+created: 2026-10-12
+rel_decided_by: [0f87-6acc-ecd4-3e20]
+rel_refines: [0f87-6acc-ecd4-4491]
+generator: model.py/2.4.0
+checksum: 87f21440cf66
+---
+
+# When one server of a service fails while the others succeed, that server shall be dropped for a given time
+
+<!-- rationale, detail, alternatives considered -->

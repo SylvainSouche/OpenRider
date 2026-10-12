@@ -1,0 +1,9 @@
+# Bmake It build outputs and fetch caches -- never committed.
+build/
+distrib/
+build-report/
+test-report/
+work/
+distfiles/
+.gen-*.mk
+.DS_Store

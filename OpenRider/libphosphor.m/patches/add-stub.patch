@@ -1,0 +1,5 @@
+--- /dev/null
++++ b/phosphor_stub.c
+@@ -0,0 +1,2 @@
++/* Added by OpenRider: Phosphor is a font, not code; this unit only gives
++ * the module something to build. */

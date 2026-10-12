@@ -1,0 +1,3308 @@
+{
+  "active-tile-fetch": {
+    "active": true,
+    "id": "0f87-6acc-ec91-4ea6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "activity-icons": {
+    "active": true,
+    "id": "0f87-6acc-edc9-3661",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "activity-types": {
+    "active": false,
+    "id": "0f87-6acc-eea3-9512",
+    "status": "superseded",
+    "type": "req"
+  },
+  "activity-types-v2": {
+    "active": true,
+    "id": "0f87-6acc-eefa-d99b",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "ai-activities-dbs-only": {
+    "active": true,
+    "id": "0f87-6acc-fbfb-6f30",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-c-core-cpp-gui": {
+    "active": false,
+    "id": "0f87-6acc-e584-2cb5",
+    "status": "rejected",
+    "type": "ai"
+  },
+  "ai-config-json": {
+    "active": true,
+    "id": "0f87-6acd-0462-bcd6",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-drop-fox": {
+    "active": true,
+    "id": "0f87-6acc-e68a-4dd0",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-exec-cancel-signals": {
+    "active": false,
+    "id": "0f87-6acd-1d00-ce23",
+    "status": "rejected",
+    "type": "ai"
+  },
+  "ai-garmin-stats-from-json": {
+    "active": true,
+    "id": "0f87-6acd-24af-50f9",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-garmindb-is-importer": {
+    "active": true,
+    "id": "0f87-6acc-e47b-19ba",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-gui-imgui": {
+    "active": true,
+    "id": "0f87-6acc-e68a-51e9",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-histogram-bins": {
+    "active": true,
+    "id": "0f87-6acd-3339-8557",
+    "status": "proposed",
+    "type": "ai"
+  },
+  "ai-http-libcurl": {
+    "active": true,
+    "id": "0f87-6acd-0462-095e",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-i18n-catalog": {
+    "active": true,
+    "id": "0f87-6acc-f449-0348",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-icons-phosphor": {
+    "active": true,
+    "id": "0f87-6acc-edca-f2d0",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-largely-within-80-95": {
+    "active": true,
+    "id": "0f87-6acd-3542-44a6",
+    "status": "proposed",
+    "type": "ai"
+  },
+  "ai-moving-time-from-raw": {
+    "active": true,
+    "id": "0f87-6acd-5f4d-6b06",
+    "status": "proposed",
+    "type": "ai"
+  },
+  "ai-nondestructive-edits": {
+    "active": true,
+    "id": "0f87-6acc-e584-4d08",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-own-sqlite-store": {
+    "active": true,
+    "id": "0f87-6acc-e584-a2ec",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-p10-more-uses": {
+    "active": true,
+    "id": "0f87-6acd-21f0-65cb",
+    "status": "proposed",
+    "type": "ai"
+  },
+  "ai-pin-fit-profile": {
+    "active": true,
+    "id": "0f87-6acc-f373-1b59",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-prototype-p1": {
+    "active": true,
+    "id": "0f87-6acc-feee-4f97",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-readonly-garmindb": {
+    "active": true,
+    "id": "0f87-6acc-e47b-e36b",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-road-running-now": {
+    "active": false,
+    "id": "0f87-6acc-ef43-5d30",
+    "status": "rejected",
+    "type": "ai"
+  },
+  "ai-segment-auto-then-edit": {
+    "active": true,
+    "id": "0f87-6acc-e584-a372",
+    "status": "proposed",
+    "type": "ai"
+  },
+  "ai-segments-method": {
+    "active": true,
+    "id": "0f87-6acd-5f9a-4c3e",
+    "status": "proposed",
+    "type": "ai"
+  },
+  "ai-sqlite-amalgamation": {
+    "active": true,
+    "id": "0f87-6acd-0462-c2d3",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-sqlite-index-fit-detail": {
+    "active": false,
+    "id": "0f87-6acc-e47b-c7cf",
+    "status": "rejected",
+    "type": "ai"
+  },
+  "ai-stationary-defaults": {
+    "active": false,
+    "id": "0f87-6acd-2197-29a0",
+    "status": "rejected",
+    "type": "ai"
+  },
+  "ai-testable-layering": {
+    "active": true,
+    "id": "0f87-6acc-f500-cefd",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-tile-cache": {
+    "active": true,
+    "id": "0f87-6acc-e9ee-f0af",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-type-from-gc-json": {
+    "active": true,
+    "id": "0f87-6acc-fb9f-2e3f",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-type-precedence": {
+    "active": true,
+    "id": "0f87-6acc-fc3f-f8f4",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-type-suggestions": {
+    "active": true,
+    "id": "0f87-6acc-fc40-e4b3",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-types-data-driven": {
+    "active": false,
+    "id": "0f87-6acc-ef42-0ddd",
+    "status": "rejected",
+    "type": "ai"
+  },
+  "ai-types-fit-backbone": {
+    "active": true,
+    "id": "0f87-6acc-f035-76fe",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-types-hierarchy": {
+    "active": false,
+    "id": "0f87-6acc-ef43-bc15",
+    "status": "rejected",
+    "type": "ai"
+  },
+  "ai-window-from-p10": {
+    "active": true,
+    "id": "0f87-6acd-21b6-2b9d",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-workflow-rescan-after": {
+    "active": true,
+    "id": "0f87-6acc-fa24-4221",
+    "status": "proposed",
+    "type": "ai"
+  },
+  "analyse-outings": {
+    "active": true,
+    "id": "0f87-6acc-e576-71e3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "app-icon": {
+    "active": true,
+    "id": "0f87-6acc-edc9-27b0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "app-loads-plugins": {
+    "active": true,
+    "id": "0f87-6acd-1b0c-998b",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "app-name-openride": {
+    "active": false,
+    "id": "0f87-6acd-03a8-37b9",
+    "status": "superseded",
+    "type": "req"
+  },
+  "app-name-openrider": {
+    "active": true,
+    "id": "0f87-6acd-0462-2e0a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "areas-resizable": {
+    "active": true,
+    "id": "0f87-6acd-32e0-7796",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "asm-activity-id-stable": {
+    "active": true,
+    "id": "0f87-6acc-ed4f-b3d4",
+    "status": "assumed",
+    "type": "asm"
+  },
+  "asm-ign-scan25-terms": {
+    "active": true,
+    "id": "0f87-6acd-35ba-95b8",
+    "status": "assumed",
+    "type": "asm"
+  },
+  "asm-opentopo-policy": {
+    "active": false,
+    "id": "0f87-6acc-e9ee-30ef",
+    "status": "superseded",
+    "type": "asm"
+  },
+  "asm-opentopo-polite-use": {
+    "active": false,
+    "id": "0f87-6acc-eb23-bc05",
+    "status": "superseded",
+    "type": "asm"
+  },
+  "backend-abstraction": {
+    "active": true,
+    "id": "0f87-6acd-03a6-60ad",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "bmk-impl-shared-dynamic": {
+    "active": true,
+    "id": "0f87-6acd-17ca-9217",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "bmk-one-framework": {
+    "active": true,
+    "id": "0f87-6acd-17ca-4230",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "bmk-public-abstractions": {
+    "active": true,
+    "id": "0f87-6acd-17ca-2c02",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "bmk-sqlite-archive": {
+    "active": true,
+    "id": "0f87-6acd-17ca-8ab7",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "build-clang-gcc": {
+    "active": true,
+    "id": "0f87-6acc-e9e7-0c3e",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "build-fno-exceptions": {
+    "active": true,
+    "id": "0f87-6acd-17c9-1e36",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "build-with-bmk": {
+    "active": true,
+    "id": "0f87-6acc-e46d-af89",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cache-dir-macos": {
+    "active": true,
+    "id": "0f87-6acd-1b0b-2011",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cache-lru": {
+    "active": true,
+    "id": "0f87-6acd-22b4-cb83",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cache-max-size": {
+    "active": true,
+    "id": "0f87-6acc-ebc2-4b2b",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cand-3d-view": {
+    "active": true,
+    "id": "0f87-6acc-e68a-3cf5",
+    "status": "open",
+    "type": "cand"
+  },
+  "cand-all-c-cimgui": {
+    "active": false,
+    "id": "0f87-6acc-e6f8-88c5",
+    "status": "rejected",
+    "type": "cand"
+  },
+  "cand-all-cpp": {
+    "active": true,
+    "id": "0f87-6acc-e801-6749",
+    "status": "accepted",
+    "type": "cand"
+  },
+  "cand-backend-abstraction": {
+    "active": true,
+    "id": "0f87-6acc-e9e9-66c5",
+    "status": "accepted",
+    "type": "cand"
+  },
+  "cand-gui-fox": {
+    "active": false,
+    "id": "0f87-6acc-e575-74b5",
+    "status": "rejected",
+    "type": "cand"
+  },
+  "cand-gui-gtk4": {
+    "active": false,
+    "id": "0f87-6acc-e68a-80b3",
+    "status": "rejected",
+    "type": "cand"
+  },
+  "cand-gui-imgui": {
+    "active": true,
+    "id": "0f87-6acc-e68a-b3ce",
+    "status": "accepted",
+    "type": "cand"
+  },
+  "cand-gui-qt": {
+    "active": false,
+    "id": "0f87-6acc-e68a-c48c",
+    "status": "rejected",
+    "type": "cand"
+  },
+  "cand-gui-wx": {
+    "active": false,
+    "id": "0f87-6acc-e575-393b",
+    "status": "rejected",
+    "type": "cand"
+  },
+  "cand-icons-fontawesome": {
+    "active": false,
+    "id": "0f87-6acc-edca-1433",
+    "status": "rejected",
+    "type": "cand"
+  },
+  "compare-segments": {
+    "active": true,
+    "id": "0f87-6acc-e577-28fd",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "con-opentopo-license": {
+    "active": true,
+    "id": "0f87-6acc-eb23-9dc5",
+    "status": "recorded",
+    "type": "con"
+  },
+  "con-opentopo-tile-url": {
+    "active": true,
+    "id": "0f87-6acc-eb23-4eb1",
+    "status": "recorded",
+    "type": "con"
+  },
+  "config-json": {
+    "active": true,
+    "id": "0f87-6acd-17c9-bfa5",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "config-simplest": {
+    "active": true,
+    "id": "0f87-6acd-0462-9654",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "correspondence-with-tag": {
+    "active": true,
+    "id": "0f87-6acc-f31d-ad53",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cpp-few-templates": {
+    "active": true,
+    "id": "0f87-6acc-ea44-a521",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cpp-limited-modern": {
+    "active": true,
+    "id": "0f87-6acc-e9e7-920f",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cpp-no-exceptions": {
+    "active": true,
+    "id": "0f87-6acc-ea45-62b6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cpp-no-rtti": {
+    "active": true,
+    "id": "0f87-6acd-03a7-72fd",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cpp-plain-structs": {
+    "active": true,
+    "id": "0f87-6acc-ea44-3896",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cpp-stdlib-sparingly": {
+    "active": true,
+    "id": "0f87-6acc-ea45-6190",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cpp20": {
+    "active": true,
+    "id": "0f87-6acc-e9e7-2e80",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "credits-about": {
+    "active": true,
+    "id": "0f87-6acc-ee26-56f9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "credits-all": {
+    "active": true,
+    "id": "0f87-6acc-ee26-c65d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "credits-file-name": {
+    "active": true,
+    "id": "0f87-6acd-22b5-7e2f",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "credits-md": {
+    "active": true,
+    "id": "0f87-6acc-ee26-de41",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "cross-platform": {
+    "active": true,
+    "id": "0f87-6acc-e575-5d42",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "dec-active-fetch": {
+    "active": true,
+    "id": "0f87-6acc-ec91-4c67",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-activity-types": {
+    "active": true,
+    "id": "0f87-6acc-eea3-3157",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-adaptive-window": {
+    "active": true,
+    "id": "0f87-6acd-21b6-eef1",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-arch": {
+    "active": true,
+    "id": "0f87-6acc-e46d-3657",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-backoff-500": {
+    "active": true,
+    "id": "0f87-6acc-ecf0-44a4",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-blurred-heatmap": {
+    "active": true,
+    "id": "0f87-6acd-60a2-dc40",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-bsd3": {
+    "active": true,
+    "id": "0f87-6acc-edc9-a72b",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-compat-header": {
+    "active": true,
+    "id": "0f87-6acd-2e44-d9c7",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-cpp": {
+    "active": true,
+    "id": "0f87-6acc-e83b-4d71",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-cpp-std": {
+    "active": true,
+    "id": "0f87-6acc-e9e7-34d7",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-credits": {
+    "active": true,
+    "id": "0f87-6acc-ee26-5545",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-cross-cutting": {
+    "active": true,
+    "id": "0f87-6acc-f500-d6cd",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-delay-per-service": {
+    "active": true,
+    "id": "0f87-6acc-ecd4-3e20",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-download-script": {
+    "active": true,
+    "id": "0f87-6acc-fba7-8075",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-error-popup": {
+    "active": true,
+    "id": "0f87-6acc-f601-06e9",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-exec-cancel-log-timeout": {
+    "active": true,
+    "id": "0f87-6acd-1d71-091c",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-exec-workflows-only": {
+    "active": true,
+    "id": "0f87-6acd-1ce7-eb36",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-features": {
+    "active": true,
+    "id": "0f87-6acc-e575-dd91",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-filter-api": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-a807",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-filter-semantics": {
+    "active": true,
+    "id": "0f87-6acd-2029-a84b",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-filters-detect": {
+    "active": true,
+    "id": "0f87-6acc-fc60-f019",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-fit-plus-tag": {
+    "active": true,
+    "id": "0f87-6acc-f31d-b2a6",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-fit-taxonomy": {
+    "active": true,
+    "id": "0f87-6acc-f1e3-71f4",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-fx-predefined": {
+    "active": true,
+    "id": "0f87-6acd-03ce-fe42",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-graph-type": {
+    "active": true,
+    "id": "0f87-6acd-3338-b48d",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-gui-imgui": {
+    "active": true,
+    "id": "0f87-6acc-e6f7-4465",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-gui-needs": {
+    "active": true,
+    "id": "0f87-6acc-e689-b329",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-gui-xplat": {
+    "active": true,
+    "id": "0f87-6acc-e575-3e5e",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-i18n-ai": {
+    "active": true,
+    "id": "0f87-6acc-f47c-abf0",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-icons": {
+    "active": true,
+    "id": "0f87-6acc-edc9-47e4",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-input": {
+    "active": true,
+    "id": "0f87-6acc-e46d-96d9",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-input-sole": {
+    "active": true,
+    "id": "0f87-6acc-e575-96ea",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-jitter-1st-decile": {
+    "active": true,
+    "id": "0f87-6acd-2098-8eed",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-keep-stationary-rule": {
+    "active": true,
+    "id": "0f87-6acd-3745-685f",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-layering-gated-progress": {
+    "active": true,
+    "id": "0f87-6acc-f56f-b3be",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-list-overview": {
+    "active": true,
+    "id": "0f87-6acd-5b17-ac6e",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-log-files": {
+    "active": true,
+    "id": "0f87-6acd-1f2b-f004",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-maps": {
+    "active": true,
+    "id": "0f87-6acc-e9e7-dd4c",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-no-fit-v1": {
+    "active": true,
+    "id": "0f87-6acc-e9e9-b1fc",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-one-language": {
+    "active": true,
+    "id": "0f87-6acc-e801-31d7",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-one-stationary-rule": {
+    "active": true,
+    "id": "0f87-6acd-2197-1748",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-opentopo-terms": {
+    "active": true,
+    "id": "0f87-6acc-eb23-d174",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-overview-filter-colour": {
+    "active": true,
+    "id": "0f87-6acd-6195-6a49",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-overzoom": {
+    "active": true,
+    "id": "0f87-6acd-5daf-d584",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-overzoom-confirmed": {
+    "active": true,
+    "id": "0f87-6acd-5e03-0696",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-p1": {
+    "active": true,
+    "id": "0f87-6acd-0221-3d5b",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-p1-build": {
+    "active": true,
+    "id": "0f87-6acd-17c8-440b",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-p1-defaults": {
+    "active": true,
+    "id": "0f87-6acd-22b3-9f86",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-p1-foundations": {
+    "active": true,
+    "id": "0f87-6acd-03a6-6993",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-p1-tech": {
+    "active": true,
+    "id": "0f87-6acd-0461-6267",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-p1-usability": {
+    "active": true,
+    "id": "0f87-6acd-32e0-f548",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-p10-moving-average": {
+    "active": true,
+    "id": "0f87-6acd-216d-2cdd",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-p10-rule-of-thumb": {
+    "active": true,
+    "id": "0f87-6acd-21f0-0bc1",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-plugin-paths": {
+    "active": true,
+    "id": "0f87-6acd-1ba1-0128",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-plugins": {
+    "active": true,
+    "id": "0f87-6acd-1b0b-3ee1",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-polite-prefetch": {
+    "active": true,
+    "id": "0f87-6acc-eb63-17c0",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-polite-tiles": {
+    "active": true,
+    "id": "0f87-6acc-eb32-e8bd",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-prefetch-outings": {
+    "active": true,
+    "id": "0f87-6acc-ebc2-4f2a",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-purpose": {
+    "active": true,
+    "id": "0f87-6acc-e46d-16a7",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-recompute-stats": {
+    "active": true,
+    "id": "0f87-6acd-208a-0286",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-restrained-cpp": {
+    "active": true,
+    "id": "0f87-6acc-ea44-75e5",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-route-segments": {
+    "active": true,
+    "id": "0f87-6acd-5f99-c2c8",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-screen-simplify": {
+    "active": true,
+    "id": "0f87-6acd-5e67-b080",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-sigterm-log-grace": {
+    "active": true,
+    "id": "0f87-6acd-1eb1-7db0",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-sport-scope": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-53e5",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-stats-toggle-stationary": {
+    "active": true,
+    "id": "0f87-6acd-2157-a1e0",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-theme-grey": {
+    "active": true,
+    "id": "0f87-6acd-2cfe-ad99",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-tiles-plugin-exec-json": {
+    "active": true,
+    "id": "0f87-6acd-1c8b-bd14",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-type-provenance": {
+    "active": true,
+    "id": "0f87-6acc-fc3f-4d9d",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-type-tags-separate": {
+    "active": true,
+    "id": "0f87-6acc-f34f-6a49",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-types-extensible": {
+    "active": true,
+    "id": "0f87-6acc-ef42-f7fc",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-types-v2": {
+    "active": true,
+    "id": "0f87-6acc-eefa-2b95",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-ui-fr-en": {
+    "active": true,
+    "id": "0f87-6acc-f449-70c0",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-vspeed-mh": {
+    "active": true,
+    "id": "0f87-6acd-0467-e34f",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-walk-hike-fit": {
+    "active": true,
+    "id": "0f87-6acc-f42b-da7e",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-window-p10-confirmed": {
+    "active": true,
+    "id": "0f87-6acd-221e-af98",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-workflow-plugin": {
+    "active": true,
+    "id": "0f87-6acd-1c17-0e6e",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-workflow-status-cancel": {
+    "active": true,
+    "id": "0f87-6acd-1d00-2370",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-workflows": {
+    "active": true,
+    "id": "0f87-6acc-fa23-db9b",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "default-clang": {
+    "active": true,
+    "id": "0f87-6acc-e9e7-521a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "delay-per-service": {
+    "active": true,
+    "id": "0f87-6acc-ecd4-04b3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "delay-shared-connections": {
+    "active": true,
+    "id": "0f87-6acc-ecd4-2c58",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "deps-bsd-compatible": {
+    "active": true,
+    "id": "0f87-6acc-edc9-b904",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "detect-misclassified-ski-tour": {
+    "active": true,
+    "id": "0f87-6acc-fc61-f72c",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "display-graphs": {
+    "active": true,
+    "id": "0f87-6acc-e577-ce7a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "display-maps": {
+    "active": true,
+    "id": "0f87-6acc-e577-debd",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "edit-by-filters": {
+    "active": true,
+    "id": "0f87-6acc-e576-fc62",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "edits-non-destructive": {
+    "active": true,
+    "id": "0f87-6acd-03a7-afa6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "error-popup": {
+    "active": true,
+    "id": "0f87-6acc-f601-f106",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "error-result-struct": {
+    "active": true,
+    "id": "0f87-6acd-17c9-d9d9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "exec-cancel-sigint": {
+    "active": false,
+    "id": "0f87-6acd-1d71-64e5",
+    "status": "superseded",
+    "type": "req"
+  },
+  "exec-cancel-sigterm": {
+    "active": true,
+    "id": "0f87-6acd-1eb1-20af",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "exec-def-json": {
+    "active": true,
+    "id": "0f87-6acd-1c8b-5072",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "exec-def-predefined": {
+    "active": true,
+    "id": "0f87-6acd-1c8c-c9c7",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "exec-def-user": {
+    "active": true,
+    "id": "0f87-6acd-1c8c-7d3b",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "exec-log-path-macos": {
+    "active": true,
+    "id": "0f87-6acd-1eb1-2c85",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "exec-output-log": {
+    "active": true,
+    "id": "0f87-6acd-1d71-ce96",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "exec-timeout-option": {
+    "active": true,
+    "id": "0f87-6acd-1d71-e7ac",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fetch-backoff-error": {
+    "active": true,
+    "id": "0f87-6acc-ec92-8df9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fetch-decay-success": {
+    "active": true,
+    "id": "0f87-6acc-ec92-5445",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fetch-delay-floor": {
+    "active": true,
+    "id": "0f87-6acc-ec92-4102",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fetch-delay-initial": {
+    "active": true,
+    "id": "0f87-6acc-ec92-fd8c",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fetch-pool-4": {
+    "active": true,
+    "id": "0f87-6acc-ec91-d38e",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "filter-abstraction": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-903a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "filter-dropin-dir": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-8655",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "filter-metadata-override": {
+    "active": true,
+    "id": "0f87-6acd-202a-b1ad",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "filter-outings": {
+    "active": true,
+    "id": "0f87-6acc-e576-4cbc",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "filter-params": {
+    "active": true,
+    "id": "0f87-6acd-2029-8e6d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "filter-stationary-jitter": {
+    "active": true,
+    "id": "0f87-6acc-e576-bc5d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "filter-track-points": {
+    "active": true,
+    "id": "0f87-6acd-2029-7062",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "filters-detect-anomalies": {
+    "active": true,
+    "id": "0f87-6acc-fc60-db2e",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "filters-dynamic-libs": {
+    "active": true,
+    "id": "0f87-6acd-17ca-cb33",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "find-similar": {
+    "active": true,
+    "id": "0f87-6acc-e576-87e1",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fit-profile-pinned": {
+    "active": true,
+    "id": "0f87-6acd-22b4-5ed0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fx-defaults": {
+    "active": true,
+    "id": "0f87-6acd-17ca-7781",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fx-grade": {
+    "active": true,
+    "id": "0f87-6acd-0222-127d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fx-grade-window": {
+    "active": true,
+    "id": "0f87-6acd-03ce-6111",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fx-predefined-list": {
+    "active": true,
+    "id": "0f87-6acd-03ce-aba9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fx-vertical-speed": {
+    "active": true,
+    "id": "0f87-6acd-0221-c96a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fx-vspeed-mh": {
+    "active": true,
+    "id": "0f87-6acd-0467-7e37",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "fx-vspeed-window": {
+    "active": true,
+    "id": "0f87-6acd-03ce-6b38",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "garmindb-sole-input": {
+    "active": true,
+    "id": "0f87-6acc-e575-1f4c",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "graph-computed-series": {
+    "active": true,
+    "id": "0f87-6acd-0221-657c",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "graph-hover-value": {
+    "active": true,
+    "id": "0f87-6acd-32e0-bbb0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "graph-series-dropdown": {
+    "active": true,
+    "id": "0f87-6acd-0221-d9d4",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "graph-type-choice": {
+    "active": true,
+    "id": "0f87-6acd-3339-adf3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "graph-x-axis-choice": {
+    "active": true,
+    "id": "0f87-6acd-0221-6f13",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "graphs-add-remove": {
+    "active": true,
+    "id": "0f87-6acd-0221-8487",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "graphs-stacked": {
+    "active": true,
+    "id": "0f87-6acd-0221-37f2",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "graphs-start-one": {
+    "active": true,
+    "id": "0f87-6acd-0221-755c",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "gui": {
+    "active": true,
+    "id": "0f87-6acc-e575-c6da",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "gui-graphing": {
+    "active": true,
+    "id": "0f87-6acc-e68a-a48a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "gui-imgui": {
+    "active": true,
+    "id": "0f87-6acc-e6f8-cf7d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "gui-nice": {
+    "active": true,
+    "id": "0f87-6acc-e68a-2e0b",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "gui-opengl-2d": {
+    "active": true,
+    "id": "0f87-6acc-e68a-5bc9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "gui-theme-grey": {
+    "active": true,
+    "id": "0f87-6acd-2cfe-5d8a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "gui-thin-layer": {
+    "active": true,
+    "id": "0f87-6acc-f56f-1211",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "heatmap-blur-kernel": {
+    "active": true,
+    "id": "0f87-6acd-60a2-92cb",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "hike-is-fit-hiking": {
+    "active": true,
+    "id": "0f87-6acc-f42b-2a95",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "http-libcurl": {
+    "active": true,
+    "id": "0f87-6acd-17c9-ecd3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "http-lightest": {
+    "active": true,
+    "id": "0f87-6acd-0461-f6d8",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "i18n-catalogs": {
+    "active": true,
+    "id": "0f87-6acc-f47c-106e",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "i18n-more-by-ai": {
+    "active": true,
+    "id": "0f87-6acc-f47c-a394",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "icons-phosphor": {
+    "active": true,
+    "id": "0f87-6acd-22b4-4cd7",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "impl-c-pref": {
+    "active": false,
+    "id": "0f87-6acc-e6f8-94d9",
+    "status": "superseded",
+    "type": "req"
+  },
+  "impl-cjson": {
+    "active": true,
+    "id": "0f87-6acd-24ce-4f64",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-compat-header": {
+    "active": true,
+    "id": "0f87-6acd-2e44-0deb",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-computed-stats": {
+    "active": true,
+    "id": "0f87-6acd-33a9-9fc2",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-cpp-flags": {
+    "active": true,
+    "id": "0f87-6acd-23b0-5b0a",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-filter-abi": {
+    "active": true,
+    "id": "0f87-6acd-33a9-8156",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-garmindb-plugin": {
+    "active": true,
+    "id": "0f87-6acd-24ce-494d",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-graph-hover": {
+    "active": true,
+    "id": "0f87-6acd-32ed-0184",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-graphs": {
+    "active": true,
+    "id": "0f87-6acd-2d65-0c79",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-gui-skeleton": {
+    "active": true,
+    "id": "0f87-6acd-23b0-c555",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-heatmap-blur": {
+    "active": true,
+    "id": "0f87-6acd-60a9-7bf6",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-histogram": {
+    "active": true,
+    "id": "0f87-6acd-335b-49cd",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-implot": {
+    "active": true,
+    "id": "0f87-6acd-2d66-2c8a",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-in-c": {
+    "active": false,
+    "id": "0f87-6acc-e46d-aa60",
+    "status": "superseded",
+    "type": "req"
+  },
+  "impl-in-cpp": {
+    "active": true,
+    "id": "0f87-6acc-e83c-9717",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "impl-jitter-plugin": {
+    "active": true,
+    "id": "0f87-6acd-33a9-64c0",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-layer-choice": {
+    "active": true,
+    "id": "0f87-6acd-3542-dba2",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-list-rows": {
+    "active": true,
+    "id": "0f87-6acd-5b42-dc4b",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-map-view": {
+    "active": true,
+    "id": "0f87-6acd-2f33-0934",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-motion": {
+    "active": true,
+    "id": "0f87-6acd-33a9-4f41",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-outing-list": {
+    "active": true,
+    "id": "0f87-6acd-24ce-ac37",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-overview": {
+    "active": true,
+    "id": "0f87-6acd-5b43-c60a",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-overview-filter-colour": {
+    "active": true,
+    "id": "0f87-6acd-6195-c32d",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-overzoom": {
+    "active": true,
+    "id": "0f87-6acd-5daf-1652",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-plugin-abi": {
+    "active": true,
+    "id": "0f87-6acd-24ce-dfb9",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-plugin-loader": {
+    "active": true,
+    "id": "0f87-6acd-24ce-521a",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-screen-simplify": {
+    "active": true,
+    "id": "0f87-6acd-5e67-4b57",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-segments": {
+    "active": true,
+    "id": "0f87-6acd-6028-c636",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-series": {
+    "active": true,
+    "id": "0f87-6acd-2d65-fc4a",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-session-log": {
+    "active": true,
+    "id": "0f87-6acd-24ce-0aa3",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-splitters": {
+    "active": true,
+    "id": "0f87-6acd-32ed-1258",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-sqlite-archive": {
+    "active": true,
+    "id": "0f87-6acd-24ce-8c9e",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-status-bar": {
+    "active": true,
+    "id": "0f87-6acd-23b0-7c7d",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-theme-stats": {
+    "active": true,
+    "id": "0f87-6acd-2cff-8135",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-tile-cache": {
+    "active": true,
+    "id": "0f87-6acd-2f33-dc20",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-tile-decode": {
+    "active": true,
+    "id": "0f87-6acd-2f33-87c2",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-tile-fetcher": {
+    "active": true,
+    "id": "0f87-6acd-2f33-f327",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-tile-policy": {
+    "active": true,
+    "id": "0f87-6acd-2f33-629b",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-tiles-abi": {
+    "active": true,
+    "id": "0f87-6acd-2f33-62f7",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-track-style": {
+    "active": true,
+    "id": "0f87-6acd-32ed-0d05",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-type-catalog": {
+    "active": true,
+    "id": "0f87-6acd-2587-fdb3",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-type-icons": {
+    "active": true,
+    "id": "0f87-6acd-30f9-68bb",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-xyz-plugin": {
+    "active": true,
+    "id": "0f87-6acd-2f33-42fb",
+    "status": "verified",
+    "type": "impl"
+  },
+  "input-filetree": {
+    "active": true,
+    "id": "0f87-6acc-e46e-fca0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "input-garmindb": {
+    "active": true,
+    "id": "0f87-6acc-e46e-8fec",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "input-sqlite": {
+    "active": true,
+    "id": "0f87-6acc-e46e-0189",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "jitter-filter-ui": {
+    "active": true,
+    "id": "0f87-6acd-32e0-a007",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "jitter-overspeed-rule": {
+    "active": true,
+    "id": "0f87-6acd-202a-b5b6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "jitter-ref-p10": {
+    "active": true,
+    "id": "0f87-6acd-2098-3405",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "jitter-stationary-rule": {
+    "active": true,
+    "id": "0f87-6acd-202a-a5fc",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "json-cjson": {
+    "active": true,
+    "id": "0f87-6acd-1b0b-27c6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "layer-http-headers": {
+    "active": true,
+    "id": "0f87-6acd-0462-b94b",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "layer-ign-scan25": {
+    "active": true,
+    "id": "0f87-6acd-03a7-fb54",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "layer-unavailable-all-fail": {
+    "active": true,
+    "id": "0f87-6acd-22b4-124a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "layer-wms": {
+    "active": true,
+    "id": "0f87-6acd-03a7-bc14",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "layer-wmts": {
+    "active": true,
+    "id": "0f87-6acd-0462-e1fb",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "layer-xyz": {
+    "active": true,
+    "id": "0f87-6acd-03a7-03b8",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "license-bsd3": {
+    "active": true,
+    "id": "0f87-6acc-edc9-111d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "list-narrow": {
+    "active": true,
+    "id": "0f87-6acd-5b17-fed6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "list-row-rich": {
+    "active": true,
+    "id": "0f87-6acd-5b17-c1a0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "log-file-name-timestamp": {
+    "active": true,
+    "id": "0f87-6acd-1f2c-7964",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "log-file-per-session": {
+    "active": true,
+    "id": "0f87-6acd-1f2c-5777",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "log-retention-10-days": {
+    "active": true,
+    "id": "0f87-6acd-1f2c-6efc",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "logic-libs-no-gui": {
+    "active": true,
+    "id": "0f87-6acc-f56f-a0ed",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "logic-tested-atf": {
+    "active": true,
+    "id": "0f87-6acc-f56f-9275",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "manage-display-fit": {
+    "active": true,
+    "id": "0f87-6acc-e46d-b338",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "manage-outings": {
+    "active": true,
+    "id": "0f87-6acc-e576-2e5e",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-attribution-opentopo": {
+    "active": true,
+    "id": "0f87-6acc-eb23-ab3a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-default-opentopo": {
+    "active": true,
+    "id": "0f87-6acc-e9e7-e624",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-layer-choice": {
+    "active": true,
+    "id": "0f87-6acd-32e0-4c32",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-layer-crs-extent": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-72a9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-layer-file": {
+    "active": true,
+    "id": "0f87-6acc-e9e7-8058",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-layer-offer-within": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-4b2a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-overzoom": {
+    "active": true,
+    "id": "0f87-6acd-5daf-2aea",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "metrics-per-outing": {
+    "active": true,
+    "id": "0f87-6acc-e576-1ec9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "metrics-per-segment": {
+    "active": true,
+    "id": "0f87-6acc-e576-51f7",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "mirror-drop-5min": {
+    "active": true,
+    "id": "0f87-6acd-22b4-2e39",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "mirror-drop-failing": {
+    "active": true,
+    "id": "0f87-6acc-ecd4-1cf6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "mirror-servers": {
+    "active": true,
+    "id": "0f87-6acc-ecd4-4491",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "no-filter-exec": {
+    "active": true,
+    "id": "0f87-6acd-1ce7-c979",
+    "status": "confirmed",
+    "type": "nreq"
+  },
+  "no-fit-extension-values": {
+    "active": true,
+    "id": "0f87-6acc-f31d-a1e3",
+    "status": "confirmed",
+    "type": "nreq"
+  },
+  "no-fit-reading-v1": {
+    "active": true,
+    "id": "0f87-6acc-e9e9-484e",
+    "status": "confirmed",
+    "type": "nreq"
+  },
+  "no-internal-exceptions": {
+    "active": true,
+    "id": "0f87-6acd-0461-de11",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "no-mixed-c-cpp": {
+    "active": true,
+    "id": "0f87-6acc-e801-a6e7",
+    "status": "confirmed",
+    "type": "nreq"
+  },
+  "no-write-garmindb": {
+    "active": true,
+    "id": "0f87-6acd-03a7-9714",
+    "status": "confirmed",
+    "type": "nreq"
+  },
+  "non-fit-as-tag": {
+    "active": true,
+    "id": "0f87-6acc-f31d-7320",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "not-moving-threshold": {
+    "active": true,
+    "id": "0f87-6acd-221e-3845",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "obs-activities-only-by-choice": {
+    "active": true,
+    "id": "0f87-6acc-fbfb-9cc3",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-activity-id": {
+    "active": true,
+    "id": "0f87-6acc-ed4f-6b85",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-activity-json": {
+    "active": true,
+    "id": "0f87-6acc-e47b-03ba",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-activity-records": {
+    "active": true,
+    "id": "0f87-6acd-0222-af6e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-avg-moving-speed": {
+    "active": true,
+    "id": "0f87-6acd-2cab-9f2d",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-bmk-copyup-sigkill": {
+    "active": true,
+    "id": "0f87-6acd-5c0a-afbb",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-bmk-shared-libs": {
+    "active": true,
+    "id": "0f87-6acd-17ca-0f47",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-bmk-test-atf": {
+    "active": true,
+    "id": "0f87-6acc-f500-d528",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-clang22-float-h": {
+    "active": false,
+    "id": "0f87-6acd-2689-e92a",
+    "status": "superseded",
+    "type": "obs"
+  },
+  "obs-cycling-mapping": {
+    "active": true,
+    "id": "0f87-6acc-eefb-5402",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-db-contents": {
+    "active": true,
+    "id": "0f87-6acc-e47b-8a43",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-db-freshness": {
+    "active": true,
+    "id": "0f87-6acc-e47b-e052",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-db-moving-time": {
+    "active": true,
+    "id": "0f87-6acd-24af-3650",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-db-type-lossy": {
+    "active": false,
+    "id": "0f87-6acc-fb9f-4a91",
+    "status": "superseded",
+    "type": "obs"
+  },
+  "obs-deps-licenses": {
+    "active": true,
+    "id": "0f87-6acc-edc9-ee0a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-filetree-contents": {
+    "active": true,
+    "id": "0f87-6acc-e47a-5286",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-fit-reference": {
+    "active": true,
+    "id": "0f87-6acc-f373-48fd",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-fit-sport-profile": {
+    "active": true,
+    "id": "0f87-6acc-f035-f934",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-fox-eval": {
+    "active": true,
+    "id": "0f87-6acc-e68a-dc9a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-garmin-sh": {
+    "active": true,
+    "id": "0f87-6acc-fba7-f36c",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-gc-activity-types": {
+    "active": true,
+    "id": "0f87-6acd-24af-6595",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-gc-typekeys": {
+    "active": true,
+    "id": "0f87-6acc-fb9f-3537",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-gtk4-eval": {
+    "active": true,
+    "id": "0f87-6acc-e68a-ec15",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-gui-runs-on-user-screen": {
+    "active": true,
+    "id": "0f87-6acd-5d1b-f1a6",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-healthdata-scripts": {
+    "active": true,
+    "id": "0f87-6acc-fa24-ed17",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-icon-gaps-p1": {
+    "active": true,
+    "id": "0f87-6acd-3186-f847",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-icons-fontawesome": {
+    "active": true,
+    "id": "0f87-6acc-edc9-3105",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-icons-gap": {
+    "active": true,
+    "id": "0f87-6acc-edc9-a146",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-icons-material": {
+    "active": true,
+    "id": "0f87-6acc-edc9-1e56",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-icons-phosphor": {
+    "active": true,
+    "id": "0f87-6acc-edc9-ff9d",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-icons-tabler": {
+    "active": true,
+    "id": "0f87-6acc-edc9-8dff",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-ign-scan25-pm": {
+    "active": true,
+    "id": "0f87-6acd-3542-9061",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-imgui-eval": {
+    "active": true,
+    "id": "0f87-6acc-e68a-4e64",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-libcxx-sdk-float-clash": {
+    "active": true,
+    "id": "0f87-6acd-2e44-3b65",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-macos-opengl": {
+    "active": true,
+    "id": "0f87-6acc-e68a-c5c1",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-map-attribution-separate": {
+    "active": true,
+    "id": "0f87-6acc-ee26-4d6c",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-monitoring-stale-cause": {
+    "active": true,
+    "id": "0f87-6acc-fb9e-c6d8",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-moving-time-bigger-filtered": {
+    "active": true,
+    "id": "0f87-6acd-5f4d-fdab",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-no-activity-standard": {
+    "active": true,
+    "id": "0f87-6acc-f035-b3c3",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-openride-name-uses": {
+    "active": true,
+    "id": "0f87-6acd-03a8-6563",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-openrider-name-uses": {
+    "active": true,
+    "id": "0f87-6acd-0462-77b5",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-other-eval": {
+    "active": true,
+    "id": "0f87-6acc-e68a-dbd6",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-phosphor-download-size": {
+    "active": true,
+    "id": "0f87-6acd-3186-a4f9",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-polyline-miter-spikes": {
+    "active": true,
+    "id": "0f87-6acd-5e67-bb01",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-qt-eval": {
+    "active": true,
+    "id": "0f87-6acc-e68a-84b0",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-redownload-loses-edits": {
+    "active": true,
+    "id": "0f87-6acc-ed4f-cfc1",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-segments-first-run": {
+    "active": true,
+    "id": "0f87-6acd-60ee-8bd1",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-sigate-scan25": {
+    "active": true,
+    "id": "0f87-6acd-03a8-b8ae",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-sports-in-data": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-3ac4",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-stats-check-24688575132": {
+    "active": true,
+    "id": "0f87-6acd-2b69-20b7",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-strava-rollerski": {
+    "active": true,
+    "id": "0f87-6acc-f291-d03e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-strava-sport-type": {
+    "active": true,
+    "id": "0f87-6acc-f035-8c2b",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-summary-json": {
+    "active": true,
+    "id": "0f87-6acd-24af-47e9",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-summit-pause-walking": {
+    "active": true,
+    "id": "0f87-6acd-2c65-d457",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-tiff-decoder": {
+    "active": true,
+    "id": "0f87-6acd-03a8-5482",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-type-watch-vs-gc": {
+    "active": true,
+    "id": "0f87-6acc-fc3f-2128",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-types-vs-scope": {
+    "active": true,
+    "id": "0f87-6acc-eea3-a6e9",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-uncorrected-types": {
+    "active": true,
+    "id": "0f87-6acc-fc3f-f4c4",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-workflow-vs-importer": {
+    "active": true,
+    "id": "0f87-6acc-fa24-5365",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-wx-eval": {
+    "active": true,
+    "id": "0f87-6acc-e68a-6fed",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "overview-colour-by-activity": {
+    "active": true,
+    "id": "0f87-6acd-6195-47c6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "overview-follows-list-filter": {
+    "active": true,
+    "id": "0f87-6acd-6195-39c7",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "overview-map": {
+    "active": true,
+    "id": "0f87-6acd-5b17-0856",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "overview-visible-filter": {
+    "active": true,
+    "id": "0f87-6acd-5b18-3b04",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "own-sqlite-store": {
+    "active": true,
+    "id": "0f87-6acd-03a7-9964",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "p1-scope": {
+    "active": true,
+    "id": "0f87-6acd-0221-1f57",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "p10-general-reference": {
+    "active": true,
+    "id": "0f87-6acd-21f0-d9db",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "p10-on-moving-average": {
+    "active": true,
+    "id": "0f87-6acd-216d-a154",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "plugin-api-version": {
+    "active": true,
+    "id": "0f87-6acd-1b0c-1303",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "plugin-extern-c": {
+    "active": true,
+    "id": "0f87-6acd-1b0b-34cf",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "plugins-dir": {
+    "active": true,
+    "id": "0f87-6acd-1b0c-627d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "plugins-path-bundled": {
+    "active": true,
+    "id": "0f87-6acd-1ba1-e6f3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "plugins-path-user": {
+    "active": true,
+    "id": "0f87-6acd-1ba1-c828",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "plugins-subdirs": {
+    "active": true,
+    "id": "0f87-6acd-1b0c-bf35",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "prefetch-layers-by-country": {
+    "active": true,
+    "id": "0f87-6acc-ebc2-9d9f",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "prefetch-outing-extents": {
+    "active": true,
+    "id": "0f87-6acc-ebc2-a3f6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "q-app-name": {
+    "active": true,
+    "id": "0f87-6acc-feee-0698",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-backoff-example": {
+    "active": true,
+    "id": "0f87-6acc-ec92-484b",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-bmk-layout": {
+    "active": true,
+    "id": "0f87-6acc-feee-38a8",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-c-cpp-boundary": {
+    "active": true,
+    "id": "0f87-6acc-e6f8-650a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-c-or-cpp": {
+    "active": true,
+    "id": "0f87-6acc-e801-d2a9",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-c-vs-cpp-gui": {
+    "active": true,
+    "id": "0f87-6acc-e584-6aaa",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-cache-eviction": {
+    "active": true,
+    "id": "0f87-6acc-ebc2-72e0",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-country-detection": {
+    "active": true,
+    "id": "0f87-6acc-ebc2-2070",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-cpp-rules-detail": {
+    "active": true,
+    "id": "0f87-6acc-ea45-8a88",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-cpp-style": {
+    "active": true,
+    "id": "0f87-6acc-e83c-427e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-credits-file-name": {
+    "active": true,
+    "id": "0f87-6acc-ee26-a32a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-crs-reprojection": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-4dcf",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-data-scope": {
+    "active": true,
+    "id": "0f87-6acc-e47b-0fa4",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-delay-scope": {
+    "active": true,
+    "id": "0f87-6acc-ec92-d768",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-detector-output": {
+    "active": true,
+    "id": "0f87-6acc-fc61-debb",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-display-surface": {
+    "active": true,
+    "id": "0f87-6acc-e47b-ea8d",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-download-script-location": {
+    "active": true,
+    "id": "0f87-6acc-fa24-6ea5",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-dropin-mechanism": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-3708",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-edit-persistence": {
+    "active": true,
+    "id": "0f87-6acc-e584-4884",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-error-convention": {
+    "active": true,
+    "id": "0f87-6acd-0462-1df9",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-error-popup-noise": {
+    "active": true,
+    "id": "0f87-6acc-f602-ed23",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-exec-output-timeout": {
+    "active": true,
+    "id": "0f87-6acd-1d00-a79d",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-filter-exec": {
+    "active": true,
+    "id": "0f87-6acd-1c8c-0da7",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-filter-vs-user-type": {
+    "active": true,
+    "id": "0f87-6acd-202a-4704",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-fit-decoding": {
+    "active": true,
+    "id": "0f87-6acc-e47b-68f2",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-fx-defaults": {
+    "active": true,
+    "id": "0f87-6acd-0468-3642",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-fx-definition": {
+    "active": true,
+    "id": "0f87-6acd-0222-827c",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-fx-smoothing": {
+    "active": true,
+    "id": "0f87-6acd-0222-d700",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-garmin-labels-source": {
+    "active": true,
+    "id": "0f87-6acc-f449-bc22",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-garmin-sh-options": {
+    "active": true,
+    "id": "0f87-6acc-fba7-f488",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-gated-meaning": {
+    "active": true,
+    "id": "0f87-6acc-f500-ab8e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-i18n-ai-details": {
+    "active": true,
+    "id": "0f87-6acc-f47c-3752",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-icon-coverage-types": {
+    "active": true,
+    "id": "0f87-6acc-eea3-d034",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-jitter-decile": {
+    "active": true,
+    "id": "0f87-6acd-202a-7d54",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-jitter-near-zero": {
+    "active": true,
+    "id": "0f87-6acd-2099-83bc",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-json-lib-choice": {
+    "active": true,
+    "id": "0f87-6acd-17ca-1167",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-largely-within": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-ce62",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-layer-protocols": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-59c2",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-log-retention": {
+    "active": true,
+    "id": "0f87-6acd-1eb1-a0a7",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-macos-cache-dir": {
+    "active": true,
+    "id": "0f87-6acd-17d3-08d6",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-manage-meaning": {
+    "active": true,
+    "id": "0f87-6acc-e47b-71a0",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-map-widget": {
+    "active": true,
+    "id": "0f87-6acc-e584-76c1",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-mapping-lossy": {
+    "active": true,
+    "id": "0f87-6acc-f1e3-3516",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-message-history": {
+    "active": true,
+    "id": "0f87-6acc-f602-58d7",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-metric-list": {
+    "active": true,
+    "id": "0f87-6acc-e584-da81",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-mirror-drop-details": {
+    "active": true,
+    "id": "0f87-6acc-ecd4-3631",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-modern-cpp-limits": {
+    "active": true,
+    "id": "0f87-6acc-e9e7-f5f1",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-moving-threshold": {
+    "active": true,
+    "id": "0f87-6acd-208a-6346",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-nice-meaning": {
+    "active": true,
+    "id": "0f87-6acc-e68a-977f",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-non-fit-types": {
+    "active": true,
+    "id": "0f87-6acc-f1e3-d534",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-p10-ma-window": {
+    "active": true,
+    "id": "0f87-6acd-216d-5241",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-pause-includes-walking": {
+    "active": true,
+    "id": "0f87-6acd-2c65-d929",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-plugin-abi": {
+    "active": true,
+    "id": "0f87-6acd-17ca-698a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-plugin-kinds": {
+    "active": true,
+    "id": "0f87-6acd-1ba1-af7a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-plugins-location": {
+    "active": true,
+    "id": "0f87-6acd-1b0c-ec5e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-portability": {
+    "active": true,
+    "id": "0f87-6acc-e47b-ada8",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-prefetch-polite-rules": {
+    "active": true,
+    "id": "0f87-6acc-eb63-a917",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-prefetch-vs-active": {
+    "active": true,
+    "id": "0f87-6acc-ec92-a9b9",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-prefetch-zooms": {
+    "active": true,
+    "id": "0f87-6acc-ebc3-e75c",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-prototype-scope": {
+    "active": true,
+    "id": "0f87-6acc-feee-1fbe",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-refresh": {
+    "active": true,
+    "id": "0f87-6acc-e47b-74aa",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-scan25-wmts": {
+    "active": true,
+    "id": "0f87-6acd-03a8-2ace",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-season-hemisphere": {
+    "active": true,
+    "id": "0f87-6acc-fc61-fe51",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-segment-detection": {
+    "active": true,
+    "id": "0f87-6acc-e584-b325",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-service-vs-server": {
+    "active": true,
+    "id": "0f87-6acc-ecd4-c93a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-sigint-grace": {
+    "active": true,
+    "id": "0f87-6acd-1d71-278e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-similar-activities": {
+    "active": true,
+    "id": "0f87-6acd-5f9a-8bf2",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-similarity-method": {
+    "active": true,
+    "id": "0f87-6acc-e584-48ee",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-ski-subkinds": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-e389",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-skitour-400m": {
+    "active": true,
+    "id": "0f87-6acd-202a-fb7e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-sport-focus": {
+    "active": true,
+    "id": "0f87-6acc-e584-89f5",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-stationary-params": {
+    "active": true,
+    "id": "0f87-6acd-2157-30aa",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-stats-source-unfiltered": {
+    "active": true,
+    "id": "0f87-6acd-208a-be92",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-status-bar-details": {
+    "active": true,
+    "id": "0f87-6acc-f500-69e4",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-status-errors": {
+    "active": true,
+    "id": "0f87-6acc-f570-cb6e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-tech-libs": {
+    "active": true,
+    "id": "0f87-6acc-feee-b798",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-type-mapping": {
+    "active": true,
+    "id": "0f87-6acc-eea3-5b7f",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-type-tags-vs-user-tags": {
+    "active": true,
+    "id": "0f87-6acc-f31e-1f3e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-ui-languages": {
+    "active": true,
+    "id": "0f87-6acc-f42b-8fbb",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-unlisted-sports": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-62d4",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-vspeed-units": {
+    "active": true,
+    "id": "0f87-6acd-03ce-9649",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-walk-hike-mechanism": {
+    "active": true,
+    "id": "0f87-6acc-f34f-710e",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-workflow-design": {
+    "active": true,
+    "id": "0f87-6acc-fa24-85d3",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-workflow-exec-details": {
+    "active": true,
+    "id": "0f87-6acd-1c18-86e6",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "repo-git-bsd3": {
+    "active": true,
+    "id": "0f87-6acd-22b5-89b9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "scope-activities-only": {
+    "active": true,
+    "id": "0f87-6acd-22b4-9ef0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "scope-ski-kinds": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-3abd",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "scope-sports": {
+    "active": true,
+    "id": "0f87-6acc-e9e8-bf88",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segment-kinds": {
+    "active": true,
+    "id": "0f87-6acc-e576-b2f1",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segment-outing": {
+    "active": true,
+    "id": "0f87-6acc-e576-5f2e",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-heatmap": {
+    "active": true,
+    "id": "0f87-6acd-5f99-67ff",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-map-tracks": {
+    "active": true,
+    "id": "0f87-6acd-5f99-e0c6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-mean-track": {
+    "active": true,
+    "id": "0f87-6acd-5f99-6725",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-similar-activities": {
+    "active": true,
+    "id": "0f87-6acd-5f99-69ed",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "select-outings": {
+    "active": true,
+    "id": "0f87-6acc-e576-2fe4",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "service-vs-server-terms": {
+    "active": true,
+    "id": "0f87-6acd-22b5-50eb",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "similar-common-segment": {
+    "active": true,
+    "id": "0f87-6acc-e577-dc00",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "similar-same-route": {
+    "active": true,
+    "id": "0f87-6acc-e577-656c",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "single-language": {
+    "active": true,
+    "id": "0f87-6acc-e801-c1fd",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "single-user": {
+    "active": true,
+    "id": "0f87-6acc-f500-7289",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "single-write-path": {
+    "active": true,
+    "id": "0f87-6acc-f56f-b585",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "skating-is-nordic": {
+    "active": true,
+    "id": "0f87-6acc-eefb-1cc0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "skitour-rule": {
+    "active": true,
+    "id": "0f87-6acd-202a-b778",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "sort-outings": {
+    "active": true,
+    "id": "0f87-6acc-e576-a013",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "source-tables-prepopulated": {
+    "active": true,
+    "id": "0f87-6acc-f1e3-5cb8",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "source-type-tables": {
+    "active": true,
+    "id": "0f87-6acc-f1e3-1918",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "speed-ma-30s": {
+    "active": true,
+    "id": "0f87-6acd-221e-e0d5",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "sqlite-amalgamation": {
+    "active": true,
+    "id": "0f87-6acd-17c9-e05d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "stationary-definition": {
+    "active": true,
+    "id": "0f87-6acd-2157-c56d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "stationary-shared-rule": {
+    "active": true,
+    "id": "0f87-6acd-2197-fd69",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "stationary-window-adaptive": {
+    "active": true,
+    "id": "0f87-6acd-21b6-9f93",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "stats-extra": {
+    "active": true,
+    "id": "0f87-6acd-2cff-e898",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "stats-garmin-from-json": {
+    "active": true,
+    "id": "0f87-6acd-2cff-b0f8",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "stats-hms": {
+    "active": true,
+    "id": "0f87-6acd-2cff-0c50",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "stats-outing-set": {
+    "active": true,
+    "id": "0f87-6acd-208a-cf96",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "stats-recompute-after-filter": {
+    "active": true,
+    "id": "0f87-6acd-208a-c12d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "stats-source-toggle": {
+    "active": true,
+    "id": "0f87-6acd-2157-cc77",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "status-bar": {
+    "active": true,
+    "id": "0f87-6acc-f500-96a2",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "status-progress": {
+    "active": true,
+    "id": "0f87-6acc-f570-1223",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "status-progress-bar": {
+    "active": true,
+    "id": "0f87-6acc-f570-c62d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "tag-outings": {
+    "active": true,
+    "id": "0f87-6acc-e576-a9c2",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "taxonomy-fit": {
+    "active": true,
+    "id": "0f87-6acc-f1e3-6a5c",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "tiff-libtiff": {
+    "active": true,
+    "id": "0f87-6acd-0462-e313",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "tile-cache-library-macos": {
+    "active": true,
+    "id": "0f87-6acd-17d3-f20a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "tile-errors-no-popup": {
+    "active": true,
+    "id": "0f87-6acd-22b5-04a3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "tiles-image-formats": {
+    "active": true,
+    "id": "0f87-6acd-03a7-d558",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "tiles-plugin-kind": {
+    "active": true,
+    "id": "0f87-6acd-1c8b-4173",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "tiles-polite-use": {
+    "active": false,
+    "id": "0f87-6acc-eb32-0ef5",
+    "status": "superseded",
+    "type": "req"
+  },
+  "tiles-polite-use-v2": {
+    "active": true,
+    "id": "0f87-6acc-eb63-c464",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "tiles-prefetch": {
+    "active": true,
+    "id": "0f87-6acc-eb63-9872",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "track-draw-pixel-simplify": {
+    "active": true,
+    "id": "0f87-6acd-5e67-4729",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "track-style-dropdown": {
+    "active": true,
+    "id": "0f87-6acd-32e0-2504",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "type-editable": {
+    "active": true,
+    "id": "0f87-6acd-03a7-b9c0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "type-from-garmin": {
+    "active": true,
+    "id": "0f87-6acd-03a7-5199",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "type-names-garmin-labels": {
+    "active": true,
+    "id": "0f87-6acc-f449-06e1",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "type-tags-separate": {
+    "active": true,
+    "id": "0f87-6acc-f34f-af8e",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "types-long-run-all": {
+    "active": true,
+    "id": "0f87-6acc-ef42-895c",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "ui-lang-fr-en": {
+    "active": true,
+    "id": "0f87-6acc-f449-4c80",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "ui-localised": {
+    "active": true,
+    "id": "0f87-6acc-f449-4d01",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "unit-testable": {
+    "active": true,
+    "id": "0f87-6acc-f500-82de",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "use-sqlite": {
+    "active": true,
+    "id": "0f87-6acd-0461-15b5",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "walk-is-fit-walking": {
+    "active": true,
+    "id": "0f87-6acc-f42b-bbfe",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "walk-vs-hike": {
+    "active": true,
+    "id": "0f87-6acc-eea3-53d3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "window-from-ref-distance": {
+    "active": true,
+    "id": "0f87-6acd-221e-c1fc",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "workflow-abstraction": {
+    "active": true,
+    "id": "0f87-6acc-fa23-cef0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "workflow-cancel-button": {
+    "active": true,
+    "id": "0f87-6acd-1d00-7b09",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "workflow-definitions": {
+    "active": true,
+    "id": "0f87-6acc-fa24-05e5",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "workflow-exit-code": {
+    "active": true,
+    "id": "0f87-6acd-1c18-8e4e",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "workflow-external-exec": {
+    "active": true,
+    "id": "0f87-6acd-1c17-58f5",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "workflow-garmindb-download": {
+    "active": true,
+    "id": "0f87-6acc-fa24-2797",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "workflow-in-status-bar": {
+    "active": true,
+    "id": "0f87-6acd-1d00-d824",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "workflow-plugin-kind": {
+    "active": true,
+    "id": "0f87-6acd-1c17-a103",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "workflow-runs-garmin-sh": {
+    "active": true,
+    "id": "0f87-6acc-fba7-a943",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "writes-atomic": {
+    "active": true,
+    "id": "0f87-6acc-f570-01f3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "writes-gated-transactional": {
+    "active": true,
+    "id": "0f87-6acc-f500-27ae",
+    "status": "confirmed",
+    "type": "req"
+  }
+}

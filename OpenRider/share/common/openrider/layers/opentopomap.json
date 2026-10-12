@@ -1,0 +1,13 @@
+{
+  "id": "opentopomap",
+  "name": "OpenTopoMap",
+  "protocol": "xyz",
+  "url": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+  "servers": ["a", "b", "c"],
+  "crs": "EPSG:3857",
+  "min_zoom": 1,
+  "max_zoom": 17,
+  "tile_size": 256,
+  "extent": [-180, -85.0511287798, 180, 85.0511287798],
+  "attribution": "Map data: © OpenStreetMap contributors, SRTM | Map representation: © OpenTopoMap (CC-BY-SA)"
+}

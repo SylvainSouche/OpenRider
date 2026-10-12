@@ -1,0 +1,17 @@
+---
+schema_version: 2
+id: 0f87-6acd-03ce-aba9
+alias: fx-predefined-list
+type: req
+status: confirmed
+origin: user statement, 2026-10-12 (FR): pour les formules une liste prédéfinie dans un premier temps, lissée : 100 m / 1000 m pour les pentes avec un combo ; 30 s / 1 min / 5 min avec un combo pour les vitesses ascensionnelles
+created: 2026-10-12
+rel_decided_by: [0f87-6acd-03ce-fe42]
+rel_refines: [0f87-6acd-0221-657c]
+generator: model.py/2.4.0
+checksum: d556330c9e62
+---
+
+# Computed series shall come from a predefined list (no user formulas for now)
+
+<!-- rationale, detail, alternatives considered -->

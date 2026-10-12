@@ -1,0 +1,9 @@
+--- /dev/null
++++ b/stb_image_impl.c
+@@ -0,0 +1,6 @@
++/* Added by OpenRider: the single translation unit holding stb_image's
++ * implementation. PNG and JPEG only. */
++#define STB_IMAGE_IMPLEMENTATION
++#define STBI_ONLY_PNG
++#define STBI_ONLY_JPEG
++#include "stb_image.h"
