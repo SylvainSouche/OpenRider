@@ -893,6 +893,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-release-0-1-0": {
+    "active": true,
+    "id": "0f87-6acd-64df-3c7e",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-restrained-cpp": {
     "active": true,
     "id": "0f87-6acc-ea44-75e5",
