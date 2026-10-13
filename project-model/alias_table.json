@@ -953,6 +953,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-release-0-1-1": {
+    "active": true,
+    "id": "0f87-6acd-dc25-3236",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-restrained-cpp": {
     "active": true,
     "id": "0f87-6acc-ea44-75e5",
@@ -1010,6 +1016,12 @@
   "dec-tiles-plugin-exec-json": {
     "active": true,
     "id": "0f87-6acd-1c8b-bd14",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-trace-width-slider": {
+    "active": true,
+    "id": "0f87-6acd-dc0b-f699",
     "status": "recorded",
     "type": "dec"
   },
@@ -1763,6 +1775,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-trace-width": {
+    "active": true,
+    "id": "0f87-6acd-dc0b-a958",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-track-style": {
     "active": true,
     "id": "0f87-6acd-32ed-0d05",
@@ -2246,6 +2264,12 @@
   "obs-healthdata-scripts": {
     "active": true,
     "id": "0f87-6acc-fa24-ed17",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-heatmap-too-precise": {
+    "active": true,
+    "id": "0f87-6acd-dc0b-b60c",
     "status": "recorded",
     "type": "obs"
   },
@@ -3200,6 +3224,12 @@
   "segments-similar-activities": {
     "active": true,
     "id": "0f87-6acd-5f99-69ed",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-trace-width": {
+    "active": true,
+    "id": "0f87-6acd-dc0b-9c88",
     "status": "confirmed",
     "type": "req"
   },

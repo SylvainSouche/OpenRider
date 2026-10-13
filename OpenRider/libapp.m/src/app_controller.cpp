@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "core/outing_selection.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <map>
 
@@ -121,7 +122,8 @@ void AppController::UpdateSegments()
     }
     const core::OutingFilter filter = model_.MapFilter();
     const std::string basis = filter.type_key + "|" + filter.from_date + "|" + filter.to_date + "|" +
-                              std::to_string(model_.tracks.size());
+                              std::to_string(model_.tracks.size()) + "|" +
+                              std::to_string(model_.segment_trace_width_m);
     if (basis != segments_basis_) {
         segments_basis_ = basis;
         std::map<std::string, std::string> sport_of;  // outing id -> sport, for the shown outings
@@ -140,7 +142,9 @@ void AppController::UpdateSegments()
         for (auto &entry : groups)
             if (entry.second.tracks.size() >= 2)  // a segment needs two routes
                 to_build.push_back(std::move(entry.second));
-        networks_.Start(std::move(to_build), core::SegmentParams{});
+        core::SegmentParams params;
+        params.trace_width_m = model_.segment_trace_width_m;
+        networks_.Start(std::move(to_build), params);
         core::LogLine("building segment networks: %s", basis.c_str());
     }
     if (networks_.Take(model_.segment_groups)) {
@@ -229,6 +233,10 @@ void AppController::Handle(const Intent &intent, Intents &out)
         break;
     case IntentKind::SetShowSegments:
         model_.show_segments = intent.i != 0;
+        UpdateSegments();
+        break;
+    case IntentKind::SetSegmentWidth:
+        model_.segment_trace_width_m = std::clamp(intent.x, 1.0, 50.0);
         UpdateSegments();
         break;
     case IntentKind::SetVisibleIds:

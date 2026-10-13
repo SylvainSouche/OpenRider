@@ -57,8 +57,28 @@ ATF_TEST_CASE_BODY(restart_replaces_the_build)
     ATF_REQUIRE_EQ(result[0].sport, "hiking");
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(many_requests_coalesce);
+ATF_TEST_CASE_BODY(many_requests_coalesce)
+{
+    core::NetworkBuilder builder;
+    core::SegmentParams params;
+    for (int width = 1; width <= 50; ++width) {  // like a slider being dragged
+        params.trace_width_m = width;
+        builder.Start({{"running", {Straight("a", 500), Straight("b", 500)}}}, params);
+    }
+    std::vector<core::SegmentGroup> result;
+    for (int i = 0; i < 2000 && !builder.Take(result); ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    ATF_REQUIRE_EQ(result.size(), 1u);
+    for (int i = 0; i < 1000 && builder.Building(); ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    ATF_REQUIRE(!builder.Building());
+    ATF_REQUIRE(!builder.Take(result));  // only the latest request was published
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
     ATF_ADD_TEST_CASE(tcs, builds_one_network_per_group);
     ATF_ADD_TEST_CASE(tcs, restart_replaces_the_build);
+    ATF_ADD_TEST_CASE(tcs, many_requests_coalesce);
 }

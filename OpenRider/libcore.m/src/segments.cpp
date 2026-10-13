@@ -397,21 +397,36 @@ Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &
         }
 
     // @impl 0f87-6acd-60a9-7bf6
-    // 2. Blurred heat map: 1 on the cells a track's line crosses, 0.5 on
-    // their neighbours, once per track (the higher value); tracks add up.
-    const double cell = params.cell_m, r = params.tolerance_m;
+    // @impl 0f87-6acd-dc0b-a958
+    // 2. Blurred heat map: each track drawn as a line trace_width_m wide.
+    // Along the track, a disc of that diameter is stamped: 1 on the cells
+    // whose centre lies inside it, 0.5 on a rim one cell wider (the blur),
+    // once per track (the higher value); tracks add up. The cell of the
+    // point itself always counts, so a width below the cell size still
+    // draws a one-cell line. Discs are stamped every half radius at most,
+    // which leaves the band covered to 97% of its half-width.
+    const double cell = params.cell_m;
+    const double radius = std::max(0.0, params.trace_width_m / 2.0);
+    const double rim = radius + cell;
+    // Points within half the trace width of a skeleton belong to it.
+    const double r = std::max(params.tolerance_m, radius);
+    const int reach = static_cast<int>(std::ceil(rim / cell));
     std::unordered_map<Cell, double> heat;
     std::unordered_map<Cell, int> reached;  // distinct tracks per cell
     for (const std::vector<XY> &l : xy) {
         std::unordered_map<Cell, double> mine;
-        for (const XY &q : Densify(l, cell * 0.5)) {
+        for (const XY &q : Densify(l, std::max(cell * 0.5, radius * 0.5))) {
             const int64_t ix = static_cast<int64_t>(std::floor(q.x / cell));
             const int64_t iy = static_cast<int64_t>(std::floor(q.y / cell));
             mine[Key(ix, iy)] = 1.0;
-            for (int dy = -1; dy <= 1; ++dy)
-                for (int dx = -1; dx <= 1; ++dx) {
+            for (int dy = -reach; dy <= reach; ++dy)
+                for (int dx = -reach; dx <= reach; ++dx) {
+                    // Distance from the point to the centre of that cell.
+                    const double distance = std::hypot((ix + dx + 0.5) * cell - q.x, (iy + dy + 0.5) * cell - q.y);
+                    if (distance > rim)
+                        continue;
                     double &v = mine[Key(ix + dx, iy + dy)];
-                    v = std::max(v, 0.5);
+                    v = std::max(v, distance <= radius ? 1.0 : 0.5);
                 }
         }
         for (const auto &[c, v] : mine) {

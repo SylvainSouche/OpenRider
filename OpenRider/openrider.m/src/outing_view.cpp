@@ -353,6 +353,14 @@ void DrawOverviewView(const app::AppModel &model, const ViewModels &view_models,
     bool show_segments = model.show_segments;
     if (ImGui::Checkbox("Common segments", &show_segments))
         out.Push(app::IntentKind::SetShowSegments, show_segments ? 1 : 0);
+    if (model.show_segments) {
+        // Edited on a local copy; every change is a new build request.
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(160.0f);
+        float width = static_cast<float>(model.segment_trace_width_m);
+        if (ImGui::SliderFloat("trace width", &width, 1.0f, 50.0f, "%.0f m"))
+            out.Push(app::IntentKind::SetSegmentWidth, 0, 0, width);
+    }
     if (model.show_segments && model.segments_building) {
         ImGui::SameLine();
         ImGui::TextDisabled("computing...");

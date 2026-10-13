@@ -5,9 +5,11 @@
 ///
 /// Method (map inference from GPS traces, kernel-density style):
 ///  1. local metric projection; sparse grid of `cell_m` cells;
-///  2. blurred heat map: each track adds 1 to the cells its line crosses and
-///     0.5 to their 8 neighbours, once per cell (the higher value when both;
-///     a track lingering somewhere does not make a corridor); tracks add up;
+///  2. blurred heat map: each track is drawn as a line `trace_width_m` wide,
+///     adding 1 to the cells it covers and 0.5 to a one-cell rim around them,
+///     once per cell (the higher value when both; a track lingering somewhere
+///     does not make a corridor); tracks add up. Wider traces merge routes
+///     that run close together;
 ///  3. corridor = cells with density >= `min_density` reached by at least
 ///     `min_tracks` distinct tracks;
 ///  4. corridor thinned to a one-cell skeleton, traced junction to junction
@@ -30,7 +32,8 @@ namespace core {
 /// Parameters of segment inference.
 struct SegmentParams {
     double cell_m = 8.0;          ///< grid resolution
-    double tolerance_m = 8.0;     ///< snapping tolerance when mapping tracks
+    double tolerance_m = 8.0;     ///< snapping tolerance when mapping tracks (at least half the trace width)
+    double trace_width_m = 8.0;   ///< width of the line each track is drawn with in the heat map
     double min_density = 1.5;     ///< blurred heat needed for a corridor
     int min_tracks = 2;           ///< distinct tracks making a corridor
     double min_spur_m = 60.0;     ///< dead ends shorter than this are pruned

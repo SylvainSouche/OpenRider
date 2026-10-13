@@ -61,6 +61,7 @@ struct AppModel {
     /// @name Common segments of the listed outings, one network per sport
     /// @{
     bool show_segments = false;                     ///< the overview shows them
+    double segment_trace_width_m = 8.0;             ///< heat map trace width (m), 1 to 50
     std::vector<core::SegmentGroup> segment_groups;  ///< last networks built
     bool segments_building = false;                 ///< a build is running
     /// @}
