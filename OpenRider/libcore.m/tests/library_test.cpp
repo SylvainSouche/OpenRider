@@ -4,6 +4,7 @@
 #include "core/outing_selection.h"
 
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <thread>
 
@@ -82,6 +83,20 @@ ATF_TEST_CASE_BODY(sort_orders)
     ATF_REQUIRE(r == (std::vector<size_t>{1, 0, 2}));
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(missing_values_sort_last);
+ATF_TEST_CASE_BODY(missing_values_sort_last)
+{
+    // The input ABI gives NaN for a value the source does not have.
+    std::vector<core::Outing> v = Sample();
+    v.push_back(Make("2026-02-01", "D", "running", std::nan("")));
+    v.push_back(Make("2026-02-02", "E", "running", 5000));
+    const core::OutingFilter all;
+    auto r = core::SelectOutings(v, all, core::SortKey::Distance, true);
+    ATF_REQUIRE(r == (std::vector<size_t>{2, 4, 1, 0, 3}));
+    r = core::SelectOutings(v, all, core::SortKey::Distance, false);
+    ATF_REQUIRE(r == (std::vector<size_t>{0, 1, 4, 2, 3}));  // still last
+}
+
 ATF_TEST_CASE_WITHOUT_HEAD(background_scan_resolves_types);
 ATF_TEST_CASE_BODY(background_scan_resolves_types)
 {
@@ -114,6 +129,7 @@ ATF_TEST_CASE_BODY(background_scan_reports_error)
 
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, missing_values_sort_last);
     ATF_ADD_TEST_CASE(tcs, filter_by_type_and_dates);
     ATF_ADD_TEST_CASE(tcs, sort_orders);
     ATF_ADD_TEST_CASE(tcs, background_scan_resolves_types);

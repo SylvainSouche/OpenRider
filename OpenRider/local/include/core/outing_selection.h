@@ -24,7 +24,9 @@ struct OutingFilter {
 /// The outing passes every criterion of the filter.
 bool OutingMatches(const Outing &outing, const OutingFilter &filter);
 
-/// Indices of `outings` matching `filter`, ordered by `key` (stable; ties by date).
+/// Indices of `outings` matching `filter`, ordered by `key` (stable). On a
+/// numeric key, outings without the value (NaN) come last in both
+/// directions.
 std::vector<size_t> SelectOutings(const std::vector<Outing> &outings,
                                   const OutingFilter &filter, SortKey key, bool ascending);
 

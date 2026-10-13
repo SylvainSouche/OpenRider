@@ -18,6 +18,7 @@ void OverviewLoader::Start(const or_input_vtable *input, void *handle, std::vect
         return;
     if (worker_.joinable())
         worker_.join();
+    stop_ = false;  // a previous Stop() must not end this load at once
     done_ = 0;
     total_ = ids.size();
     loading_ = true;

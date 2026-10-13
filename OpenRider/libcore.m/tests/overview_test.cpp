@@ -3,11 +3,14 @@
 #include "core/library.h"
 #include "core/outing_selection.h"
 #include "core/overview.h"
+#include "core/overview_loader.h"
 
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <limits>
 #include <set>
+#include <thread>
 
 namespace {
 
@@ -23,6 +26,25 @@ std::vector<or_point> LineKm()
         pts.push_back(p);
     }
     return pts;
+}
+
+// A fake input plugin: every outing is LineKm().
+int FakePoints(void *, const char *, or_point_cb cb, void *user, char *, size_t)
+{
+    for (const or_point &point : LineKm())
+        cb(user, &point);
+    return 0;
+}
+const or_input_vtable kInput = {nullptr, nullptr, nullptr, FakePoints};
+
+// Waits for a load to end, then takes its tracks.
+std::vector<core::OverviewTrack> Finish(core::OverviewLoader &loader)
+{
+    for (int i = 0; i < 2000 && loader.Loading(); ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::vector<core::OverviewTrack> tracks;
+    loader.Take(tracks);
+    return tracks;
 }
 
 } // namespace
@@ -69,8 +91,20 @@ ATF_TEST_CASE_BODY(list_restricted_to_ids)
     ATF_REQUIRE_EQ(core::SelectOutings(v, f, core::SortKey::Date, true).size(), 2u);
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(loader_restarts_after_stop);
+ATF_TEST_CASE_BODY(loader_restarts_after_stop)
+{
+    core::OverviewLoader loader;
+    loader.Start(&kInput, nullptr, {"a", "b"});
+    ATF_REQUIRE_EQ(Finish(loader).size(), 2u);
+    loader.Stop();
+    loader.Start(&kInput, nullptr, {"c", "d", "e"});
+    ATF_REQUIRE_EQ(Finish(loader).size(), 3u);  // a previous Stop() does not end the new load
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, loader_restarts_after_stop);
     ATF_ADD_TEST_CASE(tcs, thinning_keeps_shape_and_ends);
     ATF_ADD_TEST_CASE(tcs, partly_within_the_view);
     ATF_ADD_TEST_CASE(tcs, long_dates_by_language);
