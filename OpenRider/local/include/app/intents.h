@@ -23,7 +23,8 @@ enum class IntentKind {
     SetOnlyVisible,      ///< i: 0/1 -- list restricted to tracks visible on the overview
     SetVisibleIds,       ///< ids: outings visible on the overview map
     SetShowSegments,     ///< i: 0/1 -- overview shows the segment networks instead of the tracks
-    SetSegmentWidth,     ///< x: width (m) of the trace tracks are drawn with in the segment heat map
+    SelectSegmentMethod, ///< i: segments plugin index
+    SetSegmentParam,     ///< i: parameter index of the selected method, x: value
     ToggleFilter,        ///< i: filter index, j: 0/1
     SetFilterParam,      ///< i: filter index, j: parameter index, x: value
     ResetFilterParams,   ///< i: filter index

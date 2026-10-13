@@ -38,6 +38,10 @@ public:
     /// Adds a filter plugin, disabled, with its default parameters.
     void AddFilter(const or_filter_vtable *filter);
 
+    /// Adds a segments plugin with its default parameters; the first one
+    /// added is selected.
+    void AddSegmentMethod(const or_segments_vtable *method);
+
     /// Begins scanning outings.
     void Start();
 

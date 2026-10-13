@@ -251,6 +251,12 @@
     "status": "rejected",
     "type": "ai"
   },
+  "ai-velocity-bundles": {
+    "active": true,
+    "id": "0f87-6ace-24c3-e4be",
+    "status": "proposed",
+    "type": "ai"
+  },
   "ai-window-from-p10": {
     "active": true,
     "id": "0f87-6acd-21b6-2b9d",
@@ -1007,6 +1013,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-segments-plugins": {
+    "active": true,
+    "id": "0f87-6ace-2ba9-411a",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-sigterm-log-grace": {
     "active": true,
     "id": "0f87-6acd-1eb1-7db0",
@@ -1730,6 +1742,12 @@
   "impl-segments": {
     "active": true,
     "id": "0f87-6acd-6028-c636",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-segments-plugins": {
+    "active": true,
+    "id": "0f87-6ace-2ba9-bc80",
     "status": "verified",
     "type": "impl"
   },
@@ -2513,6 +2531,12 @@
     "status": "recorded",
     "type": "obs"
   },
+  "obs-switchback-averaged": {
+    "active": true,
+    "id": "0f87-6ace-24c3-046a",
+    "status": "recorded",
+    "type": "obs"
+  },
   "obs-tiff-decoder": {
     "active": true,
     "id": "0f87-6acd-03a8-5482",
@@ -3278,6 +3302,12 @@
   "segments-overview-display": {
     "active": true,
     "id": "0f87-6acd-d9d9-73f8",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-plugin-kind": {
+    "active": true,
+    "id": "0f87-6ace-2ba9-64e0",
     "status": "confirmed",
     "type": "req"
   },

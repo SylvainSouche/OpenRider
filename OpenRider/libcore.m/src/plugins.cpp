@@ -44,6 +44,7 @@ const char *PluginKindDir(uint32_t kind)
     case OR_PLUGIN_FILTER: return "filters";
     case OR_PLUGIN_TILES: return "tiles";
     case OR_PLUGIN_WORKFLOW: return "workflows";
+    case OR_PLUGIN_SEGMENTS: return "segments";
     default: return "";
     }
 }

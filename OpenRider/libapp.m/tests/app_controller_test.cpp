@@ -5,6 +5,8 @@
 
 #include "app/dispatch.h"
 
+#include "core/segment_exchange.h"
+
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -52,6 +54,31 @@ int HalfFilter(const or_point *, size_t n, const double *, unsigned char *keep, 
 const or_filter_param kParams[] = {{"k", "K", 1.0, 0.0, 2.0}};
 const or_filter_vtable kHalf = {OR_FILTER_TRACK, "half", "Half", 1, kParams, HalfFilter};
 
+// Segments plugin: one shared segment along the first track, followed by
+// every track.
+int FakeSegments(const or_segment_track *tracks, size_t count, const double *, or_segment_cancel_cb, void *,
+                 or_segment_network **out, char *, size_t)
+{
+    const std::vector<core::OverviewTrack> input = core::ImportTracks(tracks, count);
+    core::SegmentNetwork network;
+    network.nodes = {{0, input[0].lon.front(), input[0].lat.front()}, {1, input[0].lon.back(), input[0].lat.back()}};
+    core::NetworkSegment segment;
+    segment.from = 0;
+    segment.to = 1;
+    segment.lon = input[0].lon;
+    segment.lat = input[0].lat;
+    for (const core::OverviewTrack &track : input) {
+        segment.route_ids.push_back(track.id);
+        network.routes.push_back({track.id, {{0, true}}});
+    }
+    network.segments.push_back(segment);
+    *out = core::ExportNetwork(network, input);
+    return 0;
+}
+void FreeSegments(or_segment_network *network) { core::FreeExportedNetwork(network); }
+const or_filter_param kSegmentParams[] = {{"width", "Width", 8.0, 1.0, 50.0}};
+const or_segments_vtable kSegments = {"fake", "Fake", 1, kSegmentParams, FakeSegments, FreeSegments};
+
 struct Fixture {
     app::AppModel model;
     app::AppController app{model};
@@ -66,6 +93,7 @@ struct Fixture {
     {
         app.SetInput(&kInput, nullptr, "fake");
         app.AddFilter(&kHalf);
+        app.AddSegmentMethod(&kSegments);
         app.Start();
         for (int i = 0; i < 500 && (model.outings.size() < 3 || model.scanning || model.tracks_loading ||
                                     model.tracks.size() < 3);
@@ -177,6 +205,10 @@ ATF_TEST_CASE_BODY(segments_follow_the_overview)
     for (const core::NetworkSegment &segment : f.model.segment_groups[0].network.segments)
         shared = shared || segment.route_ids.size() == 2;
     ATF_REQUIRE(shared);
+
+    // Parameters of the method: clamped to their declared range.
+    f.Send(app::IntentKind::SetSegmentParam, 0, 0, 100.0);
+    ATF_REQUIRE_EQ(f.model.segment_methods[0].values[0], 50.0);
 
     // Restricting the overview to cycling leaves no group of two.
     app::Intent type{app::IntentKind::SetTypeFilter};

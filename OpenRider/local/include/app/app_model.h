@@ -12,6 +12,7 @@
 
 #include <openrider/filter.h>
 #include <openrider/input.h>
+#include <openrider/segments.h>
 
 #include <set>
 #include <string>
@@ -33,6 +34,12 @@ struct FilterState {
     const or_filter_vtable *vtable = nullptr;  ///< the filter plugin
     bool enabled = false;                      ///< applied to the selected outing
     std::vector<double> values;  ///< one per declared parameter
+};
+
+/// A segments plugin and its settings.
+struct SegmentMethod {
+    const or_segments_vtable *vtable = nullptr;  ///< the plugin
+    std::vector<double> values;                  ///< one per declared parameter
 };
 
 /// The application model. Only AppController changes it; view controllers
@@ -61,7 +68,8 @@ struct AppModel {
     /// @name Common segments of the listed outings, one network per sport
     /// @{
     bool show_segments = false;                     ///< the overview shows them
-    double segment_trace_width_m = 15.0;            ///< heat map trace width (m), 1 to 50
+    std::vector<SegmentMethod> segment_methods;     ///< every segments plugin, in load order
+    int segment_method = -1;                        ///< the one used, -1 = none
     std::vector<core::SegmentGroup> segment_groups;  ///< last networks built
     bool segments_building = false;                 ///< a build is running
     /// @}

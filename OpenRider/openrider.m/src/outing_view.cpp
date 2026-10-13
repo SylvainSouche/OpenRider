@@ -310,6 +310,43 @@ void DrawGraphs(const app::AppModel &model, const app::OutingViewModel &view_mod
         out.Push(app::IntentKind::GraphHoverEnd);
 }
 
+// The common segments switch, the method (when several segments plugins
+// are installed) and one slider per parameter the method declares. Values
+// are edited on local copies; every change is a new build request.
+void DrawSegmentControls(const app::AppModel &model, app::Intents &out)
+{
+    if (model.segment_methods.empty()) {
+        ImGui::TextDisabled("(no segments plugin)");
+        return;
+    }
+    bool show_segments = model.show_segments;
+    if (ImGui::Checkbox("Common segments", &show_segments))
+        out.Push(app::IntentKind::SetShowSegments, show_segments ? 1 : 0);
+    if (!model.show_segments || model.segment_method < 0)
+        return;
+    const app::SegmentMethod &method = model.segment_methods[static_cast<size_t>(model.segment_method)];
+    if (model.segment_methods.size() > 1) {
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(180.0f);
+        if (ImGui::BeginCombo("##segment_method", method.vtable->label)) {
+            for (size_t m = 0; m < model.segment_methods.size(); ++m)
+                if (ImGui::Selectable(model.segment_methods[m].vtable->label, static_cast<int>(m) == model.segment_method))
+                    out.Push(app::IntentKind::SelectSegmentMethod, static_cast<int>(m));
+            ImGui::EndCombo();
+        }
+    }
+    for (size_t p = 0; p < method.values.size(); ++p) {
+        const or_filter_param &param = method.vtable->params[p];
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(140.0f);
+        ImGui::PushID(static_cast<int>(p));
+        double value = method.values[p];
+        if (ImGui::SliderScalar(param.label, ImGuiDataType_Double, &value, &param.min_value, &param.max_value, "%.1f"))
+            out.Push(app::IntentKind::SetSegmentParam, static_cast<int>(p), 0, value);
+        ImGui::PopID();
+    }
+}
+
 // Overview with segments: what the hovered segment is and which outings
 // follow it, newest first.
 void DrawSegmentTooltip(const app::AppModel &model, const app::MapViewModel &view_model)
@@ -350,17 +387,7 @@ void DrawOverviewView(const app::AppModel &model, const ViewModels &view_models,
     ImGui::SameLine();
     DrawBackgroundCombo(model, view_models.map, out);
     ImGui::SameLine();
-    bool show_segments = model.show_segments;
-    if (ImGui::Checkbox("Common segments", &show_segments))
-        out.Push(app::IntentKind::SetShowSegments, show_segments ? 1 : 0);
-    if (model.show_segments) {
-        // Edited on a local copy; every change is a new build request.
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(160.0f);
-        float width = static_cast<float>(model.segment_trace_width_m);
-        if (ImGui::SliderFloat("trace width", &width, 1.0f, 50.0f, "%.0f m"))
-            out.Push(app::IntentKind::SetSegmentWidth, 0, 0, width);
-    }
+    DrawSegmentControls(model, out);
     if (model.show_segments && model.segments_building) {
         ImGui::SameLine();
         ImGui::TextDisabled("computing...");

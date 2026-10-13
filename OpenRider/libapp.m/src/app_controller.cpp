@@ -42,6 +42,17 @@ void AppController::AddFilter(const or_filter_vtable *filter)
     model_.filters.push_back(state);
 }
 
+void AppController::AddSegmentMethod(const or_segments_vtable *method)
+{
+    SegmentMethod state;
+    state.vtable = method;
+    for (size_t i = 0; i < method->param_count; ++i)
+        state.values.push_back(method->params[i].default_value);
+    model_.segment_methods.push_back(state);
+    if (model_.segment_method < 0)
+        model_.segment_method = 0;
+}
+
 void AppController::Start()
 {
     if (!input_)
@@ -116,14 +127,18 @@ void AppController::Tick(Intents &out)
 // the previous networks stay shown until it finishes.
 void AppController::UpdateSegments()
 {
-    if (!model_.show_segments || model_.tracks_loading || model_.tracks.empty()) {
+    if (!model_.show_segments || model_.tracks_loading || model_.tracks.empty() || model_.segment_method < 0) {
         model_.segments_building = networks_.Building();
         return;
     }
     const core::OutingFilter filter = model_.MapFilter();
-    const std::string basis = filter.type_key + "|" + filter.from_date + "|" + filter.to_date + "|" +
-                              std::to_string(model_.tracks.size()) + "|" +
-                              std::to_string(model_.segment_trace_width_m);
+    const std::string filter_basis = filter.type_key + "|" + filter.from_date + "|" + filter.to_date + "|" +
+                              std::to_string(model_.tracks.size());
+    const SegmentMethod &method = model_.segment_methods[static_cast<size_t>(model_.segment_method)];
+    std::string settings = method.vtable->id;
+    for (double value : method.values)
+        settings += "|" + std::to_string(value);
+    const std::string basis = filter_basis + "|" + settings;
     if (basis != segments_basis_) {
         segments_basis_ = basis;
         std::map<std::string, std::string> sport_of;  // outing id -> sport, for the shown outings
@@ -142,12 +157,13 @@ void AppController::UpdateSegments()
         for (auto &entry : groups)
             if (entry.second.tracks.size() >= 2)  // a segment needs two routes
                 to_build.push_back(std::move(entry.second));
-        core::SegmentParams params;
-        params.trace_width_m = model_.segment_trace_width_m;
-        networks_.Start(std::move(to_build), params);
+        networks_.Start(std::move(to_build), method.vtable, method.values);
         core::LogLine("building segment networks: %s", basis.c_str());
     }
     if (networks_.Take(model_.segment_groups)) {
+        const std::string error = networks_.Error();
+        if (!error.empty())
+            Report("Segment identification failed: " + error);
         size_t shared = 0;
         for (const core::SegmentGroup &group : model_.segment_groups)
             for (const core::NetworkSegment &segment : group.network.segments)
@@ -235,9 +251,21 @@ void AppController::Handle(const Intent &intent, Intents &out)
         model_.show_segments = intent.i != 0;
         UpdateSegments();
         break;
-    case IntentKind::SetSegmentWidth:
-        model_.segment_trace_width_m = std::clamp(intent.x, 1.0, 50.0);
-        UpdateSegments();
+    case IntentKind::SelectSegmentMethod:
+        if (intent.i >= 0 && intent.i < static_cast<int>(model_.segment_methods.size())) {
+            model_.segment_method = intent.i;
+            UpdateSegments();
+        }
+        break;
+    case IntentKind::SetSegmentParam:
+        if (model_.segment_method >= 0) {
+            SegmentMethod &method = model_.segment_methods[static_cast<size_t>(model_.segment_method)];
+            if (intent.i >= 0 && intent.i < static_cast<int>(method.values.size())) {
+                const or_filter_param &param = method.vtable->params[intent.i];
+                method.values[static_cast<size_t>(intent.i)] = std::clamp(intent.x, param.min_value, param.max_value);
+                UpdateSegments();
+            }
+        }
         break;
     case IntentKind::SetVisibleIds:
         model_.query.visible_ids = std::set<std::string>(intent.ids.begin(), intent.ids.end());

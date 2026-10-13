@@ -1,5 +1,7 @@
 #include "core/network_builder.h"
 
+#include "core/segment_exchange.h"
+
 namespace core {
 
 NetworkBuilder::~NetworkBuilder() { Stop(); }
@@ -17,10 +19,11 @@ void NetworkBuilder::Stop()
 }
 
 // @impl 0f87-6acd-dc0b-a958
-void NetworkBuilder::Start(std::vector<TrackGroup> groups, const SegmentParams &params)
+void NetworkBuilder::Start(std::vector<TrackGroup> groups, const or_segments_vtable *plugin,
+                           std::vector<double> values)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    request_ = Request{std::move(groups), params};
+    request_ = Request{std::move(groups), plugin, std::move(values)};
     pending_ = true;
     result_ready_ = false;  // an older result is superseded
     ++generation_;          // the running build drops out at its next group
@@ -33,6 +36,18 @@ void NetworkBuilder::Start(std::vector<TrackGroup> groups, const SegmentParams &
         worker_.join();
     running_ = true;
     worker_ = std::thread(&NetworkBuilder::Run, this);
+}
+
+std::string NetworkBuilder::Error()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return error_;
+}
+
+int NetworkBuilder::Superseded(void *self)
+{
+    const NetworkBuilder *builder = static_cast<const NetworkBuilder *>(self);
+    return builder->stop_.load() || builder->generation_.load() != builder->building_generation_ ? 1 : 0;
 }
 
 bool NetworkBuilder::Take(std::vector<SegmentGroup> &out)
@@ -62,19 +77,27 @@ void NetworkBuilder::Run()
             pending_ = false;
             generation = generation_.load();
         }
+        building_generation_ = generation;
         std::vector<SegmentGroup> built;
+        std::string error;
         bool superseded = false;
         for (TrackGroup &group : request.groups) {
             if (stop_.load() || generation_.load() != generation) {
                 superseded = true;
                 break;
             }
-            built.push_back(SegmentGroup{group.sport, BuildNetwork(group.tracks, request.params)});
+            Result<SegmentNetwork> network = RunSegments(request.plugin, group.tracks, request.values, Superseded, this);
+            if (!network.Ok()) {
+                error = network.error;
+                continue;
+            }
+            built.push_back(SegmentGroup{group.sport, std::move(network.value)});
         }
         std::lock_guard<std::mutex> lock(mutex_);
         if (!superseded && generation_.load() == generation) {
             result_ = std::move(built);
             result_ready_ = true;
+            error_ = error;
         }
     }
 }

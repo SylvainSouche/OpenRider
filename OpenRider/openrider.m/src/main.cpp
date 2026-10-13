@@ -54,6 +54,13 @@ void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::
         ctl.AddFilter(static_cast<const or_filter_vtable *>(p.info->vtable));
         core::LogLine("filter plugin %s (%s)", p.info->name, p.path.c_str());
     }
+    const core::PluginScan segment_methods = core::LoadPlugins(roots, OR_PLUGIN_SEGMENTS);
+    for (const core::LoadedPlugin &p : segment_methods.loaded) {
+        ctl.AddSegmentMethod(static_cast<const or_segments_vtable *>(p.info->vtable));
+        core::LogLine("segments plugin %s (%s)", p.info->name, p.path.c_str());
+    }
+    for (const std::string &p : segment_methods.problems)
+        out.PushText(app::IntentKind::ReportError, "Plugin refused: " + p);
     const core::PluginScan inputs = core::LoadPlugins(roots, OR_PLUGIN_INPUT);
     for (const std::string &p : filters.problems)
         out.PushText(app::IntentKind::ReportError, "Plugin refused: " + p);
