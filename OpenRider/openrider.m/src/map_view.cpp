@@ -115,6 +115,78 @@ void DrawOverviewTracks(const app::AppModel &model, const app::MapViewModel &vie
                           ImDrawFlags_None, 4.0f);
 }
 
+// @impl 0f87-6acd-d9d9-da69
+// Overview with segments: the network of each activity group. Shared
+// segments coloured and thickened by their number of routes (blue: two,
+// red: the most travelled), single-route segments thin and faint, nodes as
+// dots, the hovered segment in orange on top; a legend of the colour scale.
+void DrawSegmentNetworks(const app::AppModel &model, const app::MapViewModel &view_model, const Frame &frame)
+{
+    size_t most_routes = 2;
+    for (const core::SegmentGroup &group : model.segment_groups)
+        for (const core::NetworkSegment &segment : group.network.segments)
+            most_routes = std::max(most_routes, segment.route_ids.size());
+    auto line_of = [&](const core::NetworkSegment &segment) {
+        std::vector<ImVec2> line;
+        for (size_t i = 0; i < segment.lat.size(); ++i)
+            line.push_back(frame.At(segment.lon[i], segment.lat[i]));
+        return Simplified(line);
+    };
+    // Single-route segments first, so that shared ones are drawn over them.
+    for (int pass = 0; pass < 2; ++pass)
+        for (const core::SegmentGroup &group : model.segment_groups)
+            for (const core::NetworkSegment &segment : group.network.segments) {
+                if (segment.Shared() != (pass == 1))
+                    continue;
+                const std::vector<ImVec2> line = line_of(segment);
+                if (line.size() < 2)
+                    continue;
+                if (!segment.Shared()) {
+                    frame.draw_list->AddPolyline(line.data(), static_cast<int>(line.size()), IM_COL32(60, 60, 60, 110),
+                                                 ImDrawFlags_None, 1.5f);
+                    continue;
+                }
+                const double share = most_routes > 2 ? double(segment.route_ids.size() - 2) / double(most_routes - 2) : 0.0;
+                frame.draw_list->AddPolyline(line.data(), static_cast<int>(line.size()), Gradient(share), ImDrawFlags_None,
+                                             2.5f + 3.0f * static_cast<float>(share));
+            }
+    for (const core::SegmentGroup &group : model.segment_groups)
+        for (const core::NetworkNode &node : group.network.nodes)
+            frame.draw_list->AddCircleFilled(frame.At(node.lon, node.lat), 2.5f, IM_COL32(30, 30, 30, 200));
+    if (view_model.hovered_group >= 0 && view_model.hovered_group < static_cast<int>(model.segment_groups.size())) {
+        const core::SegmentNetwork &network = model.segment_groups[static_cast<size_t>(view_model.hovered_group)].network;
+        if (view_model.hovered_segment >= 0 && view_model.hovered_segment < static_cast<int>(network.segments.size())) {
+            const core::NetworkSegment &segment = network.segments[static_cast<size_t>(view_model.hovered_segment)];
+            const std::vector<ImVec2> line = line_of(segment);
+            if (line.size() > 1)
+                frame.draw_list->AddPolyline(line.data(), static_cast<int>(line.size()), IM_COL32(255, 140, 0, 255),
+                                             ImDrawFlags_None, 6.0f);
+            for (int end : {segment.from, segment.to})
+                if (end >= 0 && end < static_cast<int>(network.nodes.size()))
+                    frame.draw_list->AddCircleFilled(frame.At(network.nodes[static_cast<size_t>(end)].lon,
+                                                              network.nodes[static_cast<size_t>(end)].lat),
+                                                     5.0f, IM_COL32(255, 140, 0, 255));
+        }
+    }
+    // Legend: routes per shared segment.
+    const ImVec2 legend_origin(frame.origin.x + 8.0f, frame.origin.y + 8.0f);
+    const float bar_width = 120.0f, bar_height = 8.0f;
+    frame.draw_list->AddRectFilled(ImVec2(legend_origin.x - 4, legend_origin.y - 4),
+                                   ImVec2(legend_origin.x + bar_width + 4, legend_origin.y + bar_height + 34),
+                                   IM_COL32(255, 255, 255, 210), 3.0f);
+    for (int k = 0; k < 24; ++k)
+        frame.draw_list->AddRectFilled(ImVec2(legend_origin.x + bar_width * k / 24.0f, legend_origin.y + 14),
+                                       ImVec2(legend_origin.x + bar_width * (k + 1) / 24.0f, legend_origin.y + 14 + bar_height),
+                                       Gradient(k / 23.0));
+    frame.draw_list->AddText(legend_origin, IM_COL32(40, 40, 40, 255), "Routes per segment");
+    char text[32];
+    std::snprintf(text, sizeof text, "2");
+    frame.draw_list->AddText(ImVec2(legend_origin.x, legend_origin.y + 16 + bar_height), IM_COL32(40, 40, 40, 255), text);
+    std::snprintf(text, sizeof text, "%zu", most_routes);
+    frame.draw_list->AddText(ImVec2(legend_origin.x + bar_width - ImGui::CalcTextSize(text).x, legend_origin.y + 16 + bar_height),
+                             IM_COL32(40, 40, 40, 255), text);
+}
+
 // Outing: one colour, or coloured per segment by the chosen series, with a
 // legend; the point hovered in the graphs marked.
 // @impl 0f87-6acd-32ed-0d05
@@ -216,7 +288,7 @@ void DrawMapView(const app::AppModel &model, const ViewModels &view_models, Text
     const bool hovered = ImGui::IsItemHovered();
     if (hovered && ImGui::GetIO().MouseWheel != 0.0f)
         out.Push(app::IntentKind::MapZoom, ImGui::GetIO().MouseWheel > 0.0f ? 1 : -1, 0, mouse_x, mouse_y);
-    if (hovered || !view_model.hovered_track.empty())
+    if (hovered || !view_model.hovered_track.empty() || view_model.hovered_segment >= 0)
         out.Push(app::IntentKind::MapMouse, hovered ? 1 : 0, 0, mouse_x, mouse_y);
     const ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
     if (ImGui::IsItemDeactivated() && drag.x == 0.0f && drag.y == 0.0f)
@@ -230,7 +302,7 @@ void DrawMapView(const app::AppModel &model, const ViewModels &view_models, Text
     frame.tile_size = view_model.Layer()->tile_size;
     DrawTiles(view_model, textures, frame);
     if (view_model.mode == app::MapMode::Overview)
-        DrawOverviewTracks(model, view_model, frame);
+        model.show_segments ? DrawSegmentNetworks(model, view_model, frame) : DrawOverviewTracks(model, view_model, frame);
     else
         DrawOutingTrack(model, view_models, frame);
     // Attribution, always visible while the layer is shown.

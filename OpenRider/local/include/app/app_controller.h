@@ -6,6 +6,7 @@
 #include "app/intents.h"
 
 #include "core/library.h"
+#include "core/network_builder.h"
 #include "core/overview_loader.h"
 
 namespace app {
@@ -59,6 +60,10 @@ private:
     /// Re-applies the enabled track filters and recomputes the statistics.
     void ApplyFilters();
 
+    /// Starts a segment build when the overview's outings changed, and
+    /// takes a finished one.
+    void UpdateSegments();
+
     /// Logs an error and queues it for display.
     void Report(const std::string &error);
 
@@ -67,6 +72,8 @@ private:
     void *handle_ = nullptr;                  ///< its open handle
     core::Library library_;                   ///< outing scan
     core::OverviewLoader overview_;           ///< overview track loading
+    core::NetworkBuilder networks_;           ///< segment network building
+    std::string segments_basis_;              ///< what the networks were built from
     bool scan_reported_ = false;    ///< the end of the scan was handled
     bool tracks_reported_ = false;  ///< the end of the overview load was reported
 };

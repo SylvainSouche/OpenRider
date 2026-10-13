@@ -4,6 +4,7 @@
 #pragma once
 
 #include "core/library.h"
+#include "core/network_builder.h"
 #include "core/outing_selection.h"
 #include "core/overview.h"
 #include "core/stats.h"
@@ -55,6 +56,13 @@ struct AppModel {
     bool tracks_loading = false;              ///< the load is running
     size_t tracks_done = 0;                   ///< outings processed so far
     size_t tracks_total = 0;                  ///< outings to process
+    /// @}
+
+    /// @name Common segments of the listed outings, one network per sport
+    /// @{
+    bool show_segments = false;                     ///< the overview shows them
+    std::vector<core::SegmentGroup> segment_groups;  ///< last networks built
+    bool segments_building = false;                 ///< a build is running
     /// @}
 
     OutingQuery query;  ///< which outings are listed

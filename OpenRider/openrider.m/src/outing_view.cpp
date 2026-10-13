@@ -7,8 +7,10 @@
 
 #include "core/overview.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <limits>
 
 namespace ui {
@@ -308,6 +310,37 @@ void DrawGraphs(const app::AppModel &model, const app::OutingViewModel &view_mod
         out.Push(app::IntentKind::GraphHoverEnd);
 }
 
+// Overview with segments: what the hovered segment is and which outings
+// follow it, newest first.
+void DrawSegmentTooltip(const app::AppModel &model, const app::MapViewModel &view_model)
+{
+    if (view_model.hovered_group < 0 || view_model.hovered_group >= static_cast<int>(model.segment_groups.size()))
+        return;
+    const core::SegmentGroup &group = model.segment_groups[static_cast<size_t>(view_model.hovered_group)];
+    if (view_model.hovered_segment < 0 || view_model.hovered_segment >= static_cast<int>(group.network.segments.size()))
+        return;
+    const core::NetworkSegment &segment = group.network.segments[static_cast<size_t>(view_model.hovered_segment)];
+    std::vector<const core::Outing *> routes;
+    for (const std::string &id : segment.route_ids)
+        for (const core::Outing &outing : model.outings)
+            if (outing.raw.id == id)
+                routes.push_back(&outing);
+    std::sort(routes.begin(), routes.end(), [](const core::Outing *a, const core::Outing *b) {
+        return std::strcmp(a->raw.start_local, b->raw.start_local) > 0;
+    });
+    ImGui::BeginTooltip();
+    ImGui::Text("Segment %d (%s)  -  %.2f km  -  %zu route%s", segment.id, group.sport.c_str(), segment.length_m / 1000.0,
+                routes.size(), routes.size() == 1 ? "" : "s");
+    ImGui::TextDisabled("nodes %d -> %d", segment.from, segment.to);
+    ImGui::Separator();
+    const size_t max_listed = 15;
+    for (size_t i = 0; i < routes.size() && i < max_listed; ++i)
+        ImGui::Text("%s  %s", core::LongDate(routes[i]->raw.start_local, model.lang).c_str(), routes[i]->raw.name);
+    if (routes.size() > max_listed)
+        ImGui::TextDisabled("... and %zu more", routes.size() - max_listed);
+    ImGui::EndTooltip();
+}
+
 } // namespace
 
 // No outing selected: every listed track on the map; click one to open it.
@@ -316,8 +349,17 @@ void DrawOverviewView(const app::AppModel &model, const ViewModels &view_models,
     ImGui::Text("All outings  -  %zu tracks loaded", model.tracks.size());
     ImGui::SameLine();
     DrawBackgroundCombo(model, view_models.map, out);
+    ImGui::SameLine();
+    bool show_segments = model.show_segments;
+    if (ImGui::Checkbox("Common segments", &show_segments))
+        out.Push(app::IntentKind::SetShowSegments, show_segments ? 1 : 0);
+    if (model.show_segments && model.segments_building) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("computing...");
+    }
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     DrawMapView(model, view_models, textures, avail.x, avail.y, out);
+    DrawSegmentTooltip(model, view_models.map);
     if (!view_models.map.hovered_track.empty())
         for (const core::Outing &outing : model.outings)
             if (view_models.map.hovered_track == outing.raw.id)

@@ -110,7 +110,7 @@
   "ai-network-in-overview": {
     "active": true,
     "id": "0f87-6acd-ca0c-926a",
-    "status": "proposed",
+    "status": "accepted",
     "type": "ai"
   },
   "ai-network-split-entries": {
@@ -806,6 +806,12 @@
   "dec-moving-time-from-raw": {
     "active": true,
     "id": "0f87-6acd-d8c6-0017",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-network-in-overview": {
+    "active": true,
+    "id": "0f87-6acd-d9d9-c97c",
     "status": "recorded",
     "type": "dec"
   },
@@ -1628,6 +1634,12 @@
   "impl-network": {
     "active": true,
     "id": "0f87-6acd-c829-c24f",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-network-overview": {
+    "active": true,
+    "id": "0f87-6acd-d9d9-da69",
     "status": "verified",
     "type": "impl"
   },
@@ -3176,6 +3188,12 @@
   "segments-mean-track": {
     "active": true,
     "id": "0f87-6acd-5f99-6725",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-overview-display": {
+    "active": true,
+    "id": "0f87-6acd-d9d9-73f8",
     "status": "confirmed",
     "type": "req"
   },

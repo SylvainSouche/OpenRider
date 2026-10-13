@@ -159,8 +159,39 @@ ATF_TEST_CASE_BODY(errors_queue_and_quit)
     ATF_REQUIRE(f.model.quit);
 }
 
+// The two running outings follow the same line: one running network with a
+// shared segment; the lone cycling outing makes no network.
+ATF_TEST_CASE_WITHOUT_HEAD(segments_follow_the_overview);
+ATF_TEST_CASE_BODY(segments_follow_the_overview)
+{
+    Fixture f;
+    f.Send(app::IntentKind::SetShowSegments, 1);
+    ATF_REQUIRE(f.model.show_segments);
+    for (int i = 0; i < 500 && (f.model.segments_building || f.model.segment_groups.empty()); ++i) {
+        app::Step(f.c, f.intents);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    ATF_REQUIRE_EQ(f.model.segment_groups.size(), 1u);
+    ATF_REQUIRE_EQ(f.model.segment_groups[0].sport, "running");
+    bool shared = false;
+    for (const core::NetworkSegment &segment : f.model.segment_groups[0].network.segments)
+        shared = shared || segment.route_ids.size() == 2;
+    ATF_REQUIRE(shared);
+
+    // Restricting the overview to cycling leaves no group of two.
+    app::Intent type{app::IntentKind::SetTypeFilter};
+    type.text = f.model.outings[2].type.Key();
+    f.Send(type);
+    for (int i = 0; i < 500 && (f.model.segments_building || !f.model.segment_groups.empty()); ++i) {
+        app::Step(f.c, f.intents);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    ATF_REQUIRE(f.model.segment_groups.empty());
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, segments_follow_the_overview);
     ATF_ADD_TEST_CASE(tcs, scan_and_overview_fill_the_model);
     ATF_ADD_TEST_CASE(tcs, selecting_loads_points_and_stats);
     ATF_ADD_TEST_CASE(tcs, filters_are_non_destructive);

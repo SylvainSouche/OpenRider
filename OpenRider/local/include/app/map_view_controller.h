@@ -68,6 +68,8 @@ struct MapViewModel {
     int track_style = 0;                      ///< 0 = solid colour, see kTrackStyles
     unsigned int track_colour = 0xE61E1EDCu;  ///< ImU32 (ABGR)
     std::string hovered_track;                ///< overview: outing id under the mouse
+    int hovered_group = -1;                   ///< overview with segments: AppModel::segment_groups index, -1 = none
+    int hovered_segment = -1;                 ///< its segment id under the mouse, -1 = none
     std::string fitted_outing;                ///< outing the outing camera was fitted to
 
     /// The camera of the current mode.
@@ -147,11 +149,18 @@ private:
     /// Requests the tiles covering the view that are not decoded yet.
     void RequestVisibleTiles();
 
-    /// Overview: finds the track under the mouse.
+    /// Overview: finds the track under the mouse, or the segment when the
+    /// segment networks are shown.
     /// @param model the model, read-only
     /// @param mouse_x mouse offset from the map centre, pixels, rightwards
     /// @param mouse_y mouse offset from the map centre, pixels, downwards
     void UpdateHover(const AppModel &model, double mouse_x, double mouse_y);
+
+    /// Overview with segments: finds the segment under the mouse.
+    /// @param model the model, read-only
+    /// @param mouse_x mouse offset from the map centre, pixels, rightwards
+    /// @param mouse_y mouse offset from the map centre, pixels, downwards
+    void UpdateSegmentHover(const AppModel &model, double mouse_x, double mouse_y);
 
     /// Overview: pushes SetVisibleIds when the tracks in view change.
     void PublishVisible(const AppModel &model, Intents &out);

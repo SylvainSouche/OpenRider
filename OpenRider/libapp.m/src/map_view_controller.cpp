@@ -58,6 +58,17 @@ std::string ReadText(const std::string &path)
     return text;
 }
 
+// Squared distance from (x, y) to the line segment (ax, ay)-(bx, by).
+double Distance2ToSegment(double x, double y, double ax, double ay, double bx, double by)
+{
+    const double dx = bx - ax, dy = by - ay;
+    const double length2 = dx * dx + dy * dy;
+    double along = length2 > 0.0 ? ((x - ax) * dx + (y - ay) * dy) / length2 : 0.0;
+    along = std::clamp(along, 0.0, 1.0);
+    const double px = ax + along * dx - x, py = ay + along * dy - y;
+    return px * px + py * py;
+}
+
 // Highest view zoom for `layer`: at least kMaxViewZoom (over-zoom).
 int MaxViewZoom(const MapLayerInfo *layer)
 {
@@ -317,9 +328,15 @@ void MapViewController::Tick(const AppModel &model, Intents &out)
 void MapViewController::UpdateHover(const AppModel &model, double mouse_x, double mouse_y)
 {
     view_model_.hovered_track.clear();
+    view_model_.hovered_group = -1;
+    view_model_.hovered_segment = -1;
     const MapLayerInfo *layer = view_model_.Layer();
     if (!layer)
         return;
+    if (model.show_segments) {
+        UpdateSegmentHover(model, mouse_x, mouse_y);
+        return;
+    }
     std::set<std::string> shown;
     for (size_t i : core::SelectOutings(model.outings, model.MapFilter(), core::SortKey::Date, true))
         shown.insert(model.outings[i].raw.id);
@@ -344,6 +361,43 @@ void MapViewController::UpdateHover(const AppModel &model, double mouse_x, doubl
             }
         }
     }
+}
+
+// Overview with segments: the segment nearest the mouse, within kHoverPx,
+// measured to the lines between its points (they can be far apart on a
+// straight segment). Shared segments win over single-route ones at equal
+// distance, being drawn on top.
+void MapViewController::UpdateSegmentHover(const AppModel &model, double mouse_x, double mouse_y)
+{
+    const MapLayerInfo *layer = view_model_.Layer();
+    double left, top;
+    MapOrigin(view_model_, left, top);
+    const int zoom = view_model_.Camera().zoom;
+    const double mouse_world_x = left + view_model_.width / 2.0 + mouse_x;
+    const double mouse_world_y = top + view_model_.height / 2.0 + mouse_y;
+    double nearest = kHoverPx * kHoverPx;
+    bool nearest_shared = false;
+    for (size_t g = 0; g < model.segment_groups.size(); ++g)
+        for (const core::NetworkSegment &segment : model.segment_groups[g].network.segments) {
+            double previous_x = 0.0, previous_y = 0.0;
+            for (size_t i = 0; i < segment.lat.size(); ++i) {
+                double x, y;
+                maptiles::LonlatToWorld(segment.lon[i], segment.lat[i], zoom, layer->tile_size, x, y);
+                if (i > 0) {
+                    const double distance2 =
+                        Distance2ToSegment(mouse_world_x, mouse_world_y, previous_x, previous_y, x, y);
+                    const bool better = distance2 < nearest || (distance2 <= nearest && segment.Shared() && !nearest_shared);
+                    if (better) {
+                        nearest = distance2;
+                        nearest_shared = segment.Shared();
+                        view_model_.hovered_group = static_cast<int>(g);
+                        view_model_.hovered_segment = segment.id;
+                    }
+                }
+                previous_x = x;
+                previous_y = y;
+            }
+        }
 }
 
 void MapViewController::Handle(const Intent &intent, const AppModel &model, Intents &out)
@@ -383,8 +437,11 @@ void MapViewController::Handle(const Intent &intent, const AppModel &model, Inte
     case IntentKind::MapMouse:
         if (view_model_.mode == MapMode::Overview && intent.i)
             UpdateHover(model, intent.x, intent.y);
-        else
+        else {
             view_model_.hovered_track.clear();
+            view_model_.hovered_group = -1;
+            view_model_.hovered_segment = -1;
+        }
         break;
     case IntentKind::MapClick:
         if (view_model_.mode == MapMode::Overview && !view_model_.hovered_track.empty())

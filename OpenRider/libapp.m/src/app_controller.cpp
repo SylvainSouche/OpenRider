@@ -4,6 +4,7 @@
 #include "core/outing_selection.h"
 
 #include <cstdio>
+#include <map>
 
 namespace app {
 
@@ -51,6 +52,7 @@ void AppController::Start()
 
 void AppController::Shutdown()
 {
+    networks_.Stop();
     library_.Wait();
     overview_.Stop();
 }
@@ -103,6 +105,58 @@ void AppController::Tick(Intents &out)
         model_.status = status;
         core::LogLine("%s", status);
     }
+    UpdateSegments();
+}
+
+// @impl 0f87-6acd-d9d9-da69
+// The networks follow the overview: the outings passing the map filter
+// (type and dates), grouped by sport since only similar activities share
+// segments. A change of filter or of the loaded tracks starts a new build;
+// the previous networks stay shown until it finishes.
+void AppController::UpdateSegments()
+{
+    if (!model_.show_segments || model_.tracks_loading || model_.tracks.empty()) {
+        model_.segments_building = networks_.Building();
+        return;
+    }
+    const core::OutingFilter filter = model_.MapFilter();
+    const std::string basis = filter.type_key + "|" + filter.from_date + "|" + filter.to_date + "|" +
+                              std::to_string(model_.tracks.size());
+    if (basis != segments_basis_) {
+        segments_basis_ = basis;
+        std::map<std::string, std::string> sport_of;  // outing id -> sport, for the shown outings
+        for (size_t i : core::SelectOutings(model_.outings, filter, core::SortKey::Date, true))
+            sport_of[model_.outings[i].raw.id] = model_.outings[i].type.sport;
+        std::map<std::string, core::TrackGroup> groups;
+        for (const core::OverviewTrack &track : model_.tracks) {
+            const auto shown = sport_of.find(track.id);
+            if (shown == sport_of.end())
+                continue;
+            core::TrackGroup &group = groups[shown->second];
+            group.sport = shown->second;
+            group.tracks.push_back(track);
+        }
+        std::vector<core::TrackGroup> to_build;
+        for (auto &entry : groups)
+            if (entry.second.tracks.size() >= 2)  // a segment needs two routes
+                to_build.push_back(std::move(entry.second));
+        networks_.Start(std::move(to_build), core::SegmentParams{});
+        core::LogLine("building segment networks: %s", basis.c_str());
+    }
+    if (networks_.Take(model_.segment_groups)) {
+        size_t shared = 0;
+        for (const core::SegmentGroup &group : model_.segment_groups)
+            for (const core::NetworkSegment &segment : group.network.segments)
+                shared += segment.Shared() ? 1 : 0;
+        char status[160];
+        std::snprintf(status, sizeof status, "%zu shared segments in %zu activity groups", shared,
+                      model_.segment_groups.size());
+        model_.status = status;
+        core::LogLine("%s", status);
+    }
+    model_.segments_building = networks_.Building();
+    if (model_.segments_building)
+        model_.status = "Finding common segments...";
 }
 
 void AppController::Select(int index)
@@ -172,6 +226,10 @@ void AppController::Handle(const Intent &intent, Intents &out)
         model_.query.only_visible = intent.i != 0;
         if (model_.query.only_visible)
             model_.selected = -1;  // the extent is the overview map's
+        break;
+    case IntentKind::SetShowSegments:
+        model_.show_segments = intent.i != 0;
+        UpdateSegments();
         break;
     case IntentKind::SetVisibleIds:
         model_.query.visible_ids = std::set<std::string>(intent.ids.begin(), intent.ids.end());
