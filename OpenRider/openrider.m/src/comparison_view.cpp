@@ -27,6 +27,15 @@ std::string ShortDuration(double seconds)
     return text;
 }
 
+// "12 October 2026", with " (2)" for an outing's second passage.
+std::string PassageLabel(const app::AppModel &model, const app::ComparedRun &run)
+{
+    std::string label = core::LongDate(model.outings[run.outing].raw.start_local, model.lang);
+    if (run.pass > 1)
+        label += " (" + std::to_string(run.pass) + ")";
+    return label;
+}
+
 // One line per passage: its colour, a check box, the date, the time it
 // took; a second passage of the same outing says so, and a passage against
 // the segment's direction is marked with an arrow.
@@ -50,8 +59,7 @@ void DrawPassageList(const app::AppModel &model, const app::ComparisonViewModel 
         ImGui::SameLine();
         ImGui::ColorButton("##colour", RunColour(r), ImGuiColorEditFlags_NoTooltip, ImVec2(10, 10));
         ImGui::SameLine();
-        ImGui::Text("%s%s  %s %s", core::LongDate(outing.raw.start_local, model.lang).c_str(),
-                    run.pass > 1 ? (" (" + std::to_string(run.pass) + ")").c_str() : "", ShortDuration(run.duration_s).c_str(),
+        ImGui::Text("%s  %s %s", PassageLabel(model, run).c_str(), ShortDuration(run.duration_s).c_str(),
                     run.forward ? "" : "<-");
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("%s", outing.raw.name);
@@ -62,8 +70,11 @@ void DrawPassageList(const app::AppModel &model, const app::ComparisonViewModel 
 // Stacked graphs sharing the x axis: per graph, one curve (or stairs) per
 // shown passage. On the distance axis a passage is placed by its position
 // along the segment, so passages in both directions line up on the ground;
-// on the time axis it starts at its entry into the segment.
-void DrawComparisonGraphs(const app::AppModel &model, const app::ComparisonViewModel &view_model, float height)
+// on the time axis it starts at its entry into the segment. Over a graph,
+// a cursor line and a tooltip with every shown passage's value there; the
+// position is reported so that the map marks each passage there.
+void DrawComparisonGraphs(const app::AppModel &model, const app::ComparisonViewModel &view_model, float height,
+                          app::Intents &out)
 {
     const int rows = static_cast<int>(view_model.graphs.size());
     if (!ImPlot::BeginSubplots("##comparison_graphs", rows, 1, ImVec2(-1.0f, height),
@@ -71,6 +82,7 @@ void DrawComparisonGraphs(const app::AppModel &model, const app::ComparisonViewM
         return;
     const bool distance = view_model.xaxis == core::XAxis::Distance;
     const char *xlabel = distance ? "along the segment (km)" : "time from entry (min)";
+    bool any_hover = false;
     for (int g = 0; g < rows; ++g) {
         const core::SeriesSpec &spec = view_model.graphs[static_cast<size_t>(g)];
         char ylabel[64];
@@ -80,32 +92,61 @@ void DrawComparisonGraphs(const app::AppModel &model, const app::ComparisonViewM
         if (!ImPlot::BeginPlot(id, ImVec2(-1.0f, 0.0f), g == 0 ? ImPlotFlags_None : ImPlotFlags_NoLegend))
             continue;
         ImPlot::SetupAxes(g == rows - 1 ? xlabel : nullptr, ylabel, ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+        struct Reading {
+            size_t run;
+            double value;
+        };
+        std::vector<Reading> readings;  // each shown passage's value at the cursor
         for (size_t r = 0; r < model.comparison.runs.size(); ++r) {
             if (r >= view_model.shown.size() || !view_model.shown[r])
                 continue;
             const app::ComparedRun &run = model.comparison.runs[r];
-            char label[64];
-            std::snprintf(label, sizeof label, "%s%s", core::LongDate(model.outings[run.outing].raw.start_local, model.lang).c_str(),
-                          run.pass > 1 ? (" (" + std::to_string(run.pass) + ")").c_str() : "");
+            const std::string label = PassageLabel(model, run);
             ImPlotSpec style;
             style.LineColor = RunColour(r);
+            const core::Series series = app::GraphSeries(run.points, view_model.xaxis, spec);
             if (spec.type == core::GraphType::Histogram) {
-                const core::Series series = app::GraphSeries(run.points, view_model.xaxis, spec);
-                style.Flags = ImPlotStairsFlags_None;
-                ImPlot::PlotStairs(label, series.x.data(), series.y.data(), static_cast<int>(series.x.size()), style);
+                ImPlot::PlotStairs(label.c_str(), series.x.data(), series.y.data(), static_cast<int>(series.x.size()), style);
                 continue;
             }
-            const core::Series series = app::GraphSeries(run.points, view_model.xaxis, spec);
             std::vector<double> x(series.y.size());
-            for (size_t k = 0; k < series.y.size(); ++k) {
-                const size_t point = k < series.point_index.size() ? series.point_index[k] : k;
-                x[k] = distance ? run.along_m[std::min(point, run.along_m.size() - 1)] / 1000.0 : series.x[k];
+            for (size_t k = 0; k < series.y.size(); ++k)
+                x[k] = app::PassageX(run, view_model.xaxis, k < series.point_index.size() ? series.point_index[k] : k);
+            ImPlot::PlotLine(label.c_str(), x.data(), series.y.data(), static_cast<int>(x.size()), style);
+            if (view_model.hovering && !run.points.empty()) {
+                const size_t point = app::PassagePointAt(run, view_model.xaxis, view_model.hover_x);
+                if (point < series.y.size())
+                    readings.push_back({r, series.y[point]});
             }
-            ImPlot::PlotLine(label, x.data(), series.y.data(), static_cast<int>(x.size()), style);
+        }
+        if (view_model.hovering) {
+            ImPlotSpec cursor;
+            cursor.LineColor = ImVec4(0.2f, 0.2f, 0.2f, 0.6f);
+            ImPlot::PlotInfLines("##cursor", &view_model.hover_x, 1, cursor);
+        }
+        if (ImPlot::IsPlotHovered()) {
+            any_hover = true;
+            out.Push(app::IntentKind::ComparisonHover, 0, 0, ImPlot::GetPlotMousePos().x);
+            if (view_model.hovering && !readings.empty()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("%s  %.2f", xlabel, view_model.hover_x);
+                for (const Reading &reading : readings) {
+                    ImGui::ColorButton("##colour", RunColour(reading.run), ImGuiColorEditFlags_NoTooltip, ImVec2(10, 10));
+                    ImGui::SameLine();
+                    const std::string label = PassageLabel(model, model.comparison.runs[reading.run]);
+                    if (std::isnan(reading.value))
+                        ImGui::Text("%s  -", label.c_str());
+                    else
+                        ImGui::Text("%s  %.1f %s", label.c_str(), reading.value, core::SeriesUnit(spec));
+                }
+                ImGui::EndTooltip();
+            }
         }
         ImPlot::EndPlot();
     }
     ImPlot::EndSubplots();
+    if (!any_hover && view_model.hovering)
+        out.Push(app::IntentKind::ComparisonHoverEnd);
 }
 
 } // namespace
@@ -139,7 +180,7 @@ void DrawComparisonView(const app::AppModel &model, const ViewModels &view_model
                       {app::IntentKind::SetComparisonXAxis, app::IntentKind::AddComparisonGraph,
                        app::IntentKind::RemoveComparisonGraph, app::IntentKind::SetComparisonGraphSpec},
                       out);
-    DrawComparisonGraphs(model, view_models.comparison, ImGui::GetContentRegionAvail().y);
+    DrawComparisonGraphs(model, view_models.comparison, ImGui::GetContentRegionAvail().y, out);
 }
 
 } // namespace ui

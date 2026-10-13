@@ -8,6 +8,7 @@ void ComparisonViewController::Tick(const AppModel &model)
         return;
     generation_ = model.comparison.generation;
     view_model_.shown.assign(model.comparison.runs.size(), true);
+    view_model_.hovering = false;
 }
 
 void ComparisonViewController::Handle(const Intent &intent)
@@ -23,6 +24,14 @@ void ComparisonViewController::Handle(const Intent &intent)
         break;
     case IntentKind::SetComparisonXAxis:
         view_model_.xaxis = static_cast<core::XAxis>(intent.i);
+        view_model_.hovering = false;
+        break;
+    case IntentKind::ComparisonHover:
+        view_model_.hovering = true;
+        view_model_.hover_x = intent.x;
+        break;
+    case IntentKind::ComparisonHoverEnd:
+        view_model_.hovering = false;
         break;
     case IntentKind::AddComparisonGraph:
         view_model_.graphs.push_back(core::SeriesSpec{});

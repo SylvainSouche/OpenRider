@@ -17,6 +17,8 @@ struct ComparisonViewModel {
     std::vector<bool> shown;                                      ///< per ComparedRun: drawn on the map and graphs
     core::XAxis xaxis = core::XAxis::Distance;                    ///< distance: position along the segment
     std::vector<core::SeriesSpec> graphs = {core::SeriesSpec{}};  ///< stacked graphs; starts with one
+    bool hovering = false;                                        ///< the mouse is over a graph
+    double hover_x = 0.0;                                         ///< its position on the x axis (km or min)
 };
 
 /// Owns the ComparisonViewModel and changes it in response to the
@@ -30,7 +32,8 @@ public:
     void Tick(const AppModel &model);
 
     /// Handles ToggleComparedRun, ShowAllComparedRuns, SetComparisonXAxis,
-    /// AddComparisonGraph, RemoveComparisonGraph and SetComparisonGraphSpec.
+    /// AddComparisonGraph, RemoveComparisonGraph, SetComparisonGraphSpec,
+    /// ComparisonHover and ComparisonHoverEnd.
     void Handle(const Intent &intent);
 
 private:

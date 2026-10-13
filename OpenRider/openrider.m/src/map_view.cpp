@@ -188,7 +188,8 @@ void DrawSegmentNetworks(const app::AppModel &model, const app::MapViewModel &vi
 }
 
 // Comparison: the segment, wide and pale, and each shown passage in its
-// colour on top.
+// colour on top; while the mouse is over the graphs, a dot in each shown
+// passage's colour where it is at the cursor.
 void DrawComparedPassages(const app::AppModel &model, const app::ComparisonViewModel &view_model, const Frame &frame)
 {
     const core::NetworkSegment &segment = model.comparison.segment;
@@ -209,6 +210,20 @@ void DrawComparedPassages(const app::AppModel &model, const app::ComparisonViewM
         if (passage.size() > 1)
             frame.draw_list->AddPolyline(passage.data(), static_cast<int>(passage.size()),
                                          ImGui::ColorConvertFloat4ToU32(RunColour(r)), ImDrawFlags_None, 2.0f);
+    }
+    // Where each shown passage is at the graphs' cursor.
+    if (!view_model.hovering)
+        return;
+    for (size_t r = 0; r < model.comparison.runs.size(); ++r) {
+        const app::ComparedRun &run = model.comparison.runs[r];
+        if (r >= view_model.shown.size() || !view_model.shown[r] || run.points.empty())
+            continue;
+        const or_point &point = run.points[app::PassagePointAt(run, view_model.xaxis, view_model.hover_x)];
+        if (std::isnan(point.lat) || std::isnan(point.lon))
+            continue;
+        const ImVec2 at = frame.At(point.lon, point.lat);
+        frame.draw_list->AddCircleFilled(at, 6.0f, IM_COL32(255, 255, 255, 255));
+        frame.draw_list->AddCircleFilled(at, 4.5f, ImGui::ColorConvertFloat4ToU32(RunColour(r)));
     }
 }
 

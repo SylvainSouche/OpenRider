@@ -65,6 +65,8 @@ enum class IntentKind {
     AddComparisonGraph,      ///< appends a graph
     RemoveComparisonGraph,   ///< i: graph index
     SetComparisonGraphSpec,  ///< i: graph index, spec
+    ComparisonHover,         ///< x: mouse position on the graphs' x axis
+    ComparisonHoverEnd,      ///< the mouse left the graphs
 
     // MainViewController
     ResizeList,          ///< x: pixels

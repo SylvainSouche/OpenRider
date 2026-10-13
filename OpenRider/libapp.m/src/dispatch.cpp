@@ -38,6 +38,8 @@ Owner OwnerOf(IntentKind kind)
     case IntentKind::AddComparisonGraph:
     case IntentKind::RemoveComparisonGraph:
     case IntentKind::SetComparisonGraphSpec:
+    case IntentKind::ComparisonHover:
+    case IntentKind::ComparisonHoverEnd:
         return Owner::Comparison;
     case IntentKind::ResizeList:
     case IntentKind::ResizeMap:

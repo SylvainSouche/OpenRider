@@ -473,6 +473,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "comparison-hover": {
+    "active": true,
+    "id": "0f87-6ace-37d9-2162",
+    "status": "confirmed",
+    "type": "req"
+  },
   "con-opentopo-license": {
     "active": true,
     "id": "0f87-6acc-eb23-9dc5",
@@ -1550,6 +1556,12 @@
   "impl-cjson": {
     "active": true,
     "id": "0f87-6acd-24ce-4f64",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-comparison-hover": {
+    "active": true,
+    "id": "0f87-6ace-37d9-900e",
     "status": "verified",
     "type": "impl"
   },

@@ -4,6 +4,7 @@
 #include <atf-c++.hpp>
 
 #include "app/dispatch.h"
+#include "app/graphs.h"
 
 #include "core/segment_exchange.h"
 
@@ -249,6 +250,17 @@ ATF_TEST_CASE_BODY(segment_comparison)
     f.Send(app::IntentKind::AddComparisonGraph);
     ATF_REQUIRE_EQ(f.comparison.ViewModel().graphs.size(), 2u);
     ATF_REQUIRE_EQ(f.outing.ViewModel().graphs.size(), 1u);  // the outing panel's own graphs are untouched
+
+    // Pointing at the graphs: the cursor's position, and each passage's
+    // point there (100 m along the segment).
+    f.Send(app::IntentKind::ComparisonHover, 0, 0, 0.1);
+    ATF_REQUIRE(f.comparison.ViewModel().hovering);
+    const app::ComparedRun &run = f.model.comparison.runs[0];
+    const size_t point = app::PassagePointAt(run, core::XAxis::Distance, 0.1);
+    ATF_REQUIRE(std::fabs(run.along_m[point] - 100.0) < 10.0);
+    ATF_REQUIRE(std::fabs(app::PassageX(run, core::XAxis::Time, point) - run.points[point].t_s / 60.0) < 1e-9);
+    f.Send(app::IntentKind::ComparisonHoverEnd);
+    ATF_REQUIRE(!f.comparison.ViewModel().hovering);
 
     f.Send(app::IntentKind::CloseSegmentComparison);
     ATF_REQUIRE(!f.model.comparison.open);
