@@ -1,5 +1,6 @@
-// Error handling without exceptions: a fallible function returns a Result
-// holding either a value or an error message.
+/// @file
+/// Error handling without exceptions: a fallible function returns a Result
+/// holding either a value or an error message.
 #pragma once
 
 #include <string>
@@ -7,23 +8,34 @@
 
 namespace core {
 
+/// The outcome of an operation producing a `T`: a value, or an error.
 template <class T>
 struct Result {
-    T value{};
-    std::string error;  // empty on success
+    T value{};          ///< meaningful on success only
+    std::string error;  ///< empty on success
 
-    bool ok() const { return error.empty(); }
+    /// The operation succeeded.
+    bool Ok() const { return error.empty(); }
 
-    static Result success(T v) { return Result{std::move(v), {}}; }
-    static Result failure(std::string e) { return Result{T{}, std::move(e)}; }
+    /// A success holding `value`.
+    static Result Success(T value) { return Result{std::move(value), {}}; }
+
+    /// A failure with an error message.
+    static Result Failure(std::string error) { return Result{T{}, std::move(error)}; }
 };
 
-// For operations that produce no value.
+/// The outcome of an operation producing no value.
 struct Status {
-    std::string error;
-    bool ok() const { return error.empty(); }
-    static Status success() { return {}; }
-    static Status failure(std::string e) { return Status{std::move(e)}; }
+    std::string error;  ///< empty on success
+
+    /// The operation succeeded.
+    bool Ok() const { return error.empty(); }
+
+    /// A success.
+    static Status Success() { return {}; }
+
+    /// A failure with an error message.
+    static Status Failure(std::string error) { return Status{std::move(error)}; }
 };
 
 } // namespace core

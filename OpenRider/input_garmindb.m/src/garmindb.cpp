@@ -21,32 +21,32 @@ struct Handle {
     sqlite3 *db = nullptr;     // garmin_activities.db, read-only
 };
 
-void set_err(char *err, size_t errlen, const char *fmt, const char *arg)
+void SetErr(char *err, size_t errlen, const char *fmt, const char *arg)
 {
     if (err && errlen)
         std::snprintf(err, errlen, fmt, arg ? arg : "");
 }
 
-void copy_str(char *dst, size_t n, const char *src)
+void CopyStr(char *dst, size_t n, const char *src)
 {
     if (!src)
         src = "";
     std::snprintf(dst, n, "%s", src);
 }
 
-double col_double(sqlite3_stmt *st, int i)
+double ColDouble(sqlite3_stmt *st, int i)
 {
     return sqlite3_column_type(st, i) == SQLITE_NULL ? NAN : sqlite3_column_double(st, i);
 }
 
-const char *col_text(sqlite3_stmt *st, int i)
+const char *ColText(sqlite3_stmt *st, int i)
 {
     const unsigned char *t = sqlite3_column_text(st, i);
     return t ? reinterpret_cast<const char *>(t) : "";
 }
 
 // "HH:MM:SS[.ffffff]" -> seconds; NaN when empty.
-double parse_hms(const char *s)
+double ParseHms(const char *s)
 {
     int h = 0, m = 0;
     double sec = 0.0;
@@ -57,7 +57,7 @@ double parse_hms(const char *s)
 
 // "YYYY-MM-DD HH:MM:SS[.ffffff]" -> seconds since an arbitrary epoch
 // (days-from-civil); only differences are used, so the time zone is moot.
-double parse_timestamp(const char *s)
+double ParseTimestamp(const char *s)
 {
     int y, mo, d, h, mi;
     double sec;
@@ -72,13 +72,13 @@ double parse_timestamp(const char *s)
     return days * 86400.0 + h * 3600.0 + mi * 60.0 + sec;
 }
 
-double json_number(const cJSON *obj, const char *key)
+double JsonNumber(const cJSON *obj, const char *key)
 {
     const cJSON *v = cJSON_GetObjectItemCaseSensitive(obj, key);
     return cJSON_IsNumber(v) ? v->valuedouble : NAN;
 }
 
-std::string read_file(const std::string &path)
+std::string ReadFile(const std::string &path)
 {
     std::string out;
     FILE *f = std::fopen(path.c_str(), "rb");
@@ -94,10 +94,10 @@ std::string read_file(const std::string &path)
 
 // Overlay Garmin Connect's summary (activity_<id>.json) on the DB row: it
 // carries the user's type corrections and the real moving time.
-void apply_summary_json(const Handle &h, or_outing &o)
+void ApplySummaryJson(const Handle &h, or_outing &o)
 {
     const std::string path = h.base_dir + "/FitFiles/Activities/activity_" + o.id + ".json";
-    const std::string text = read_file(path);
+    const std::string text = ReadFile(path);
     if (text.empty())
         return;
     cJSON *root = cJSON_Parse(text.c_str());
@@ -106,10 +106,10 @@ void apply_summary_json(const Handle &h, or_outing &o)
     const cJSON *type = cJSON_GetObjectItemCaseSensitive(root, "activityType");
     const cJSON *key = cJSON_GetObjectItemCaseSensitive(type, "typeKey");
     if (cJSON_IsString(key))
-        copy_str(o.source_type, sizeof o.source_type, key->valuestring);
+        CopyStr(o.source_type, sizeof o.source_type, key->valuestring);
     const cJSON *name = cJSON_GetObjectItemCaseSensitive(root, "activityName");
     if (cJSON_IsString(name) && name->valuestring[0])
-        copy_str(o.name, sizeof o.name, name->valuestring);
+        CopyStr(o.name, sizeof o.name, name->valuestring);
 
     struct { const char *key; double *dst; } nums[] = {
         {"duration", &o.duration_s},      {"movingDuration", &o.moving_s},
@@ -122,12 +122,12 @@ void apply_summary_json(const Handle &h, or_outing &o)
         {"anaerobicTrainingEffect", &o.anaerobic_te},
     };
     for (auto &n : nums) {
-        const double v = json_number(root, n.key);
+        const double v = JsonNumber(root, n.key);
         if (!std::isnan(v))
             *n.dst = v;
     }
-    const double ahr = json_number(root, "averageHR");
-    const double mhr = json_number(root, "maxHR");
+    const double ahr = JsonNumber(root, "averageHR");
+    const double mhr = JsonNumber(root, "maxHR");
     if (!std::isnan(ahr))
         o.avg_hr = static_cast<int32_t>(std::lround(ahr));
     if (!std::isnan(mhr))
@@ -135,7 +135,7 @@ void apply_summary_json(const Handle &h, or_outing &o)
     cJSON_Delete(root);
 }
 
-std::string config_base_dir(const char *config)
+std::string ConfigBaseDir(const char *config)
 {
     std::string dir;
     if (config && *config) {
@@ -152,14 +152,14 @@ std::string config_base_dir(const char *config)
     return dir;
 }
 
-void *gdb_open(const char *config, char *err, size_t errlen)
+void *GdbOpen(const char *config, char *err, size_t errlen)
 {
     Handle *h = new Handle;
-    h->base_dir = config_base_dir(config);
+    h->base_dir = ConfigBaseDir(config);
     const std::string uri = "file:" + h->base_dir + "/DBs/garmin_activities.db?mode=ro";
     if (sqlite3_open_v2(uri.c_str(), &h->db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI,
                         nullptr) != SQLITE_OK) {
-        set_err(err, errlen, "cannot open GarminDB activities database: %s",
+        SetErr(err, errlen, "cannot open GarminDB activities database: %s",
                 h->db ? sqlite3_errmsg(h->db) : "out of memory");
         sqlite3_close(h->db);
         delete h;
@@ -168,7 +168,7 @@ void *gdb_open(const char *config, char *err, size_t errlen)
     return h;
 }
 
-void gdb_close(void *handle)
+void GdbClose(void *handle)
 {
     Handle *h = static_cast<Handle *>(handle);
     if (!h)
@@ -177,7 +177,7 @@ void gdb_close(void *handle)
     delete h;
 }
 
-int gdb_list(void *handle, or_outing_cb cb, void *user, char *err, size_t errlen)
+int GdbList(void *handle, or_outing_cb cb, void *user, char *err, size_t errlen)
 {
     Handle *h = static_cast<Handle *>(handle);
     size_t total = 0;
@@ -195,7 +195,7 @@ int gdb_list(void *handle, or_outing_cb cb, void *user, char *err, size_t errlen
         " anaerobic_training_effect"
         " FROM activities ORDER BY start_time";
     if (sqlite3_prepare_v2(h->db, sql, -1, &st, nullptr) != SQLITE_OK) {
-        set_err(err, errlen, "cannot read activities: %s", sqlite3_errmsg(h->db));
+        SetErr(err, errlen, "cannot read activities: %s", sqlite3_errmsg(h->db));
         return 1;
     }
     size_t index = 0;
@@ -203,42 +203,42 @@ int gdb_list(void *handle, or_outing_cb cb, void *user, char *err, size_t errlen
     while ((rc = sqlite3_step(st)) == SQLITE_ROW) {
         or_outing o;
         std::memset(&o, 0, sizeof o);
-        copy_str(o.id, sizeof o.id, col_text(st, 0));
-        copy_str(o.name, sizeof o.name, col_text(st, 1));
-        copy_str(o.fit_sport, sizeof o.fit_sport, col_text(st, 2));
-        copy_str(o.fit_sub_sport, sizeof o.fit_sub_sport, col_text(st, 3));
-        copy_str(o.start_local, sizeof o.start_local, col_text(st, 4));
-        o.duration_s = parse_hms(col_text(st, 5));
-        o.moving_s = parse_hms(col_text(st, 6));
-        o.distance_m = col_double(st, 7) * 1000.0;         // DB: km
-        o.ascent_m = col_double(st, 8);
-        o.descent_m = col_double(st, 9);
-        o.avg_speed_ms = col_double(st, 10) / 3.6;         // DB: km/h
-        o.max_speed_ms = col_double(st, 11) / 3.6;
+        CopyStr(o.id, sizeof o.id, ColText(st, 0));
+        CopyStr(o.name, sizeof o.name, ColText(st, 1));
+        CopyStr(o.fit_sport, sizeof o.fit_sport, ColText(st, 2));
+        CopyStr(o.fit_sub_sport, sizeof o.fit_sub_sport, ColText(st, 3));
+        CopyStr(o.start_local, sizeof o.start_local, ColText(st, 4));
+        o.duration_s = ParseHms(ColText(st, 5));
+        o.moving_s = ParseHms(ColText(st, 6));
+        o.distance_m = ColDouble(st, 7) * 1000.0;         // DB: km
+        o.ascent_m = ColDouble(st, 8);
+        o.descent_m = ColDouble(st, 9);
+        o.avg_speed_ms = ColDouble(st, 10) / 3.6;         // DB: km/h
+        o.max_speed_ms = ColDouble(st, 11) / 3.6;
         o.avg_hr = sqlite3_column_type(st, 12) == SQLITE_NULL ? -1 : sqlite3_column_int(st, 12);
         o.max_hr = sqlite3_column_type(st, 13) == SQLITE_NULL ? -1 : sqlite3_column_int(st, 13);
-        o.start_lat = col_double(st, 14);
-        o.start_lon = col_double(st, 15);
+        o.start_lat = ColDouble(st, 14);
+        o.start_lon = ColDouble(st, 15);
         o.min_alt_m = NAN;  // not in the activities table; JSON only
         o.max_alt_m = NAN;
-        o.avg_temp_c = col_double(st, 16);
-        o.min_temp_c = col_double(st, 17);
-        o.max_temp_c = col_double(st, 18);
-        o.calories = col_double(st, 19);
-        o.aerobic_te = col_double(st, 20);
-        o.anaerobic_te = col_double(st, 21);
-        apply_summary_json(*h, o);
+        o.avg_temp_c = ColDouble(st, 16);
+        o.min_temp_c = ColDouble(st, 17);
+        o.max_temp_c = ColDouble(st, 18);
+        o.calories = ColDouble(st, 19);
+        o.aerobic_te = ColDouble(st, 20);
+        o.anaerobic_te = ColDouble(st, 21);
+        ApplySummaryJson(*h, o);
         if (cb(user, &o, index++, total) != 0)
             break;
     }
     const bool failed = rc != SQLITE_ROW && rc != SQLITE_DONE;
     if (failed)
-        set_err(err, errlen, "error reading activities: %s", sqlite3_errmsg(h->db));
+        SetErr(err, errlen, "error reading activities: %s", sqlite3_errmsg(h->db));
     sqlite3_finalize(st);
     return failed ? 1 : 0;
 }
 
-int gdb_points(void *handle, const char *outing_id, or_point_cb cb, void *user,
+int GdbPoints(void *handle, const char *outing_id, or_point_cb cb, void *user,
                char *err, size_t errlen)
 {
     Handle *h = static_cast<Handle *>(handle);
@@ -248,37 +248,37 @@ int gdb_points(void *handle, const char *outing_id, or_point_cb cb, void *user,
         " FROM activity_records WHERE activity_id = ? ORDER BY record";
     sqlite3_stmt *st = nullptr;
     if (sqlite3_prepare_v2(h->db, sql, -1, &st, nullptr) != SQLITE_OK) {
-        set_err(err, errlen, "cannot read records: %s", sqlite3_errmsg(h->db));
+        SetErr(err, errlen, "cannot read records: %s", sqlite3_errmsg(h->db));
         return 1;
     }
     sqlite3_bind_text(st, 1, outing_id, -1, SQLITE_TRANSIENT);
     double t0 = NAN;
     int rc;
     while ((rc = sqlite3_step(st)) == SQLITE_ROW) {
-        const double t = parse_timestamp(col_text(st, 0));
+        const double t = ParseTimestamp(ColText(st, 0));
         if (std::isnan(t0))
             t0 = t;
         or_point p;
         p.t_s = t - t0;
-        p.lat = col_double(st, 1);
-        p.lon = col_double(st, 2);
-        p.alt_m = col_double(st, 3);
-        p.dist_m = col_double(st, 4) * 1000.0;             // DB: km
-        p.speed_ms = col_double(st, 5) / 3.6;              // DB: km/h
-        p.hr = col_double(st, 6);
-        p.cadence = col_double(st, 7);
-        p.temp_c = col_double(st, 8);
+        p.lat = ColDouble(st, 1);
+        p.lon = ColDouble(st, 2);
+        p.alt_m = ColDouble(st, 3);
+        p.dist_m = ColDouble(st, 4) * 1000.0;             // DB: km
+        p.speed_ms = ColDouble(st, 5) / 3.6;              // DB: km/h
+        p.hr = ColDouble(st, 6);
+        p.cadence = ColDouble(st, 7);
+        p.temp_c = ColDouble(st, 8);
         if (cb(user, &p) != 0)
             break;
     }
     const bool failed = rc != SQLITE_ROW && rc != SQLITE_DONE;
     if (failed)
-        set_err(err, errlen, "error reading records: %s", sqlite3_errmsg(h->db));
+        SetErr(err, errlen, "error reading records: %s", sqlite3_errmsg(h->db));
     sqlite3_finalize(st);
     return failed ? 1 : 0;
 }
 
-const or_input_vtable kVtable = {gdb_open, gdb_close, gdb_list, gdb_points};
+const or_input_vtable kVtable = {GdbOpen, GdbClose, GdbList, GdbPoints};
 
 const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_INPUT, "garmindb",
                               "0.1", &kVtable};

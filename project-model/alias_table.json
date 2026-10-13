@@ -104,6 +104,18 @@
   "ai-moving-time-from-raw": {
     "active": true,
     "id": "0f87-6acd-5f4d-6b06",
+    "status": "accepted",
+    "type": "ai"
+  },
+  "ai-network-in-overview": {
+    "active": true,
+    "id": "0f87-6acd-ca0c-926a",
+    "status": "proposed",
+    "type": "ai"
+  },
+  "ai-network-split-entries": {
+    "active": true,
+    "id": "0f87-6acd-c829-2a05",
     "status": "proposed",
     "type": "ai"
   },
@@ -312,9 +324,9 @@
     "type": "req"
   },
   "bmk-one-framework": {
-    "active": true,
+    "active": false,
     "id": "0f87-6acd-17ca-4230",
-    "status": "confirmed",
+    "status": "superseded",
     "type": "req"
   },
   "bmk-public-abstractions": {
@@ -326,6 +338,12 @@
   "bmk-sqlite-archive": {
     "active": true,
     "id": "0f87-6acd-17ca-8ab7",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "bmk-two-frameworks": {
+    "active": true,
+    "id": "0f87-6acd-cd73-30d1",
     "status": "confirmed",
     "type": "req"
   },
@@ -575,6 +593,18 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-coding-rules": {
+    "active": true,
+    "id": "0f87-6acd-d0f1-36e0",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-coding-rules-precise": {
+    "active": true,
+    "id": "0f87-6acd-d164-2725",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-compat-header": {
     "active": true,
     "id": "0f87-6acd-2e44-d9c7",
@@ -608,6 +638,12 @@
   "dec-delay-per-service": {
     "active": true,
     "id": "0f87-6acc-ecd4-3e20",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-deps-framework": {
+    "active": true,
+    "id": "0f87-6acd-cd72-7eb0",
     "status": "recorded",
     "type": "dec"
   },
@@ -707,6 +743,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-icon-colour-darker-ski": {
+    "active": true,
+    "id": "0f87-6acd-c812-75f7",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-icons": {
     "active": true,
     "id": "0f87-6acc-edc9-47e4",
@@ -758,6 +800,12 @@
   "dec-maps": {
     "active": true,
     "id": "0f87-6acc-e9e7-dd4c",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-moving-time-from-raw": {
+    "active": true,
+    "id": "0f87-6acd-d8c6-0017",
     "status": "recorded",
     "type": "dec"
   },
@@ -917,6 +965,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-segment-network": {
+    "active": true,
+    "id": "0f87-6acd-c828-7612",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-sigterm-log-grace": {
     "active": true,
     "id": "0f87-6acd-1eb1-7db0",
@@ -932,6 +986,12 @@
   "dec-stats-toggle-stationary": {
     "active": true,
     "id": "0f87-6acd-2157-a1e0",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-strict-mvc": {
+    "active": true,
+    "id": "0f87-6acd-cd73-27ab",
     "status": "recorded",
     "type": "dec"
   },
@@ -1433,6 +1493,18 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-doxygen": {
+    "active": true,
+    "id": "0f87-6acd-d7ea-8da3",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-file-per-class": {
+    "active": true,
+    "id": "0f87-6acd-d7ea-421f",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-filter-abi": {
     "active": true,
     "id": "0f87-6acd-33a9-8156",
@@ -1472,6 +1544,12 @@
   "impl-histogram": {
     "active": true,
     "id": "0f87-6acd-335b-49cd",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-icon-colour": {
+    "active": true,
+    "id": "0f87-6acd-c813-9ed7",
     "status": "verified",
     "type": "impl"
   },
@@ -1523,6 +1601,36 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-mvc-intents": {
+    "active": true,
+    "id": "0f87-6acd-ce40-f1bc",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-mvc-model": {
+    "active": true,
+    "id": "0f87-6acd-ce40-0dd9",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-mvc-viewmodels": {
+    "active": true,
+    "id": "0f87-6acd-ce40-cb62",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-naming": {
+    "active": true,
+    "id": "0f87-6acd-d7ea-1602",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-network": {
+    "active": true,
+    "id": "0f87-6acd-c829-c24f",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-outing-list": {
     "active": true,
     "id": "0f87-6acd-24ce-ac37",
@@ -1568,6 +1676,12 @@
   "impl-segments": {
     "active": true,
     "id": "0f87-6acd-6028-c636",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-self-documenting": {
+    "active": true,
+    "id": "0f87-6acd-d7ea-db3a",
     "status": "verified",
     "type": "impl"
   },
@@ -1751,6 +1865,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "list-icon-activity-colour": {
+    "active": true,
+    "id": "0f87-6acd-c813-aa5b",
+    "status": "confirmed",
+    "type": "req"
+  },
   "list-narrow": {
     "active": true,
     "id": "0f87-6acd-5b17-fed6",
@@ -1874,6 +1994,48 @@
   "mirror-servers": {
     "active": true,
     "id": "0f87-6acc-ecd4-4491",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "mvc-controllers-mutate": {
+    "active": true,
+    "id": "0f87-6acd-cd73-a15f",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "mvc-report-viewmodels": {
+    "active": true,
+    "id": "0f87-6acd-cd73-d2b0",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "mvc-viewmodel-with-viewcontroller": {
+    "active": true,
+    "id": "0f87-6acd-cd73-74c3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "mvc-views-read-only": {
+    "active": true,
+    "id": "0f87-6acd-cd73-d2fa",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "network-nodes-segments": {
+    "active": true,
+    "id": "0f87-6acd-c828-b661",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "network-route-chain": {
+    "active": true,
+    "id": "0f87-6acd-c828-53c4",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "network-segment-routes": {
+    "active": true,
+    "id": "0f87-6acd-c828-8bb0",
     "status": "confirmed",
     "type": "req"
   },
@@ -2150,6 +2312,24 @@
   "obs-moving-time-bigger-filtered": {
     "active": true,
     "id": "0f87-6acd-5f4d-fdab",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-mvc-texture-mirror": {
+    "active": true,
+    "id": "0f87-6acd-d0a1-97a5",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-mvc-viewmodels": {
+    "active": true,
+    "id": "0f87-6acd-d0a1-704d",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-network-first-real-run": {
+    "active": true,
+    "id": "0f87-6acd-ca0c-4d66",
     "status": "recorded",
     "type": "obs"
   },
@@ -2888,6 +3068,66 @@
   "repo-git-bsd3": {
     "active": true,
     "id": "0f87-6acd-22b5-89b9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-c-abi-exempt": {
+    "active": true,
+    "id": "0f87-6acd-d165-4856",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-camelcase": {
+    "active": true,
+    "id": "0f87-6acd-d0f1-82a3",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-comment-complex": {
+    "active": true,
+    "id": "0f87-6acd-d0f1-eb6d",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-data-structs-grouped": {
+    "active": true,
+    "id": "0f87-6acd-d165-37b5",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-doxygen": {
+    "active": true,
+    "id": "0f87-6acd-d0f1-f0c6",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-file-per-class": {
+    "active": true,
+    "id": "0f87-6acd-d0f1-2690",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-lowercase-fields": {
+    "active": true,
+    "id": "0f87-6acd-d165-91dc",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-self-documenting": {
+    "active": true,
+    "id": "0f87-6acd-d0f1-754f",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-upper-camel-methods": {
+    "active": true,
+    "id": "0f87-6acd-d164-c27a",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "rule-utility-module-files": {
+    "active": true,
+    "id": "0f87-6acd-d0f1-9840",
     "status": "confirmed",
     "type": "req"
   },

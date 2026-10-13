@@ -7,3 +7,5 @@ work/
 distfiles/
 .gen-*.mk
 .DS_Store
+OpenRider/docs/
+compile_commands.json

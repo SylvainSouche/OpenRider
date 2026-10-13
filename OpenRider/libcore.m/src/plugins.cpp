@@ -9,7 +9,7 @@ namespace core {
 
 namespace {
 
-bool is_shared_library(const std::string &name)
+bool IsSharedLibrary(const std::string &name)
 {
     auto ends_with = [&](const char *s) {
         const std::string suffix(s);
@@ -20,13 +20,13 @@ bool is_shared_library(const std::string &name)
            ends_with(".dll");
 }
 
-std::vector<std::string> libraries_in(const std::string &dir)
+std::vector<std::string> LibrariesIn(const std::string &dir)
 {
     std::vector<std::string> out;
     if (DIR *d = opendir(dir.c_str())) {
         while (dirent *e = readdir(d)) {
             const std::string name = e->d_name;
-            if (name[0] != '.' && is_shared_library(name))
+            if (name[0] != '.' && IsSharedLibrary(name))
                 out.push_back(dir + "/" + name);
         }
         closedir(d);
@@ -37,7 +37,7 @@ std::vector<std::string> libraries_in(const std::string &dir)
 
 } // namespace
 
-const char *plugin_kind_dir(uint32_t kind)
+const char *PluginKindDir(uint32_t kind)
 {
     switch (kind) {
     case OR_PLUGIN_INPUT: return "input";
@@ -48,7 +48,7 @@ const char *plugin_kind_dir(uint32_t kind)
     }
 }
 
-std::string plugin_check(const or_plugin_info *info, uint32_t kind)
+std::string PluginCheck(const or_plugin_info *info, uint32_t kind)
 {
     if (!info)
         return "entry point returned no descriptor";
@@ -56,19 +56,19 @@ std::string plugin_check(const or_plugin_info *info, uint32_t kind)
         return "API version " + std::to_string(info->api_version) + ", expected " +
                std::to_string(OR_PLUGIN_API_VERSION);
     if (info->kind != kind)
-        return "is a '" + std::string(plugin_kind_dir(info->kind)) + "' plugin, not '" +
-               plugin_kind_dir(kind) + "'";
+        return "is a '" + std::string(PluginKindDir(info->kind)) + "' plugin, not '" +
+               PluginKindDir(kind) + "'";
     if (!info->vtable || !info->name)
         return "incomplete descriptor";
     return "";
 }
 
 // @impl 0f87-6acd-24ce-521a
-PluginScan load_plugins(const std::vector<std::string> &roots, uint32_t kind)
+PluginScan LoadPlugins(const std::vector<std::string> &roots, uint32_t kind)
 {
     PluginScan scan;
     for (const std::string &root : roots) {
-        for (const std::string &path : libraries_in(root + "/" + plugin_kind_dir(kind))) {
+        for (const std::string &path : LibrariesIn(root + "/" + PluginKindDir(kind))) {
             void *h = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
             if (!h) {
                 const char *e = dlerror();
@@ -78,7 +78,7 @@ PluginScan load_plugins(const std::vector<std::string> &roots, uint32_t kind)
             auto entry = reinterpret_cast<or_plugin_entry_fn>(dlsym(h, OR_PLUGIN_ENTRY_SYMBOL));
             const or_plugin_info *info = entry ? entry() : nullptr;
             const std::string why =
-                entry ? plugin_check(info, kind) : "no " OR_PLUGIN_ENTRY_SYMBOL " entry point";
+                entry ? PluginCheck(info, kind) : "no " OR_PLUGIN_ENTRY_SYMBOL " entry point";
             if (!why.empty()) {
                 scan.problems.push_back(path + ": " + why);
                 dlclose(h);

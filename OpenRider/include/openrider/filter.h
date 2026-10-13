@@ -1,4 +1,5 @@
-/* OpenRider filter abstraction.
+/** @file
+ * OpenRider filter abstraction.
  *
  * A filter plugin lives in plugins/filters/. It declares its parameters
  * (thresholds are parameters, never constants) and processes one outing.
@@ -18,27 +19,30 @@ extern "C" {
 #endif
 
 /* @impl 0f87-6acd-33a9-8156 */
+/** What a filter works on. */
 enum or_filter_kind {
-    OR_FILTER_TRACK = 1  /* changes the outing's record points */
+    OR_FILTER_TRACK = 1  /**< changes the outing's record points */
 };
 
+/** A parameter a filter declares; the user adjusts it within its range. */
 struct or_filter_param {
-    const char *id;           /* e.g. "ref_distance_m" */
-    const char *label;        /* e.g. "Reference distance (m)" */
-    double default_value;
-    double min_value;
-    double max_value;
+    const char *id;           /**< e.g. "ref_distance_m" */
+    const char *label;        /**< e.g. "Reference distance (m)" */
+    double default_value;     /**< initial value */
+    double min_value;         /**< lowest value offered */
+    double max_value;         /**< highest value offered */
 };
 
-/* Functions return 0 on success; on failure, non-zero with a message
- * written to err (errlen bytes, always NUL-terminated). */
+/** Description and functions of a filter plugin. Functions return 0 on
+ * success; on failure, non-zero with a message written to err (errlen
+ * bytes, always NUL-terminated). */
 struct or_filter_vtable {
-    uint32_t kind;            /* enum or_filter_kind */
-    const char *id;           /* e.g. "jitter" */
-    const char *label;        /* e.g. "Jitter while not moving" */
-    size_t param_count;
-    const struct or_filter_param *params;
-    /* Track filter: sets keep[i] to 1 for every point to keep, 0 otherwise.
+    uint32_t kind;            /**< enum or_filter_kind */
+    const char *id;           /**< e.g. "jitter" */
+    const char *label;        /**< e.g. "Jitter while not moving" */
+    size_t param_count;       /**< number of entries in params */
+    const struct or_filter_param *params;  /**< declared parameters */
+    /** Track filter: sets keep[i] to 1 for every point to keep, 0 otherwise.
      * `values` holds one value per declared parameter, in order. */
     int (*apply_track)(const struct or_point *points, size_t count, const double *values,
                        unsigned char *keep, char *err, size_t errlen);

@@ -1,7 +1,9 @@
-# OpenRider -- the single framework (for now). Only the abstraction headers
-# under include/openrider/ are public interface; third-party modules stage
-# their own headers, reached via -isystem so their warnings stay theirs.
-PREREQS=
-DOCS=no
-PUBLIC_HEADERS_SYSTEM=yes
+# OpenRider -- the project's own code. Only the abstraction headers under
+# include/openrider/ are public interface. Third-party libraries come from
+# the OpenRiderDependencies framework.
+PREREQS=OpenRiderDependencies
+# Doxygen of the public plugin ABI; internal headers carry the same
+# documentation (coding rules).
+# @impl 0f87-6acd-d7ea-8da3
+DOCS=yes
 .include "mk.framework.mk"

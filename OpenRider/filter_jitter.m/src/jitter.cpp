@@ -25,10 +25,10 @@ const or_filter_param kParams[] = {
     {"overspeed_factor", "Drop above (x max speed)", 2.0, 1.1, 10.0},
 };
 
-bool has_pos(const or_point &p) { return !std::isnan(p.lat) && !std::isnan(p.lon); }
+bool HasPos(const or_point &p) { return !std::isnan(p.lat) && !std::isnan(p.lon); }
 
 // @impl 0f87-6acd-33a9-64c0
-int jitter_apply(const or_point *points, size_t count, const double *values, unsigned char *keep,
+int JitterApply(const or_point *points, size_t count, const double *values, unsigned char *keep,
                  char *err, size_t errlen)
 {
     if (!points || !keep || !values) {
@@ -46,13 +46,13 @@ int jitter_apply(const or_point *points, size_t count, const double *values, uns
     for (size_t i = 0; i < count; ++i)
         keep[i] = 1;
     // 1. Not-moving stretches keep only their two ends.
-    const std::vector<bool> still = core::not_moving_mask(pts, mp);
+    const std::vector<bool> still = core::NotMovingMask(pts, mp);
     for (size_t i = 1; i + 1 < count; ++i)
         if (still[i] && still[i - 1] && still[i + 1])
             keep[i] = 0;
 
     // 2. Positions implying more than `overspeed` x the max moving speed.
-    const std::vector<double> ma = core::moving_average_speed(pts, mp.speed_window_s);
+    const std::vector<double> ma = core::MovingAverageSpeed(pts, mp.speed_window_s);
     double max_ms = 0.0;
     for (size_t i = 0; i < count; ++i)
         if (!still[i] && !std::isnan(ma[i]))
@@ -60,11 +60,11 @@ int jitter_apply(const or_point *points, size_t count, const double *values, uns
     if (max_ms > 0.0) {
         size_t prev = count;  // last kept point with a position
         for (size_t i = 0; i < count; ++i) {
-            if (!keep[i] || !has_pos(pts[i]))
+            if (!keep[i] || !HasPos(pts[i]))
                 continue;
             if (prev < count) {
                 const double dt = pts[i].t_s - pts[prev].t_s;
-                const double d = core::haversine_m(pts[prev].lat, pts[prev].lon, pts[i].lat, pts[i].lon);
+                const double d = core::HaversineM(pts[prev].lat, pts[prev].lon, pts[i].lat, pts[i].lon);
                 if (dt > 0.0 && d / dt > overspeed * max_ms) {
                     keep[i] = 0;
                     continue;
@@ -77,7 +77,7 @@ int jitter_apply(const or_point *points, size_t count, const double *values, uns
 }
 
 const or_filter_vtable kVtable = {OR_FILTER_TRACK, "jitter", "Jitter while not moving",
-                                  sizeof kParams / sizeof kParams[0], kParams, jitter_apply};
+                                  sizeof kParams / sizeof kParams[0], kParams, JitterApply};
 const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_FILTER, "jitter", "0.1", &kVtable};
 
 } // namespace

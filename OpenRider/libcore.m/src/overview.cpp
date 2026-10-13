@@ -8,113 +8,60 @@
 
 namespace core {
 
-OverviewTrack thin_track(const std::string &id, const std::vector<or_point> &pts, double spacing_m)
+OverviewTrack ThinTrack(const std::string &id, const std::vector<or_point> &points, double spacing_m)
 {
-    OverviewTrack t;
-    t.id = id;
-    t.west = t.south = 1e9;
-    t.east = t.north = -1e9;
-    size_t last_valid = pts.size();
-    for (size_t i = 0; i < pts.size(); ++i) {
-        const or_point &p = pts[i];
-        if (std::isnan(p.lat) || std::isnan(p.lon))
+    OverviewTrack track;
+    track.id = id;
+    track.west = track.south = 1e9;
+    track.east = track.north = -1e9;
+    size_t last_valid = points.size();
+    for (size_t i = 0; i < points.size(); ++i) {
+        const or_point &point = points[i];
+        if (std::isnan(point.lat) || std::isnan(point.lon))
             continue;
         last_valid = i;
-        if (!t.lat.empty() && haversine_m(t.lat.back(), t.lon.back(), p.lat, p.lon) < spacing_m)
+        if (!track.lat.empty() && HaversineM(track.lat.back(), track.lon.back(), point.lat, point.lon) < spacing_m)
             continue;
-        t.lat.push_back(p.lat);
-        t.lon.push_back(p.lon);
+        track.lat.push_back(point.lat);
+        track.lon.push_back(point.lon);
     }
-    if (last_valid < pts.size() && !t.lat.empty() &&
-        (t.lat.back() != pts[last_valid].lat || t.lon.back() != pts[last_valid].lon)) {
-        t.lat.push_back(pts[last_valid].lat);
-        t.lon.push_back(pts[last_valid].lon);
+    if (last_valid < points.size() && !track.lat.empty() &&
+        (track.lat.back() != points[last_valid].lat || track.lon.back() != points[last_valid].lon)) {
+        track.lat.push_back(points[last_valid].lat);
+        track.lon.push_back(points[last_valid].lon);
     }
-    for (size_t i = 0; i < t.lat.size(); ++i) {
-        t.west = std::min(t.west, t.lon[i]);
-        t.east = std::max(t.east, t.lon[i]);
-        t.south = std::min(t.south, t.lat[i]);
-        t.north = std::max(t.north, t.lat[i]);
+    for (size_t i = 0; i < track.lat.size(); ++i) {
+        track.west = std::min(track.west, track.lon[i]);
+        track.east = std::max(track.east, track.lon[i]);
+        track.south = std::min(track.south, track.lat[i]);
+        track.north = std::max(track.north, track.lat[i]);
     }
-    return t;
+    return track;
 }
 
 // @impl 0f87-6acd-5b43-c60a
-bool track_in_box(const OverviewTrack &t, double west, double south, double east, double north)
+bool TrackInBox(const OverviewTrack &track, double west, double south, double east, double north)
 {
-    if (t.lat.empty() || t.east < west || t.west > east || t.north < south || t.south > north)
+    if (track.lat.empty() || track.east < west || track.west > east || track.north < south || track.south > north)
         return false;
-    for (size_t i = 0; i < t.lat.size(); ++i)
-        if (t.lon[i] >= west && t.lon[i] <= east && t.lat[i] >= south && t.lat[i] <= north)
+    for (size_t i = 0; i < track.lat.size(); ++i)
+        if (track.lon[i] >= west && track.lon[i] <= east && track.lat[i] >= south && track.lat[i] <= north)
             return true;
     return false;
 }
 
-std::string long_date(const char *start_local, const std::string &lang)
+std::string LongDate(const char *start_local, const std::string &lang)
 {
-    static const char *en[] = {"January", "February", "March",     "April",   "May",      "June",
+    static const char *months_en[] = {"January", "February", "March",     "April",   "May",      "June",
                                "July",    "August",   "September", "October", "November", "December"};
-    static const char *fr[] = {"janvier", "février", "mars",      "avril",   "mai",      "juin",
+    static const char *months_fr[] = {"janvier", "février", "mars",      "avril",   "mai",      "juin",
                                "juillet", "août",    "septembre", "octobre", "novembre", "décembre"};
-    int y = 0, m = 0, d = 0;
-    if (!start_local || std::sscanf(start_local, "%d-%d-%d", &y, &m, &d) != 3 || m < 1 || m > 12)
+    int year = 0, month = 0, day = 0;
+    if (!start_local || std::sscanf(start_local, "%d-%d-%d", &year, &month, &day) != 3 || month < 1 || month > 12)
         return start_local ? start_local : "";
-    char buf[48];
-    std::snprintf(buf, sizeof buf, "%d %s %d", d, (lang == "fr" ? fr : en)[m - 1], y);
-    return buf;
-}
-
-OverviewLoader::~OverviewLoader() { stop(); }
-
-void OverviewLoader::stop()
-{
-    stop_ = true;
-    if (worker_.joinable())
-        worker_.join();
-    loading_ = false;
-}
-
-void OverviewLoader::start(const or_input_vtable *input, void *handle, std::vector<std::string> ids)
-{
-    if (loading_.load())
-        return;
-    if (worker_.joinable())
-        worker_.join();
-    done_ = 0;
-    total_ = ids.size();
-    loading_ = true;
-    worker_ = std::thread(&OverviewLoader::run, this, input, handle, std::move(ids));
-}
-
-void OverviewLoader::take(std::vector<OverviewTrack> &out)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    for (OverviewTrack &t : pending_)
-        out.push_back(std::move(t));
-    pending_.clear();
-}
-
-void OverviewLoader::run(const or_input_vtable *input, void *handle, std::vector<std::string> ids)
-{
-    for (const std::string &id : ids) {
-        if (stop_.load())
-            break;
-        std::vector<or_point> pts;
-        char err[256] = "";
-        auto cb = [](void *user, const or_point *p) -> int {
-            static_cast<std::vector<or_point> *>(user)->push_back(*p);
-            return 0;
-        };
-        if (input->load_points(handle, id.c_str(), cb, &pts, err, sizeof err) == 0) {
-            OverviewTrack t = thin_track(id, pts, kOverviewSpacingM);
-            if (!t.lat.empty()) {
-                std::lock_guard<std::mutex> lock(mutex_);
-                pending_.push_back(std::move(t));
-            }
-        }
-        ++done_;
-    }
-    loading_ = false;
+    char text[48];
+    std::snprintf(text, sizeof text, "%d %s %d", day, (lang == "fr" ? months_fr : months_en)[month - 1], year);
+    return text;
 }
 
 } // namespace core

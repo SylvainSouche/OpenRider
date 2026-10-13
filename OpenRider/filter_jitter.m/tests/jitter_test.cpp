@@ -13,14 +13,14 @@ extern "C" const or_plugin_info *openrider_plugin(void);
 
 namespace {
 
-const or_filter_vtable *vt()
+const or_filter_vtable *Vt()
 {
     return static_cast<const or_filter_vtable *>(openrider_plugin()->vtable);
 }
 
 // Walk 1.5 m/s, 7 min pause with +/-2 m jitter, walk on; one GPS spike of
 // 400 m during the second walk. One sample every 2 s.
-std::vector<or_point> outing()
+std::vector<or_point> Outing()
 {
     std::vector<or_point> pts;
     double lat = 45.9, t = 0.0;
@@ -45,20 +45,20 @@ std::vector<or_point> outing()
     return pts;
 }
 
-std::vector<double> defaults()
+std::vector<double> Defaults()
 {
     std::vector<double> v;
-    for (size_t i = 0; i < vt()->param_count; ++i)
-        v.push_back(vt()->params[i].default_value);
+    for (size_t i = 0; i < Vt()->param_count; ++i)
+        v.push_back(Vt()->params[i].default_value);
     return v;
 }
 
-std::vector<or_point> filtered(const std::vector<or_point> &pts, std::vector<unsigned char> &keep)
+std::vector<or_point> Filtered(const std::vector<or_point> &pts, std::vector<unsigned char> &keep)
 {
     keep.assign(pts.size(), 0);
     char err[128] = "";
-    const std::vector<double> v = defaults();
-    ATF_REQUIRE_EQ(vt()->apply_track(pts.data(), pts.size(), v.data(), keep.data(), err, sizeof err), 0);
+    const std::vector<double> v = Defaults();
+    ATF_REQUIRE_EQ(Vt()->apply_track(pts.data(), pts.size(), v.data(), keep.data(), err, sizeof err), 0);
     std::vector<or_point> out;
     for (size_t i = 0; i < pts.size(); ++i)
         if (keep[i])
@@ -72,18 +72,18 @@ ATF_TEST_CASE_WITHOUT_HEAD(descriptor_and_parameters);
 ATF_TEST_CASE_BODY(descriptor_and_parameters)
 {
     ATF_REQUIRE_EQ(openrider_plugin()->kind, static_cast<uint32_t>(OR_PLUGIN_FILTER));
-    ATF_REQUIRE_EQ(vt()->kind, static_cast<uint32_t>(OR_FILTER_TRACK));
-    ATF_REQUIRE_EQ(vt()->param_count, 4u);
-    ATF_REQUIRE_EQ(std::string(vt()->params[0].id), "ref_distance_m");
-    ATF_REQUIRE_EQ(vt()->params[0].default_value, 50.0);
+    ATF_REQUIRE_EQ(Vt()->kind, static_cast<uint32_t>(OR_FILTER_TRACK));
+    ATF_REQUIRE_EQ(Vt()->param_count, 4u);
+    ATF_REQUIRE_EQ(std::string(Vt()->params[0].id), "ref_distance_m");
+    ATF_REQUIRE_EQ(Vt()->params[0].default_value, 50.0);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(pause_jitter_removed_ends_kept);
 ATF_TEST_CASE_BODY(pause_jitter_removed_ends_kept)
 {
-    const auto pts = outing();
+    const auto pts = Outing();
     std::vector<unsigned char> keep;
-    filtered(pts, keep);
+    Filtered(pts, keep);
     int kept_in_pause = 0;
     for (size_t i = 620; i < 790; ++i)
         kept_in_pause += keep[i];
@@ -97,20 +97,20 @@ ATF_TEST_CASE_BODY(pause_jitter_removed_ends_kept)
 ATF_TEST_CASE_WITHOUT_HEAD(spike_removed);
 ATF_TEST_CASE_BODY(spike_removed)
 {
-    const auto pts = outing();
+    const auto pts = Outing();
     std::vector<unsigned char> keep;
-    filtered(pts, keep);
+    Filtered(pts, keep);
     ATF_REQUIRE_EQ(keep[810 + 300], 0);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(stats_after_filter_are_clean);
 ATF_TEST_CASE_BODY(stats_after_filter_are_clean)
 {
-    const auto pts = outing();
+    const auto pts = Outing();
     std::vector<unsigned char> keep;
-    const auto clean = filtered(pts, keep);
-    const auto raw = core::compute_stats(pts, core::MotionParams{});
-    const auto st = core::compute_stats(clean, core::MotionParams{});
+    const auto clean = Filtered(pts, keep);
+    const auto raw = core::ComputeStats(pts, core::MotionParams{});
+    const auto st = core::ComputeStats(clean, core::MotionParams{});
     ATF_REQUIRE(raw.max_speed_ms > 1.9);                  // jitter and spike inflate it
     ATF_REQUIRE(std::fabs(st.max_speed_ms - 1.5) < 0.05); // back to the walk
     ATF_REQUIRE(std::fabs(st.distance_m - 3600.0) < 20.0);
@@ -119,7 +119,7 @@ ATF_TEST_CASE_BODY(stats_after_filter_are_clean)
     ATF_REQUIRE(std::fabs(st.moving_s - raw.moving_s) < 60.0);
     // With the raw points given, moving time is exactly the raw one: the
     // filter cannot make the user move longer.
-    const auto anchored = core::compute_stats(clean, core::MotionParams{}, &pts);
+    const auto anchored = core::ComputeStats(clean, core::MotionParams{}, &pts);
     ATF_REQUIRE_EQ(anchored.moving_s, raw.moving_s);
     ATF_REQUIRE(anchored.distance_m < raw.distance_m);
 }

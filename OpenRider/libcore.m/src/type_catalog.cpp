@@ -1,4 +1,4 @@
-#include "core/types.h"
+#include "core/type_catalog.h"
 
 #include <cJSON.h>
 
@@ -8,14 +8,14 @@ namespace core {
 
 namespace {
 
-std::string json_string(const cJSON *obj, const char *key)
+std::string JsonString(const cJSON *obj, const char *key)
 {
     const cJSON *v = cJSON_GetObjectItemCaseSensitive(obj, key);
     return cJSON_IsString(v) ? v->valuestring : "";
 }
 
 // "e71c" -> UTF-8 encoding of U+E71C; "" if not a hex codepoint.
-std::string utf8_from_hex(const std::string &hex)
+std::string Utf8FromHex(const std::string &hex)
 {
     if (hex.empty() || hex.size() > 6)
         return "";
@@ -46,55 +46,47 @@ constexpr const char *kGenericIcon = "\xee\x9c\xae";  // U+E72E person-simple
 
 } // namespace
 
-std::string ActivityType::key() const
-{
-    std::string k = sport + "/" + (sub_sport.empty() ? "generic" : sub_sport);
-    if (!tag.empty())
-        k += "+" + tag;
-    return k;
-}
-
-Status TypeCatalog::load_labels(const std::string &json_text)
+Status TypeCatalog::LoadLabels(const std::string &json_text)
 {
     cJSON *root = cJSON_Parse(json_text.c_str());
     if (!cJSON_IsObject(root)) {
         cJSON_Delete(root);
-        return Status::failure("activity type labels: invalid JSON");
+        return Status::Failure("activity type labels: invalid JSON");
     }
     const cJSON *item = nullptr;
     cJSON_ArrayForEach(item, root) {
-        const std::string col = json_string(item, "colour");
+        const std::string col = JsonString(item, "colour");
         const unsigned int rgb =
             col.size() == 7 && col[0] == '#' ? static_cast<unsigned int>(std::strtoul(col.c_str() + 1, nullptr, 16)) : 0;
-        labels_[item->string] = TypeLabel{json_string(item, "en"), json_string(item, "fr"),
-                                          utf8_from_hex(json_string(item, "icon")), rgb};
+        labels_[item->string] = TypeLabel{JsonString(item, "en"), JsonString(item, "fr"),
+                                          Utf8FromHex(JsonString(item, "icon")), rgb};
     }
     cJSON_Delete(root);
-    return Status::success();
+    return Status::Success();
 }
 
 // @impl 0f87-6acd-2587-fdb3
-Status TypeCatalog::load_source(const std::string &source, const std::string &json_text)
+Status TypeCatalog::LoadSource(const std::string &source, const std::string &json_text)
 {
     cJSON *root = cJSON_Parse(json_text.c_str());
     if (!cJSON_IsObject(root)) {
         cJSON_Delete(root);
-        return Status::failure(source + " type table: invalid JSON");
+        return Status::Failure(source + " type table: invalid JSON");
     }
     auto &table = sources_[source];
     const cJSON *item = nullptr;
     cJSON_ArrayForEach(item, root) {
-        ActivityType t{json_string(item, "sport"), json_string(item, "sub_sport"),
-                       json_string(item, "tag")};
+        ActivityType t{JsonString(item, "sport"), JsonString(item, "sub_sport"),
+                       JsonString(item, "tag")};
         if (t.sub_sport.empty())
             t.sub_sport = "generic";
         table[item->string] = t;
     }
     cJSON_Delete(root);
-    return Status::success();
+    return Status::Success();
 }
 
-ActivityType TypeCatalog::resolve(const std::string &source, const std::string &source_type,
+ActivityType TypeCatalog::Resolve(const std::string &source, const std::string &source_type,
                                   const std::string &fit_sport,
                                   const std::string &fit_sub_sport) const
 {
@@ -110,22 +102,22 @@ ActivityType TypeCatalog::resolve(const std::string &source, const std::string &
                         fit_sub_sport.empty() ? "generic" : fit_sub_sport, ""};
 }
 
-std::string TypeCatalog::label(const ActivityType &t, const std::string &lang) const
+std::string TypeCatalog::Label(const ActivityType &type, const std::string &lang) const
 {
-    auto pick = [&](const TypeLabel &l) { return lang == "fr" && !l.fr.empty() ? l.fr : l.en; };
-    auto it = labels_.find(t.key());
-    if (it == labels_.end() && t.tag.empty())
-        it = labels_.find(t.sport);
+    auto pick = [&](const TypeLabel &label) { return lang == "fr" && !label.fr.empty() ? label.fr : label.en; };
+    auto it = labels_.find(type.Key());
+    if (it == labels_.end() && type.tag.empty())
+        it = labels_.find(type.sport);
     if (it != labels_.end() && !pick(it->second).empty())
         return pick(it->second);
-    return t.key();
+    return type.Key();
 }
 
 // @impl 0f87-6acd-30f9-68bb
-std::string TypeCatalog::icon(const ActivityType &t) const
+std::string TypeCatalog::Icon(const ActivityType &type) const
 {
-    for (const std::string &k : {t.key(), t.sport}) {
-        const auto it = labels_.find(k);
+    for (const std::string &key : {type.Key(), type.sport}) {
+        const auto it = labels_.find(key);
         if (it != labels_.end() && !it->second.icon.empty())
             return it->second.icon;
     }
@@ -133,10 +125,10 @@ std::string TypeCatalog::icon(const ActivityType &t) const
 }
 
 // @impl 0f87-6acd-6195-c32d
-unsigned int TypeCatalog::colour(const ActivityType &t) const
+unsigned int TypeCatalog::Colour(const ActivityType &type) const
 {
-    for (const std::string &k : {t.key(), t.sport}) {
-        const auto it = labels_.find(k);
+    for (const std::string &key : {type.Key(), type.sport}) {
+        const auto it = labels_.find(key);
         if (it != labels_.end() && it->second.rgb != 0)
             return it->second.rgb;
     }

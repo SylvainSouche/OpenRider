@@ -17,7 +17,7 @@ extern "C" const or_plugin_info *openrider_plugin(void);
 
 namespace {
 
-std::string make_fixture()
+std::string MakeFixture()
 {
     char tmpl[] = "/tmp/openrider-gdb-XXXXXX";
     std::string base = mkdtemp(tmpl);
@@ -51,24 +51,24 @@ std::string make_fixture()
     return base;
 }
 
-const or_input_vtable *vtable()
+const or_input_vtable *Vtable()
 {
     return static_cast<const or_input_vtable *>(openrider_plugin()->vtable);
 }
 
-int collect_outing(void *user, const or_outing *o, size_t, size_t)
+int CollectOuting(void *user, const or_outing *o, size_t, size_t)
 {
     static_cast<std::vector<or_outing> *>(user)->push_back(*o);
     return 0;
 }
 
-int collect_point(void *user, const or_point *p)
+int CollectPoint(void *user, const or_point *p)
 {
     static_cast<std::vector<or_point> *>(user)->push_back(*p);
     return 0;
 }
 
-std::string config_for(const std::string &base)
+std::string ConfigFor(const std::string &base)
 {
     return "{\"base_dir\":\"" + base + "\"}";
 }
@@ -87,14 +87,14 @@ ATF_TEST_CASE_BODY(descriptor)
 ATF_TEST_CASE_WITHOUT_HEAD(lists_outings_with_json_overlay);
 ATF_TEST_CASE_BODY(lists_outings_with_json_overlay)
 {
-    const std::string base = make_fixture();
+    const std::string base = MakeFixture();
     char err[256] = "";
-    void *h = vtable()->open(config_for(base).c_str(), err, sizeof err);
+    void *h = Vtable()->open(ConfigFor(base).c_str(), err, sizeof err);
     if (h == nullptr)
         ATF_FAIL(std::string("open failed: ") + err);
     std::vector<or_outing> outings;
-    ATF_REQUIRE_EQ(vtable()->list_outings(h, collect_outing, &outings, err, sizeof err), 0);
-    vtable()->close(h);
+    ATF_REQUIRE_EQ(Vtable()->list_outings(h, CollectOuting, &outings, err, sizeof err), 0);
+    Vtable()->close(h);
     ATF_REQUIRE_EQ(outings.size(), 2u);
 
     // Outing 1: Garmin Connect JSON wins for type, name and moving time.
@@ -118,13 +118,13 @@ ATF_TEST_CASE_BODY(lists_outings_with_json_overlay)
 ATF_TEST_CASE_WITHOUT_HEAD(loads_points_relative_time);
 ATF_TEST_CASE_BODY(loads_points_relative_time)
 {
-    const std::string base = make_fixture();
+    const std::string base = MakeFixture();
     char err[256] = "";
-    void *h = vtable()->open(config_for(base).c_str(), err, sizeof err);
+    void *h = Vtable()->open(ConfigFor(base).c_str(), err, sizeof err);
     ATF_REQUIRE(h != nullptr);
     std::vector<or_point> pts;
-    ATF_REQUIRE_EQ(vtable()->load_points(h, "1", collect_point, &pts, err, sizeof err), 0);
-    vtable()->close(h);
+    ATF_REQUIRE_EQ(Vtable()->load_points(h, "1", CollectPoint, &pts, err, sizeof err), 0);
+    Vtable()->close(h);
     ATF_REQUIRE_EQ(pts.size(), 2u);
     ATF_REQUIRE(std::fabs(pts[1].t_s - 10.0) < 1e-6);
     ATF_REQUIRE(std::fabs(pts[1].dist_m - 30.0) < 1e-6);   // 0.03 km
@@ -136,7 +136,7 @@ ATF_TEST_CASE_WITHOUT_HEAD(missing_database_reports_error);
 ATF_TEST_CASE_BODY(missing_database_reports_error)
 {
     char err[256] = "";
-    void *h = vtable()->open("{\"base_dir\":\"/nonexistent/openrider\"}", err, sizeof err);
+    void *h = Vtable()->open("{\"base_dir\":\"/nonexistent/openrider\"}", err, sizeof err);
     ATF_REQUIRE(h == nullptr);
     ATF_REQUIRE(err[0] != '\0');
 }

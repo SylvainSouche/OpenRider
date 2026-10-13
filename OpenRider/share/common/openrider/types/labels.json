@@ -3,7 +3,7 @@
   "running/trail":                    {"en": "Trail running",       "fr": "Trail",               "icon": "e730"},
   "running/street":                   {"en": "Street running",      "fr": "Course sur route",    "icon": "e730"},
   "running/track":                    {"en": "Track running",       "fr": "Course sur piste",    "icon": "e730"},
-  "cycling":                          {"en": "Cycling",             "fr": "Cyclisme",            "icon": "e0d6", "colour": "#1f3fbf"},
+  "cycling":                          {"en": "Cycling",             "fr": "Cyclisme",            "icon": "e0d6", "colour": "#14206e"},
   "cycling/road":                     {"en": "Road cycling",        "fr": "Vélo de route",       "icon": "e0d6"},
   "cycling/gravel_cycling":           {"en": "Gravel cycling",      "fr": "Gravel",              "icon": "e0d6"},
   "cycling/mountain":                 {"en": "Mountain biking",     "fr": "VTT",                 "icon": "e734"},
@@ -12,11 +12,11 @@
   "walking/rucking":                  {"en": "Rucking",             "fr": "Marche lestée",       "icon": "ed54"},
   "mountaineering":                   {"en": "Mountaineering",      "fr": "Alpinisme",           "icon": "e7ae"},
   "rock_climbing":                    {"en": "Climbing",            "fr": "Escalade",            "icon": "e7ae"},
-  "alpine_skiing":                    {"en": "Alpine skiing",       "fr": "Ski alpin",           "icon": "e71c", "colour": "#4aa8e8"},
+  "alpine_skiing":                    {"en": "Alpine skiing",       "fr": "Ski alpin",           "icon": "e71c", "colour": "#1c6fc4"},
   "alpine_skiing/backcountry":        {"en": "Ski touring",         "fr": "Ski de randonnée",    "icon": "e71c"},
   "alpine_skiing/resort":             {"en": "Resort skiing",       "fr": "Ski sur piste",       "icon": "e71c"},
-  "cross_country_skiing":             {"en": "Nordic skiing",       "fr": "Ski de fond",         "icon": "e71c", "colour": "#4aa8e8"},
+  "cross_country_skiing":             {"en": "Nordic skiing",       "fr": "Ski de fond",         "icon": "e71c", "colour": "#1c6fc4"},
   "cross_country_skiing/skate_skiing":{"en": "Skate skiing",        "fr": "Ski de fond skating", "icon": "e71c"},
   "cross_country_skiing/generic+roller-ski": {"en": "Roller skiing", "fr": "Ski-roues",         "icon": "e71c"},
-  "snowshoeing":                      {"en": "Snowshoeing",         "fr": "Raquettes",           "icon": "e5aa", "colour": "#4aa8e8"}
+  "snowshoeing":                      {"en": "Snowshoeing",         "fr": "Raquettes",           "icon": "e5aa", "colour": "#1c6fc4"}
 }

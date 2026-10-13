@@ -5,7 +5,7 @@
 
 namespace maptiles {
 
-double view_fraction_inside(const GeoBox &view, const double extent[4])
+double ViewFractionInside(const GeoBox &view, const double extent[4])
 {
     const double w = view.east - view.west, h = view.north - view.south;
     if (w <= 0.0 || h <= 0.0)
@@ -17,7 +17,7 @@ double view_fraction_inside(const GeoBox &view, const double extent[4])
     return (iw * ih) / (w * h);
 }
 
-double points_fraction_inside(const std::vector<double> &lons, const std::vector<double> &lats,
+double PointsFractionInside(const std::vector<double> &lons, const std::vector<double> &lats,
                               const double extent[4])
 {
     size_t n = 0, in = 0;
@@ -32,11 +32,11 @@ double points_fraction_inside(const std::vector<double> &lons, const std::vector
 }
 
 // @impl 0f87-6acd-3542-dba2
-bool layer_offered(const double extent[4], const GeoBox &view, const std::vector<double> &lons,
+bool LayerOffered(const double extent[4], const GeoBox &view, const std::vector<double> &lons,
                    const std::vector<double> &lats, const CoverageRule &rule)
 {
-    return view_fraction_inside(view, extent) >= rule.min_view_fraction &&
-           points_fraction_inside(lons, lats, extent) >= rule.min_track_fraction;
+    return ViewFractionInside(view, extent) >= rule.min_view_fraction &&
+           PointsFractionInside(lons, lats, extent) >= rule.min_track_fraction;
 }
 
 } // namespace maptiles

@@ -17,7 +17,7 @@ const char kPng[] =
     "\xf8\xcf\xc0\x00\x42\xff\x01\x0f\xf9\x03\xfd\x85\x11\x99\x76\x00\x00\x00\x00\x49\x45\x4e"
     "\x44\xae\x42\x60\x82";
 
-std::string tiff_bytes()
+std::string TiffBytes()
 {
     char path[] = "/tmp/openrider-tiff-XXXXXX";
     const int fd = mkstemp(path);
@@ -48,8 +48,8 @@ std::string tiff_bytes()
 ATF_TEST_CASE_WITHOUT_HEAD(decodes_png);
 ATF_TEST_CASE_BODY(decodes_png)
 {
-    const auto r = maptiles::decode_tile(std::string(kPng, sizeof kPng - 1));
-    ATF_REQUIRE(r.ok());
+    const auto r = maptiles::DecodeTile(std::string(kPng, sizeof kPng - 1));
+    ATF_REQUIRE(r.Ok());
     ATF_REQUIRE_EQ(r.value.width, 2);
     ATF_REQUIRE_EQ(r.value.height, 1);
     ATF_REQUIRE_EQ(r.value.rgba[0], 255);  // red
@@ -59,8 +59,8 @@ ATF_TEST_CASE_BODY(decodes_png)
 ATF_TEST_CASE_WITHOUT_HEAD(decodes_tiff);
 ATF_TEST_CASE_BODY(decodes_tiff)
 {
-    const auto r = maptiles::decode_tile(tiff_bytes());
-    ATF_REQUIRE(r.ok());
+    const auto r = maptiles::DecodeTile(TiffBytes());
+    ATF_REQUIRE(r.Ok());
     ATF_REQUIRE_EQ(r.value.width, 3);
     ATF_REQUIRE_EQ(r.value.rgba[1], 255);  // green
     ATF_REQUIRE_EQ(r.value.rgba[3], 255);  // opaque
@@ -69,8 +69,8 @@ ATF_TEST_CASE_BODY(decodes_tiff)
 ATF_TEST_CASE_WITHOUT_HEAD(rejects_garbage);
 ATF_TEST_CASE_BODY(rejects_garbage)
 {
-    ATF_REQUIRE(!maptiles::decode_tile("").ok());
-    ATF_REQUIRE(!maptiles::decode_tile("<html>rate limited</html>").ok());
+    ATF_REQUIRE(!maptiles::DecodeTile("").Ok());
+    ATF_REQUIRE(!maptiles::DecodeTile("<html>rate limited</html>").Ok());
 }
 
 ATF_INIT_TEST_CASES(tcs)

@@ -12,7 +12,7 @@ ATF_TEST_CASE_BODY(sub_pixel_zigzag_collapses)
         xs.push_back(i * 0.1f);
         ys.push_back(i % 2 ? 0.3f : -0.3f);
     }
-    const auto k = maptiles::simplify_screen(xs, ys, maptiles::kMinSegmentPx);
+    const auto k = maptiles::SimplifyScreen(xs, ys, maptiles::kMinSegmentPx);
     ATF_REQUIRE(k.size() >= 6 && k.size() <= 9);
     ATF_REQUIRE_EQ(k.front(), 0u);
     ATF_REQUIRE_EQ(k.back(), 99u);
@@ -22,15 +22,15 @@ ATF_TEST_CASE_WITHOUT_HEAD(spread_points_all_kept);
 ATF_TEST_CASE_BODY(spread_points_all_kept)
 {
     const std::vector<float> xs = {0, 10, 20, 30}, ys = {0, 5, 0, 5};
-    ATF_REQUIRE_EQ(maptiles::simplify_screen(xs, ys, 1.5f).size(), 4u);
+    ATF_REQUIRE_EQ(maptiles::SimplifyScreen(xs, ys, 1.5f).size(), 4u);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(degenerate_inputs);
 ATF_TEST_CASE_BODY(degenerate_inputs)
 {
-    ATF_REQUIRE(maptiles::simplify_screen({}, {}, 1.5f).empty());
-    ATF_REQUIRE_EQ(maptiles::simplify_screen({5}, {5}, 1.5f).size(), 1u);
-    ATF_REQUIRE_EQ(maptiles::simplify_screen({5, 5.1f}, {5, 5}, 1.5f).size(), 2u);  // ends kept
+    ATF_REQUIRE(maptiles::SimplifyScreen({}, {}, 1.5f).empty());
+    ATF_REQUIRE_EQ(maptiles::SimplifyScreen({5}, {5}, 1.5f).size(), 1u);
+    ATF_REQUIRE_EQ(maptiles::SimplifyScreen({5, 5.1f}, {5, 5}, 1.5f).size(), 2u);  // ends kept
 }
 
 ATF_INIT_TEST_CASES(tcs)

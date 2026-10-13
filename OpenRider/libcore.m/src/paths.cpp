@@ -15,13 +15,13 @@ namespace core {
 
 namespace {
 
-std::string home()
+std::string Home()
 {
     const char *h = std::getenv("HOME");
     return h ? h : "";
 }
 
-std::string parent(const std::string &path)
+std::string Parent(const std::string &path)
 {
     const size_t slash = path.find_last_of('/');
     return slash == std::string::npos ? "." : path.substr(0, slash);
@@ -29,7 +29,7 @@ std::string parent(const std::string &path)
 
 } // namespace
 
-std::string executable_dir()
+std::string ExecutableDir()
 {
     char buf[PATH_MAX];
 #ifdef __APPLE__
@@ -38,8 +38,8 @@ std::string executable_dir()
         return ".";
     char real[PATH_MAX];
     if (realpath(buf, real))
-        return parent(real);
-    return parent(buf);
+        return Parent(real);
+    return Parent(buf);
 #else
     const ssize_t n = readlink("/proc/self/exe", buf, sizeof buf - 1);
     if (n <= 0)
@@ -49,14 +49,14 @@ std::string executable_dir()
 #endif
 }
 
-std::string bundled_plugins_dir() { return parent(executable_dir()) + "/plugins"; }
-std::string bundled_share_dir() { return parent(executable_dir()) + "/share/openrider"; }
-std::string user_support_dir() { return home() + "/Library/Application Support/OpenRider"; }
-std::string user_plugins_dir() { return user_support_dir() + "/plugins"; }
-std::string user_logs_dir() { return home() + "/Library/Logs/OpenRider"; }
-std::string user_cache_dir() { return home() + "/Library/Caches/OpenRider"; }
+std::string BundledPluginsDir() { return Parent(ExecutableDir()) + "/plugins"; }
+std::string BundledShareDir() { return Parent(ExecutableDir()) + "/share/openrider"; }
+std::string UserSupportDir() { return Home() + "/Library/Application Support/OpenRider"; }
+std::string UserPluginsDir() { return UserSupportDir() + "/plugins"; }
+std::string UserLogsDir() { return Home() + "/Library/Logs/OpenRider"; }
+std::string UserCacheDir() { return Home() + "/Library/Caches/OpenRider"; }
 
-bool make_dirs(const std::string &path)
+bool MakeDirs(const std::string &path)
 {
     if (path.empty())
         return false;

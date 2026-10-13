@@ -1,0 +1,47 @@
+/// @file
+/// OpenRider views (Dear ImGui). Views are read-only: they draw from the
+/// model and the view models (const) and report user actions as intents.
+/// Even ImGui's editable widgets work on a local copy; a change becomes an
+/// intent, applied by its controller before the next frame. Module-level
+/// functions, one source file per view.
+#pragma once
+
+#include "style.h"
+#include "texture_mirror.h"
+
+#include "app/dispatch.h"
+#include "app/graphs.h"
+#include "app/map_view_utils.h"
+
+namespace ui {
+
+/// Every view model, read-only, as the views see them.
+struct ViewModels {
+    const app::MainViewModel &main;      ///< layout
+    const app::ListViewModel &list;      ///< outing list
+    const app::MapViewModel &map;        ///< map
+    const app::OutingViewModel &outing;  ///< outing panel
+};
+
+/// The main window: menu bar, outing list and right-hand panel side by
+/// side, status bar, About box, error popup.
+void DrawMainView(const app::AppModel &model, const ViewModels &view_models, TextureMirror &textures,
+                  app::Intents &out);
+
+/// The outing list: query widgets, sort controls, one row per outing.
+void DrawListView(const app::AppModel &model, const ViewModels &view_models, app::Intents &out);
+
+/// Right-hand panel with no outing selected: every listed track on the map.
+void DrawOverviewView(const app::AppModel &model, const ViewModels &view_models, TextureMirror &textures,
+                      app::Intents &out);
+
+/// Right-hand panel for the selected outing: statistics, filters, map, graphs.
+void DrawOutingView(const app::AppModel &model, const ViewModels &view_models, TextureMirror &textures,
+                    app::Intents &out);
+
+/// The map, `width` x `height` pixels at the cursor: tiles, tracks,
+/// attribution; mouse actions reported as intents.
+void DrawMapView(const app::AppModel &model, const ViewModels &view_models, TextureMirror &textures,
+                 float width, float height, app::Intents &out);
+
+} // namespace ui

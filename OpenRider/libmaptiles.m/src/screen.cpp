@@ -3,7 +3,7 @@
 namespace maptiles {
 
 // @impl 0f87-6acd-5e67-4b57
-std::vector<size_t> simplify_screen(const std::vector<float> &xs, const std::vector<float> &ys,
+std::vector<size_t> SimplifyScreen(const std::vector<float> &xs, const std::vector<float> &ys,
                                     float min_px)
 {
     std::vector<size_t> kept;

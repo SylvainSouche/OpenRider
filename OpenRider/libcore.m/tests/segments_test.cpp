@@ -2,6 +2,7 @@
 
 #include "core/segments.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace {
@@ -11,7 +12,7 @@ constexpr double kKx = 111320.0 * 0.69591;  // cos(45.9 deg)
 constexpr double kKy = 110540.0;
 
 // A track from metric points (x east, y north), one point every 10 m.
-core::OverviewTrack track(const std::string &id, const std::vector<std::pair<double, double>> &corners,
+core::OverviewTrack Track(const std::string &id, const std::vector<std::pair<double, double>> &corners,
                           double offset, unsigned seed)
 {
     core::OverviewTrack t;
@@ -41,10 +42,10 @@ core::OverviewTrack track(const std::string &id, const std::vector<std::pair<dou
 
 // Two outings sharing y = 0 from x = 0 to x = 1000 m, arriving and leaving
 // from different places, one 3 m north of the path and one 3 m south.
-std::vector<core::OverviewTrack> two_tracks()
+std::vector<core::OverviewTrack> TwoTracks()
 {
-    return {track("a", {{-300, 400}, {0, 0}, {1000, 0}, {1300, 400}}, 3.0, 7),
-            track("b", {{-300, -400}, {0, 0}, {1000, 0}, {1300, -400}}, -3.0, 11)};
+    return {Track("a", {{-300, 400}, {0, 0}, {1000, 0}, {1300, 400}}, 3.0, 7),
+            Track("b", {{-300, -400}, {0, 0}, {1000, 0}, {1300, -400}}, -3.0, 11)};
 }
 
 } // namespace
@@ -57,7 +58,7 @@ ATF_TEST_CASE_BODY(thinning_gives_one_pixel_line)
     for (int y = 2; y < 7; ++y)
         for (int x = 2; x < 28; ++x)
             img[y * w + x] = 1;
-    core::thin_image(img, w, h);
+    core::ThinImage(img, w, h);
     for (int x = 6; x < 24; ++x) {  // away from the ends, one pixel per column
         int n = 0;
         for (int y = 0; y < h; ++y)
@@ -69,7 +70,7 @@ ATF_TEST_CASE_BODY(thinning_gives_one_pixel_line)
 ATF_TEST_CASE_WITHOUT_HEAD(shared_stretch_is_one_common_segment);
 ATF_TEST_CASE_BODY(shared_stretch_is_one_common_segment)
 {
-    const auto r = core::find_segments(two_tracks(), core::SegmentParams{});
+    const auto r = core::FindSegments(TwoTracks(), core::SegmentParams{});
     ATF_REQUIRE_EQ(r.segments.size(), 1u);
     const core::Segment &s = r.segments[0];
     ATF_REQUIRE_EQ(s.track_ids.size(), 2u);
@@ -85,7 +86,7 @@ ATF_TEST_CASE_BODY(shared_stretch_is_one_common_segment)
 ATF_TEST_CASE_WITHOUT_HEAD(tracks_mapped_own_common_own);
 ATF_TEST_CASE_BODY(tracks_mapped_own_common_own)
 {
-    const auto r = core::find_segments(two_tracks(), core::SegmentParams{});
+    const auto r = core::FindSegments(TwoTracks(), core::SegmentParams{});
     ATF_REQUIRE_EQ(r.mappings.size(), 2u);
     for (const core::TrackMapping &m : r.mappings) {
         ATF_REQUIRE_EQ(m.pieces.size(), 3u);
@@ -98,11 +99,84 @@ ATF_TEST_CASE_BODY(tracks_mapped_own_common_own)
 ATF_TEST_CASE_WITHOUT_HEAD(single_track_has_no_common_segment);
 ATF_TEST_CASE_BODY(single_track_has_no_common_segment)
 {
-    const auto r = core::find_segments({two_tracks()[0]}, core::SegmentParams{});
+    const auto r = core::FindSegments({TwoTracks()[0]}, core::SegmentParams{});
     ATF_REQUIRE(r.segments.empty());
     ATF_REQUIRE_EQ(r.mappings.size(), 1u);
     ATF_REQUIRE_EQ(r.mappings[0].pieces.size(), 1u);
     ATF_REQUIRE_EQ(r.mappings[0].pieces[0].segment, -1);
+}
+
+namespace {
+
+// Consecutive steps of every route share a node.
+void RequireConnected(const core::SegmentNetwork &net)
+{
+    for (const core::NetworkRoute &r : net.routes)
+        for (size_t i = 1; i < r.steps.size(); ++i) {
+            const core::NetworkSegment &a = net.segments[static_cast<size_t>(r.steps[i - 1].segment)];
+            const core::NetworkSegment &b = net.segments[static_cast<size_t>(r.steps[i].segment)];
+            const int exit = r.steps[i - 1].forward ? a.to : a.from;
+            const int entry = r.steps[i].forward ? b.from : b.to;
+            ATF_REQUIRE_EQ(exit, entry);
+        }
+}
+
+// The segment whose mean track passes nearest the metric point (x, y).
+const core::NetworkSegment *SegmentAt(const core::SegmentNetwork &net, double x, double y)
+{
+    const core::NetworkSegment *best = nullptr;
+    double bd = 1e18;
+    // Distance to the polyline (a straight segment may keep only its ends).
+    for (const core::NetworkSegment &s : net.segments)
+        for (size_t i = 1; i < s.lat.size(); ++i) {
+            const double ax = (s.lon[i - 1] - kLon0) * kKx, ay = (s.lat[i - 1] - kLat0) * kKy;
+            const double bx = (s.lon[i] - kLon0) * kKx, by = (s.lat[i] - kLat0) * kKy;
+            const double vx = bx - ax, vy = by - ay, l2 = vx * vx + vy * vy;
+            double t = l2 > 0 ? ((x - ax) * vx + (y - ay) * vy) / l2 : 0.0;
+            t = std::max(0.0, std::min(1.0, t));
+            const double dx = ax + t * vx - x, dy = ay + t * vy - y;
+            if (dx * dx + dy * dy < bd) {
+                bd = dx * dx + dy * dy;
+                best = &s;
+            }
+        }
+    return best;
+}
+
+} // namespace
+
+ATF_TEST_CASE_WITHOUT_HEAD(network_two_routes);
+ATF_TEST_CASE_BODY(network_two_routes)
+{
+    const auto net = core::BuildNetwork(TwoTracks(), core::SegmentParams{});
+    int shared = 0, own = 0;
+    for (const core::NetworkSegment &s : net.segments)
+        (s.Shared() ? shared : own) += 1;
+    ATF_REQUIRE_EQ(shared, 1);
+    ATF_REQUIRE_EQ(own, 4);              // two own parts per route
+    ATF_REQUIRE_EQ(net.nodes.size(), 6u);  // 2 junctions + 4 route ends
+    ATF_REQUIRE_EQ(net.routes.size(), 2u);
+    for (const core::NetworkRoute &r : net.routes)
+        ATF_REQUIRE_EQ(r.steps.size(), 3u);  // own, shared, own
+    RequireConnected(net);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(network_cut_where_a_route_joins);
+ATF_TEST_CASE_BODY(network_cut_where_a_route_joins)
+{
+    // c joins the shared stretch halfway, from the north, and leaves with a.
+    auto tracks = TwoTracks();
+    tracks.push_back(Track("c", {{500, 500}, {500, 0}, {1000, 0}, {1300, 400}}, 0.0, 13));
+    const auto net = core::BuildNetwork(tracks, core::SegmentParams{});
+    const core::NetworkSegment *west = SegmentAt(net, 250, 0);
+    const core::NetworkSegment *east = SegmentAt(net, 750, 0);
+    ATF_REQUIRE(west && east && west != east);  // cut near x = 500
+    ATF_REQUIRE_EQ(west->route_ids.size(), 2u);  // a, b
+    ATF_REQUIRE_EQ(east->route_ids.size(), 3u);  // a, b, c
+    const core::NetworkSegment *exit = SegmentAt(net, 1150, 200);
+    ATF_REQUIRE(exit && exit->Shared());         // a and c leave together
+    ATF_REQUIRE_EQ(exit->route_ids.size(), 2u);
+    RequireConnected(net);
 }
 
 ATF_INIT_TEST_CASES(tcs)
@@ -111,4 +185,6 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, shared_stretch_is_one_common_segment);
     ATF_ADD_TEST_CASE(tcs, tracks_mapped_own_common_own);
     ATF_ADD_TEST_CASE(tcs, single_track_has_no_common_segment);
+    ATF_ADD_TEST_CASE(tcs, network_two_routes);
+    ATF_ADD_TEST_CASE(tcs, network_cut_where_a_route_joins);
 }
