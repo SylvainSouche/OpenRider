@@ -12,6 +12,7 @@
 
 #include <openrider/filter.h>
 #include <openrider/input.h>
+#include <openrider/segments.h>
 
 #include <set>
 #include <string>
@@ -33,6 +34,31 @@ struct FilterState {
     const or_filter_vtable *vtable = nullptr;  ///< the filter plugin
     bool enabled = false;                      ///< applied to the selected outing
     std::vector<double> values;  ///< one per declared parameter
+};
+
+/// A segments plugin and its settings.
+struct SegmentMethod {
+    const or_segments_vtable *vtable = nullptr;  ///< the plugin
+    std::vector<double> values;                  ///< one per declared parameter
+};
+
+/// One passage of an outing along the compared segment.
+struct ComparedRun {
+    size_t outing = 0;             ///< index into AppModel::outings
+    int pass = 1;                  ///< 1, 2... when the outing travels the segment several times
+    bool forward = true;           ///< travelled in the segment's direction
+    std::vector<or_point> points;  ///< its points along the segment; time and distance from the entry
+    std::vector<double> along_m;   ///< position along the segment of each point
+    double duration_s = 0.0;       ///< time from entry to exit
+};
+
+/// The segment being compared, and every passage of the outings along it.
+struct SegmentComparison {
+    bool open = false;               ///< the comparison panel is shown
+    unsigned generation = 0;         ///< changes with every comparison opened
+    std::string sport;               ///< activity group of the segment
+    core::NetworkSegment segment;    ///< a copy: networks are rebuilt
+    std::vector<ComparedRun> runs;   ///< newest outing first
 };
 
 /// The application model. Only AppController changes it; view controllers
@@ -61,10 +87,13 @@ struct AppModel {
     /// @name Common segments of the listed outings, one network per sport
     /// @{
     bool show_segments = false;                     ///< the overview shows them
-    double segment_trace_width_m = 8.0;             ///< heat map trace width (m), 1 to 50
+    std::vector<SegmentMethod> segment_methods;     ///< every segments plugin, in load order
+    int segment_method = -1;                        ///< the one used, -1 = none
     std::vector<core::SegmentGroup> segment_groups;  ///< last networks built
     bool segments_building = false;                 ///< a build is running
     /// @}
+
+    SegmentComparison comparison;  ///< the segment comparison panel's content
 
     OutingQuery query;  ///< which outings are listed
     int selected = -1;  ///< index into outings, -1 = none

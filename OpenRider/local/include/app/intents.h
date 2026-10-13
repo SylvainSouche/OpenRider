@@ -23,7 +23,10 @@ enum class IntentKind {
     SetOnlyVisible,      ///< i: 0/1 -- list restricted to tracks visible on the overview
     SetVisibleIds,       ///< ids: outings visible on the overview map
     SetShowSegments,     ///< i: 0/1 -- overview shows the segment networks instead of the tracks
-    SetSegmentWidth,     ///< x: width (m) of the trace tracks are drawn with in the segment heat map
+    SelectSegmentMethod, ///< i: segments plugin index
+    SetSegmentParam,     ///< i: parameter index of the selected method, x: value
+    OpenSegmentComparison,  ///< i: segment group index, j: segment id
+    CloseSegmentComparison, ///< back from the comparison panel
     ToggleFilter,        ///< i: filter index, j: 0/1
     SetFilterParam,      ///< i: filter index, j: parameter index, x: value
     ResetFilterParams,   ///< i: filter index
@@ -41,6 +44,7 @@ enum class IntentKind {
     MapZoom,             ///< i: +1/-1, x, y: mouse offset from the map centre
     MapMouse,            ///< x, y: mouse offset from the map centre; i: 1 inside, 0 outside
     MapClick,            ///< a click (no drag) on the map
+    MapDoubleClick,      ///< a double click on the map
     SelectLayer,         ///< i: layer index
     SetTrackStyle,       ///< i: track style index
     SetTrackColour,      ///< x: packed RGBA as a double (0..2^32)
@@ -53,6 +57,16 @@ enum class IntentKind {
     GraphHover,          ///< i: graph index, x: value on the x axis
     GraphHoverEnd,       ///< the mouse left the graphs
     SetStatsComputed,    ///< i: 0 Garmin, 1 computed
+
+    // ComparisonViewController
+    ToggleComparedRun,       ///< i: run index
+    ShowAllComparedRuns,     ///< i: 1 all, 0 none
+    SetComparisonXAxis,      ///< i: core::XAxis
+    AddComparisonGraph,      ///< appends a graph
+    RemoveComparisonGraph,   ///< i: graph index
+    SetComparisonGraphSpec,  ///< i: graph index, spec
+    ComparisonHover,         ///< x: mouse position on the graphs' x axis
+    ComparisonHoverEnd,      ///< the mouse left the graphs
 
     // MainViewController
     ResizeList,          ///< x: pixels

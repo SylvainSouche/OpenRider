@@ -1,0 +1,8 @@
+# Track-matching segment identification plugin: a shared library loaded
+# at run time from plugins/segments/. Builds the network by matching the
+# tracks into it one after the other.
+LIB=openrider_segments_matching
+PLUGIN_KIND=segments
+LIBS=core
+TESTS_CXX=matching_test
+.include "mk.lib.mk"

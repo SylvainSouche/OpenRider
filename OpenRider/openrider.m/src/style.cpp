@@ -71,6 +71,15 @@ std::string FormatNumber(double value, const char *format)
     return text;
 }
 
+ImVec4 RunColour(size_t index)
+{
+    // Tableau 10: distinct, readable on the light theme and on map tiles.
+    static const unsigned int palette[10] = {0x4E79A7, 0xF28E2B, 0xE15759, 0x76B7B2, 0x59A14F,
+                                             0xEDC948, 0xB07AA1, 0xFF9DA7, 0x9C755F, 0x7F7F7F};
+    const unsigned int rgb = palette[index % 10];
+    return ImVec4(((rgb >> 16) & 0xff) / 255.0f, ((rgb >> 8) & 0xff) / 255.0f, (rgb & 0xff) / 255.0f, 1.0f);
+}
+
 ImU32 ColourU32(unsigned int rgb, int alpha)
 {
     return IM_COL32((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, alpha);

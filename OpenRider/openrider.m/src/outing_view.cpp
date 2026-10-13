@@ -150,94 +150,6 @@ void DrawTrackStyle(const app::MapViewModel &view_model, app::Intents &out)
     }
 }
 
-// One row of controls per graph: series, type, window/unit, remove.
-void DrawGraphControls(const app::OutingViewModel &view_model, app::Intents &out)
-{
-    static const core::SeriesKind kinds[] = {core::SeriesKind::Altitude,    core::SeriesKind::Speed,
-                                             core::SeriesKind::HeartRate,   core::SeriesKind::Cadence,
-                                             core::SeriesKind::Temperature, core::SeriesKind::VerticalSpeed,
-                                             core::SeriesKind::Grade};
-    ImGui::TextUnformatted("X axis:");
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Time", view_model.xaxis == core::XAxis::Time))
-        out.Push(app::IntentKind::SetXAxis, static_cast<int>(core::XAxis::Time));
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Distance", view_model.xaxis == core::XAxis::Distance))
-        out.Push(app::IntentKind::SetXAxis, static_cast<int>(core::XAxis::Distance));
-    ImGui::SameLine();
-    if (ImGui::Button("+ Add graph"))
-        out.Push(app::IntentKind::AddGraph);
-
-    for (size_t graph = 0; graph < view_model.graphs.size(); ++graph) {
-        core::SeriesSpec spec = view_model.graphs[graph];  // edited locally, sent as an intent
-        bool changed = false;
-        ImGui::PushID(static_cast<int>(graph));
-        ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::BeginCombo("##series", core::SeriesLabel(spec.kind))) {
-            for (core::SeriesKind kind : kinds)
-                if (ImGui::Selectable(core::SeriesLabel(kind), spec.kind == kind)) {
-                    spec.kind = kind;
-                    changed = true;
-                }
-            ImGui::EndCombo();
-        }
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(95.0f);
-        int type = spec.type == core::GraphType::Histogram ? 1 : 0;
-        static const char *type_names[] = {"Curve", "Histogram"};
-        if (ImGui::Combo("##type", &type, type_names, 2)) {
-            spec.type = type == 1 ? core::GraphType::Histogram : core::GraphType::Curve;
-            changed = true;
-        }
-        if (spec.kind == core::SeriesKind::VerticalSpeed) {
-            static const double windows[] = {30.0, 60.0, 300.0};
-            static const char *window_names[] = {"30 s", "1 min", "5 min"};
-            static const core::VSpeedUnit units[] = {core::VSpeedUnit::MetresPerHour, core::VSpeedUnit::MetresPerMinute,
-                                                     core::VSpeedUnit::MetresPerSecond};
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(80.0f);
-            int window = spec.vspeed_window_s == 30.0 ? 0 : spec.vspeed_window_s == 300.0 ? 2 : 1;
-            if (ImGui::Combo("##window", &window, window_names, 3)) {
-                spec.vspeed_window_s = windows[window];
-                changed = true;
-            }
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(80.0f);
-            if (ImGui::BeginCombo("##unit", core::SeriesUnit(spec))) {
-                for (core::VSpeedUnit unit : units) {
-                    core::SeriesSpec unit_spec = spec;
-                    unit_spec.vspeed_unit = unit;
-                    if (ImGui::Selectable(core::SeriesUnit(unit_spec), spec.vspeed_unit == unit)) {
-                        spec.vspeed_unit = unit;
-                        changed = true;
-                    }
-                }
-                ImGui::EndCombo();
-            }
-        } else if (spec.kind == core::SeriesKind::Grade) {
-            static const char *window_names[] = {"100 m", "1000 m"};
-            int window = spec.grade_window_m == 1000.0 ? 1 : 0;
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(80.0f);
-            if (ImGui::Combo("##gwindow", &window, window_names, 2)) {
-                spec.grade_window_m = window == 1 ? 1000.0 : 100.0;
-                changed = true;
-            }
-        }
-        if (view_model.graphs.size() > 1) {
-            ImGui::SameLine();
-            if (ImGui::SmallButton("Remove"))
-                out.Push(app::IntentKind::RemoveGraph, static_cast<int>(graph));
-        }
-        if (changed) {
-            app::Intent intent(app::IntentKind::SetGraphSpec);
-            intent.i = static_cast<int>(graph);
-            intent.spec = spec;
-            out.Push(std::move(intent));
-        }
-        ImGui::PopID();
-    }
-}
 
 // Stacked graphs sharing the x axis; the value under the mouse in a
 // tooltip, a cursor line across all graphs.
@@ -310,6 +222,43 @@ void DrawGraphs(const app::AppModel &model, const app::OutingViewModel &view_mod
         out.Push(app::IntentKind::GraphHoverEnd);
 }
 
+// The common segments switch, the method (when several segments plugins
+// are installed) and one slider per parameter the method declares. Values
+// are edited on local copies; every change is a new build request.
+void DrawSegmentControls(const app::AppModel &model, app::Intents &out)
+{
+    if (model.segment_methods.empty()) {
+        ImGui::TextDisabled("(no segments plugin)");
+        return;
+    }
+    bool show_segments = model.show_segments;
+    if (ImGui::Checkbox("Common segments", &show_segments))
+        out.Push(app::IntentKind::SetShowSegments, show_segments ? 1 : 0);
+    if (!model.show_segments || model.segment_method < 0)
+        return;
+    const app::SegmentMethod &method = model.segment_methods[static_cast<size_t>(model.segment_method)];
+    if (model.segment_methods.size() > 1) {
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(180.0f);
+        if (ImGui::BeginCombo("##segment_method", method.vtable->label)) {
+            for (size_t m = 0; m < model.segment_methods.size(); ++m)
+                if (ImGui::Selectable(model.segment_methods[m].vtable->label, static_cast<int>(m) == model.segment_method))
+                    out.Push(app::IntentKind::SelectSegmentMethod, static_cast<int>(m));
+            ImGui::EndCombo();
+        }
+    }
+    for (size_t p = 0; p < method.values.size(); ++p) {
+        const or_filter_param &param = method.vtable->params[p];
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(140.0f);
+        ImGui::PushID(static_cast<int>(p));
+        double value = method.values[p];
+        if (ImGui::SliderScalar(param.label, ImGuiDataType_Double, &value, &param.min_value, &param.max_value, "%.1f"))
+            out.Push(app::IntentKind::SetSegmentParam, static_cast<int>(p), 0, value);
+        ImGui::PopID();
+    }
+}
+
 // Overview with segments: what the hovered segment is and which outings
 // follow it, newest first.
 void DrawSegmentTooltip(const app::AppModel &model, const app::MapViewModel &view_model)
@@ -350,17 +299,7 @@ void DrawOverviewView(const app::AppModel &model, const ViewModels &view_models,
     ImGui::SameLine();
     DrawBackgroundCombo(model, view_models.map, out);
     ImGui::SameLine();
-    bool show_segments = model.show_segments;
-    if (ImGui::Checkbox("Common segments", &show_segments))
-        out.Push(app::IntentKind::SetShowSegments, show_segments ? 1 : 0);
-    if (model.show_segments) {
-        // Edited on a local copy; every change is a new build request.
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(160.0f);
-        float width = static_cast<float>(model.segment_trace_width_m);
-        if (ImGui::SliderFloat("trace width", &width, 1.0f, 50.0f, "%.0f m"))
-            out.Push(app::IntentKind::SetSegmentWidth, 0, 0, width);
-    }
+    DrawSegmentControls(model, out);
     if (model.show_segments && model.segments_building) {
         ImGui::SameLine();
         ImGui::TextDisabled("computing...");
@@ -394,7 +333,10 @@ void DrawOutingView(const app::AppModel &model, const ViewModels &view_models, T
     const float resized = Splitter("##split_map", false, avail.x, map_height);
     if (resized >= 0.0f)
         out.Push(app::IntentKind::ResizeMap, 0, 0, 0.0, resized);
-    DrawGraphControls(view_models.outing, out);
+    DrawGraphControls(view_models.outing.graphs, view_models.outing.xaxis,
+                      {app::IntentKind::SetXAxis, app::IntentKind::AddGraph, app::IntentKind::RemoveGraph,
+                       app::IntentKind::SetGraphSpec},
+                      out);
     DrawGraphs(model, view_models.outing, ImGui::GetContentRegionAvail().y, out);
 }
 

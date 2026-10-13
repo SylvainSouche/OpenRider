@@ -21,6 +21,7 @@ struct ViewModels {
     const app::ListViewModel &list;      ///< outing list
     const app::MapViewModel &map;        ///< map
     const app::OutingViewModel &outing;  ///< outing panel
+    const app::ComparisonViewModel &comparison;  ///< segment comparison panel
 };
 
 /// The main window: menu bar, outing list and right-hand panel side by
@@ -38,6 +39,25 @@ void DrawOverviewView(const app::AppModel &model, const ViewModels &view_models,
 /// Right-hand panel for the selected outing: statistics, filters, map, graphs.
 void DrawOutingView(const app::AppModel &model, const ViewModels &view_models, TextureMirror &textures,
                     app::Intents &out);
+
+/// Right-hand panel comparing the outings along a segment: the passages to
+/// show and the map on the first row, the graphs below, one curve per
+/// passage.
+void DrawComparisonView(const app::AppModel &model, const ViewModels &view_models, TextureMirror &textures,
+                        app::Intents &out);
+
+/// The intents graph controls push: they belong to the panel showing them.
+struct GraphIntents {
+    app::IntentKind set_xaxis;  ///< i: core::XAxis
+    app::IntentKind add;        ///< appends a graph
+    app::IntentKind remove;     ///< i: graph index
+    app::IntentKind set_spec;   ///< i: graph index, spec
+};
+
+/// The x axis choice, an "add graph" button and one row of controls per
+/// graph (series, type, window/unit, remove).
+void DrawGraphControls(const std::vector<core::SeriesSpec> &graphs, core::XAxis xaxis, const GraphIntents &intents,
+                       app::Intents &out);
 
 /// The map, `width` x `height` pixels at the cursor: tiles, tracks,
 /// attribution; mouse actions reported as intents.

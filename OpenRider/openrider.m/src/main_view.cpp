@@ -120,7 +120,9 @@ void DrawMainView(const app::AppModel &model, const ViewModels &view_models, Tex
         out.Push(app::IntentKind::ResizeList, 0, 0, resized);
     ImGui::SameLine(0.0f, 0.0f);
     ImGui::BeginChild("outing", ImVec2(0.0f, body_h), ImGuiChildFlags_Borders);
-    if (model.SelectedOuting())
+    if (model.comparison.open)
+        DrawComparisonView(model, view_models, textures, out);
+    else if (model.SelectedOuting())
         DrawOutingView(model, view_models, textures, out);
     else
         DrawOverviewView(model, view_models, textures, out);

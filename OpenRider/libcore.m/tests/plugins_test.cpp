@@ -37,6 +37,7 @@ ATF_TEST_CASE_BODY(kind_directories)
     ATF_REQUIRE_EQ(std::string(core::PluginKindDir(OR_PLUGIN_FILTER)), "filters");
     ATF_REQUIRE_EQ(std::string(core::PluginKindDir(OR_PLUGIN_TILES)), "tiles");
     ATF_REQUIRE_EQ(std::string(core::PluginKindDir(OR_PLUGIN_WORKFLOW)), "workflows");
+    ATF_REQUIRE_EQ(std::string(core::PluginKindDir(OR_PLUGIN_SEGMENTS)), "segments");
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(missing_directory_loads_nothing);

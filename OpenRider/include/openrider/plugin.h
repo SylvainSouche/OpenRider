@@ -27,7 +27,8 @@ enum or_plugin_kind {
     OR_PLUGIN_INPUT = 1,    /**< plugins/input: data backends, see input.h */
     OR_PLUGIN_FILTER = 2,   /**< plugins/filters: see filter.h */
     OR_PLUGIN_TILES = 3,    /**< plugins/tiles: map tile protocols, see tiles.h */
-    OR_PLUGIN_WORKFLOW = 4  /**< plugins/workflows: external tools */
+    OR_PLUGIN_WORKFLOW = 4, /**< plugins/workflows: external tools */
+    OR_PLUGIN_SEGMENTS = 5  /**< plugins/segments: segment identification, see segments.h */
 };
 
 /** The descriptor a plugin returns from its entry function. */

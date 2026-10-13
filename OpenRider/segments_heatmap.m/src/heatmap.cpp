@@ -1,4 +1,6 @@
-#include "core/segments.h"
+#include "heatmap/heatmap.h"
+
+#include "core/network_cleanup.h"
 
 #include <algorithm>
 #include <cmath>
@@ -10,7 +12,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace core {
+namespace heatmap {
 
 namespace {
 
@@ -315,13 +317,147 @@ struct Match {
     double offset = 0.0;  // signed distance from the skeleton
 };
 
+// Indices of the points where a track turns back on itself: the track a
+// little before and a little after (`arm` metres along it) passes within
+// `close` of itself while the point stands out from both by more than
+// `spike` -- an out-and-back. One index per turn: the farthest point.
+// @impl 0f87-6ace-1013-e03e
+std::vector<size_t> TurnArounds(const std::vector<XY> &line, double arm, double close, double spike)
+{
+    std::vector<double> along(line.size(), 0.0);
+    for (size_t i = 1; i < line.size(); ++i)
+        along[i] = along[i - 1] + Dist(line[i - 1], line[i]);
+    std::vector<size_t> turns;
+    double turn_height = 0.0;  // of the last turn found, while still in its spike
+    size_t spike_end = 0;
+    for (size_t i = 1; i + 1 < line.size(); ++i) {
+        size_t before = i, after = i;
+        while (before > 0 && along[i] - along[before] < arm)
+            --before;
+        while (after + 1 < line.size() && along[after] - along[i] < arm)
+            ++after;
+        if (along[i] - along[before] < arm || along[after] - along[i] < arm)
+            continue;
+        const XY base{(line[before].x + line[after].x) / 2.0, (line[before].y + line[after].y) / 2.0};
+        const double height = Dist(line[i], base);
+        if (Dist(line[before], line[after]) >= close || std::min(Dist(line[i], line[before]), Dist(line[i], line[after])) <= spike)
+            continue;
+        if (!turns.empty() && before < spike_end) {
+            // Same spike: keep its farthest point.
+            if (height > turn_height) {
+                turns.back() = i;
+                turn_height = height;
+            }
+        } else {
+            turns.push_back(i);
+            turn_height = height;
+        }
+        spike_end = after;
+    }
+    return turns;
+}
+
+// Point of `line` at `distance` metres along it from point `from`
+// (negative: backwards), clamped to the line's ends.
+XY AlongFrom(const std::vector<XY> &line, size_t from, double distance)
+{
+    size_t i = from;
+    double left = std::fabs(distance);
+    if (distance >= 0.0) {
+        while (i + 1 < line.size() && left > Dist(line[i], line[i + 1]))
+            left -= Dist(line[i], line[i + 1]), ++i;
+        if (i + 1 >= line.size())
+            return line.back();
+        const double step = Dist(line[i], line[i + 1]);
+        const double f = step > 0.0 ? left / step : 0.0;
+        return {line[i].x + (line[i + 1].x - line[i].x) * f, line[i].y + (line[i + 1].y - line[i].y) * f};
+    }
+    while (i > 0 && left > Dist(line[i], line[i - 1]))
+        left -= Dist(line[i], line[i - 1]), --i;
+    if (i == 0)
+        return line.front();
+    const double step = Dist(line[i], line[i - 1]);
+    const double f = step > 0.0 ? left / step : 0.0;
+    return {line[i].x + (line[i - 1].x - line[i].x) * f, line[i].y + (line[i - 1].y - line[i].y) * f};
+}
+
+// A hairpin bend looks like a turn-around on a single track: the track
+// doubles back with its two legs close together. What tells them apart is
+// the other tracks: at a turn-around on a path, tracks passing the spot
+// carry straight on; through a hairpin, every one of them doubles back
+// too. Turns are grouped by place; where at least three tracks pass and
+// nearly all of them double back, the place is a bend and its turns go.
+// (A dead end everyone turns round at is lost as a turn, but it ends its
+// line and is a node anyway.)
+void DropHairpins(const std::vector<std::vector<XY>> &xy, double arm, std::vector<std::vector<size_t>> &turns)
+{
+    const double radius = 40.0;  // turns this close are one place
+    struct Place {
+        XY at;
+        int count = 0;
+    };
+    std::vector<Place> places;
+    for (size_t t = 0; t < turns.size(); ++t)
+        for (size_t i : turns[t]) {
+            const XY &q = xy[t][i];
+            bool joined = false;
+            for (Place &place : places)
+                if (Dist(place.at, q) <= radius) {
+                    place.at = {(place.at.x * place.count + q.x) / (place.count + 1),
+                                (place.at.y * place.count + q.y) / (place.count + 1)};
+                    ++place.count;
+                    joined = true;
+                    break;
+                }
+            if (!joined)
+                places.push_back({q, 1});
+        }
+    std::vector<XY> bends;
+    for (const Place &place : places) {
+        int passing = 0, doubling = 0;
+        for (const std::vector<XY> &line : xy) {
+            // The track's point nearest the place, if it passes there.
+            size_t nearest = line.size();
+            double best = radius;
+            for (size_t i = 0; i < line.size(); ++i)
+                if (Dist(line[i], place.at) < best) {
+                    best = Dist(line[i], place.at);
+                    nearest = i;
+                }
+            if (nearest == line.size())
+                continue;
+            ++passing;
+            // Doubling back: the track `arm` before and after is much
+            // closer than the 2 x arm of a straight passage.
+            if (Dist(AlongFrom(line, nearest, -arm), AlongFrom(line, nearest, arm)) < arm)
+                ++doubling;
+        }
+        if (passing >= 3 && doubling >= 0.8 * passing)
+            bends.push_back(place.at);
+    }
+    for (size_t t = 0; t < turns.size(); ++t) {
+        std::vector<size_t> kept;
+        for (size_t i : turns[t]) {
+            bool bend = false;
+            for (const XY &at : bends)
+                bend = bend || Dist(xy[t][i], at) <= radius;
+            if (!bend)
+                kept.push_back(i);
+        }
+        turns[t].swap(kept);
+    }
+}
+
 struct Analysis {
     Proj pr;
     std::vector<std::vector<XY>> xy;          // tracks, metres
+    std::vector<std::vector<size_t>> turns;   // per track: turn-around point indices
+    std::vector<std::vector<int>> pass_of;    // per track point: pass index (turn-arounds split passes)
     std::vector<std::vector<XY>> lines;       // skeleton lines, one vertex per cell
     std::vector<std::vector<Match>> matches;  // per track point
     std::vector<std::vector<TrackPiece>> pieces;
     std::vector<std::set<size_t>> line_tracks;
+    std::vector<std::set<std::pair<size_t, int>>> line_passes;  // (track, pass) along each line
     std::vector<bool> kept;                   // shared lines
     std::vector<std::vector<XY>> mean;        // per kept line, per vertex
 };
@@ -396,6 +532,31 @@ Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &
             xy[t].push_back(q);
         }
 
+    // Turn-arounds split each track into passes: a stretch done out and back
+    // is passed twice, and the two passes count as two contributors to the
+    // heat map, so that it forms a corridor and a segment like a stretch
+    // shared by two outings. Scales follow the trace width.
+    analysis.turns.assign(tracks.size(), {});
+    analysis.pass_of.assign(tracks.size(), {});
+    const double turn_arm = std::max(80.0, 2.0 * params.trace_width_m);
+    for (size_t t = 0; t < tracks.size(); ++t)
+        analysis.turns[t] = TurnArounds(xy[t], turn_arm, std::max(25.0, params.trace_width_m / 2.0),
+                                        std::max(40.0, params.trace_width_m));
+    DropHairpins(xy, turn_arm, analysis.turns);
+    for (size_t t = 0; t < tracks.size(); ++t) {
+        std::vector<int> &pass = analysis.pass_of[t];
+        pass.assign(xy[t].size(), 0);
+        size_t next_turn = 0;
+        int current = 0;
+        for (size_t i = 0; i < xy[t].size(); ++i) {
+            pass[i] = current;
+            if (next_turn < analysis.turns[t].size() && analysis.turns[t][next_turn] == i) {
+                ++current;  // the turn point ends one pass and starts the next
+                ++next_turn;
+            }
+        }
+    }
+
     // @impl 0f87-6acd-60a9-7bf6
     // @impl 0f87-6acd-dc0b-a958
     // 2. Blurred heat map: each track drawn as a line trace_width_m wide.
@@ -413,7 +574,16 @@ Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &
     const int reach = static_cast<int>(std::ceil(rim / cell));
     std::unordered_map<Cell, double> heat;
     std::unordered_map<Cell, int> reached;  // distinct tracks per cell
-    for (const std::vector<XY> &l : xy) {
+    std::vector<std::vector<XY>> passes;
+    for (size_t t = 0; t < xy.size(); ++t) {
+        size_t start = 0;
+        for (size_t turn : analysis.turns[t]) {
+            passes.emplace_back(xy[t].begin() + static_cast<long>(start), xy[t].begin() + static_cast<long>(turn) + 1);
+            start = turn;
+        }
+        passes.emplace_back(xy[t].begin() + static_cast<long>(start), xy[t].end());
+    }
+    for (const std::vector<XY> &l : passes) {
         std::unordered_map<Cell, double> mine;
         for (const XY &q : Densify(l, std::max(cell * 0.5, radius * 0.5))) {
             const int64_t ix = static_cast<int64_t>(std::floor(q.x / cell));
@@ -469,7 +639,7 @@ Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &
             lines.push_back(Densify(Simplify(ed.pts, cell * 0.5), cell));
 
     // 5. Map tracks: nearest skeleton vertex within tolerance (grid index).
-    const double bucket = std::max(10.0, r * 2.0);
+    const double bucket = std::max(25.0, r * 2.0);  // >= snap: neighbours of the bucket hold every candidate
     std::unordered_map<Cell, std::vector<std::pair<int, int>>> index;
     for (int li = 0; li < static_cast<int>(lines.size()); ++li)
         for (int vi = 0; vi < static_cast<int>(lines[static_cast<size_t>(li)].size()); ++vi) {
@@ -477,11 +647,28 @@ Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &
             index[Key(static_cast<int64_t>(std::floor(v.x / bucket)), static_cast<int64_t>(std::floor(v.y / bucket)))]
                 .push_back({li, vi});
         }
-    const double snap = r * 1.5;
+    const double snap = std::max(r * 1.5, 25.0);  // GPS drift on a shared path (forest: 15-25 m)
     std::vector<std::vector<Match>> &matches = analysis.matches;
     matches.assign(tracks.size(), {});
+    // A point matches a line only where the track moves along it (either
+    // way): its velocity -- here the direction from the previous point to the
+    // next -- within 60 degrees of the line's direction. Position alone puts
+    // a hairpin's tip on a leg, or a point on the wrong one of two close
+    // parallel paths; direction tells them apart. Points barely moving (a
+    // pause) have no reliable direction and match by position.
+    auto line_direction = [&](int li, int vi) {
+        const std::vector<XY> &l = lines[static_cast<size_t>(li)];
+        const XY &a = l[static_cast<size_t>(std::max(0, vi - 2))];
+        const XY &b = l[std::min(l.size() - 1, static_cast<size_t>(vi + 2))];
+        return XY{b.x - a.x, b.y - a.y};
+    };
     for (size_t t = 0; t < tracks.size(); ++t) {
-        for (const XY &q : xy[t]) {
+        for (size_t qi = 0; qi < xy[t].size(); ++qi) {
+            const XY &q = xy[t][qi];
+            const XY &before = xy[t][qi > 0 ? qi - 1 : qi];
+            const XY &after = xy[t][qi + 1 < xy[t].size() ? qi + 1 : qi];
+            const XY velocity{after.x - before.x, after.y - before.y};
+            const double speed = std::hypot(velocity.x, velocity.y);
             Match m;
             double best = snap;
             const int64_t bx = static_cast<int64_t>(std::floor(q.x / bucket)), by = static_cast<int64_t>(std::floor(q.y / bucket));
@@ -493,7 +680,16 @@ Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &
                     for (auto [li, vi] : it->second) {
                         const XY &v = lines[static_cast<size_t>(li)][static_cast<size_t>(vi)];
                         const double d = Dist(v, q);
-                        if (d < best) {
+                        if (d >= best)
+                            continue;
+                        if (speed > 2.0) {
+                            const XY along = line_direction(li, vi);
+                            const double length = std::hypot(along.x, along.y);
+                            if (length > 0.0 &&
+                                std::fabs(velocity.x * along.x + velocity.y * along.y) < 0.5 * speed * length)
+                                continue;  // moving across the line, not along it
+                        }
+                        {
                             best = d;
                             m.line = li;
                             m.vertex = vi;
@@ -515,6 +711,8 @@ Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &
     // Pieces: runs on one line, long enough; the rest is the track's own.
     std::vector<std::set<size_t>> &line_tracks = analysis.line_tracks;
     line_tracks.assign(lines.size(), {});
+    std::vector<std::set<std::pair<size_t, int>>> &line_passes = analysis.line_passes;
+    line_passes.assign(lines.size(), {});
     std::vector<std::vector<TrackPiece>> &pieces = analysis.pieces;
     pieces.assign(tracks.size(), {});
     for (size_t t = 0; t < tracks.size(); ++t) {
@@ -534,8 +732,11 @@ Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &
                 pieces[t].back().last = j;
             else
                 pieces[t].push_back(pc);
-            if (pc.segment >= 0)
+            if (pc.segment >= 0) {
                 line_tracks[static_cast<size_t>(pc.segment)].insert(t);
+                for (size_t k = i; k <= j; ++k)
+                    line_passes[static_cast<size_t>(pc.segment)].insert({t, analysis.pass_of[t][k]});
+            }
             i = j + 1;
         }
     }
@@ -568,7 +769,8 @@ Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &
     analysis.kept.assign(lines.size(), false);
     analysis.mean.assign(lines.size(), {});
     for (size_t li = 0; li < lines.size(); ++li) {
-        if (static_cast<int>(line_tracks[li].size()) < params.min_tracks)
+        // Shared: followed by enough passes (an out-and-back counts twice).
+        if (static_cast<int>(line_passes[li].size()) < params.min_tracks)
             continue;
         analysis.kept[li] = true;
         const std::vector<XY> &l = lines[li];
@@ -669,16 +871,23 @@ SegmentResult FindSegments(const std::vector<OverviewTrack> &tracks, const Segme
     return out;
 }
 
+
 // @impl 0f87-6acd-c829-c24f
-SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const SegmentParams &params)
+SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const SegmentParams &params,
+                            const std::function<bool()> &cancelled)
 {
     SegmentNetwork net;
     if (tracks.empty())
         return net;
     const Analysis analysis = Analyse(tracks, params);
+    if (cancelled && cancelled())
+        return net;  // superseded: the caller discards it
     const std::vector<std::vector<XY>> &lines = analysis.lines;
-    // Entry points closer than ~30 m (in skeleton vertices) are one cut.
-    const int margin = std::max(2, static_cast<int>(std::ceil(30.0 / params.cell_m)));
+    // Entry points closer than the trace width (30 m at least; in skeleton
+    // vertices) are one cut: within a wide trace, where a route enters or
+    // leaves jitters across the whole width.
+    const double cut_resolution_m = std::max(30.0, params.trace_width_m);
+    const int margin = std::max(2, static_cast<int>(std::ceil(cut_resolution_m / params.cell_m)));
 
     // 1. Traversals: each shared piece as monotone runs along its line (a
     // turn-around starts a new run); own pieces kept as they are.
@@ -701,10 +910,20 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
                 ++f0;
             int start_v = m[f0].vertex, ext_v = start_v, dir = 0;
             size_t start_i = pc.first, ext_i = f0;
+            const std::vector<size_t> &turns = analysis.turns[t];
             for (size_t k = f0 + 1; k <= pc.last; ++k) {
                 if (m[k].line != pc.segment)
                     continue;  // a bridged excursion point
                 const int v = m[k].vertex;
+                if (std::binary_search(turns.begin(), turns.end(), k)) {
+                    // A detected turn-around: the traversal ends there and
+                    // the next starts back from it, whatever its length.
+                    travs[t].push_back({pc.segment, start_v, v, start_i, k});
+                    start_v = ext_v = v;
+                    start_i = ext_i = k;
+                    dir = 0;
+                    continue;
+                }
                 if (dir == 0) {
                     if (std::abs(v - start_v) > margin / 2)
                         dir = v > start_v ? 1 : -1;
@@ -793,10 +1012,18 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
             }
 
     // 4. Shared segments: one per range between consecutive cuts.
+    // A run of a track along a shared proto: its point indices, and whether
+    // it goes the proto's way (from -> to).
+    struct Run {
+        size_t track, first, last;
+        bool forward;
+    };
     struct Proto {
         int from, to;
         std::vector<XY> pts;
         std::set<size_t> routes;
+        std::vector<Run> runs;  // the tracks' runs along it
+        bool own = false;       // made from one route's own part
     };
     std::vector<Proto> protos;
     std::vector<std::vector<int>> proto_of(lines.size());
@@ -813,25 +1040,47 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
         }
     }
 
+    // A route's start or end joins the node already there, if any within
+    // max(50 m, trace width): outings starting from home share one node
+    // instead of one each. Otherwise it is a new node.
+    const double end_radius = std::max(50.0, params.trace_width_m);
+    auto end_node = [&](const XY &q) {
+        int best = -1;
+        double best_distance = end_radius;
+        for (size_t n = 0; n < node_pos.size(); ++n) {
+            const double distance = Dist(node_pos[n], q);
+            if (distance <= best_distance) {
+                best_distance = distance;
+                best = find(static_cast<int>(n));
+            }
+        }
+        return best >= 0 ? best : new_node(q);
+    };
+
     // 5. Routes: shared traversals cover whole ranges (more than half of a
     // range overlapped); own parts become single-route segments joining the
     // nodes where the route leaves and rejoins the shared network.
     struct Item {
         int proto = -1;
         bool forward = true;
-        int from = -1, to = -1;  // nodes in travel order
+        int from = -1, to = -1;    // nodes in travel order
+        size_t first = 0, last = 0;  // the track's points along it
     };
     std::vector<std::vector<Item>> items(tracks.size());
+    std::map<std::pair<int, int>, int> connectors;  // node pair -> connecting proto
     for (size_t t = 0; t < tracks.size(); ++t) {
         for (const Trav &tr : travs[t]) {
             if (tr.line < 0) {
                 // Own part: geometry from the track; nodes filled below.
                 Proto own;
                 own.from = own.to = -1;
+                own.own = true;
                 for (size_t k = tr.first; k <= tr.last; ++k)
                     own.pts.push_back(analysis.xy[t][k]);
                 own.routes.insert(t);
-                items[t].push_back({static_cast<int>(protos.size()), true, -1, -1});
+                if (tr.first < tr.last)
+                    own.runs.push_back({t, tr.first, tr.last, true});
+                items[t].push_back({static_cast<int>(protos.size()), true, -1, -1, tr.first, tr.last});
                 protos.push_back(std::move(own));
                 continue;
             }
@@ -848,7 +1097,21 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
             if (!fwd)
                 std::reverse(covered.begin(), covered.end());
             for (size_t k : covered) {
+                // The track's points along this range, for the geometry.
+                size_t first = tr.last + 1, last = 0;
+                const std::vector<Match> &m = analysis.matches[t];
+                for (size_t i = tr.first; i <= tr.last; ++i)
+                    if (m[i].line == tr.line && m[i].vertex >= cuts[li][k] && m[i].vertex <= cuts[li][k + 1]) {
+                        first = std::min(first, i);
+                        last = std::max(last, i);
+                    }
+                if (first < last)
+                    protos[static_cast<size_t>(proto_of[li][k])].runs.push_back({t, first, last, fwd});
+                else
+                    first = tr.first, last = tr.last;
                 Item it;
+                it.first = first;
+                it.last = last;
                 it.proto = proto_of[li][k];
                 it.forward = fwd;
                 it.from = fwd ? node_at[li][k] : node_at[li][k + 1];
@@ -860,7 +1123,8 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
         // Junction crossings: going from one shared segment to another
         // directly, or through a short own stretch, passes one junction: the
         // exit and entry nodes are the same node, and the stretch is no
-        // segment of its own.
+        // segment of its own -- provided the two nodes are within the cut
+        // resolution; farther apart they are distinct junctions.
         std::vector<Item> &its = items[t];
         {
             std::vector<Item> kept_items;
@@ -871,19 +1135,42 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
                                      its[i + 1].from >= 0;
                 if (own && between && Length(pr.pts) <= params.max_excursion_m &&
                     Dist(node_pos[static_cast<size_t>(kept_items.back().to)],
-                         node_pos[static_cast<size_t>(its[i + 1].from)]) <= params.max_excursion_m) {
+                         node_pos[static_cast<size_t>(its[i + 1].from)]) <= cut_resolution_m) {
                     const int a = find(kept_items.back().to), b = find(its[i + 1].from);
                     if (a != b)
                         parent[static_cast<size_t>(b)] = a;
                     protos[static_cast<size_t>(its[i].proto)].routes.erase(t);
                     continue;
                 }
-                if (!own && !kept_items.empty() && kept_items.back().to >= 0 && its[i].from >= 0 &&
-                    Dist(node_pos[static_cast<size_t>(kept_items.back().to)],
-                         node_pos[static_cast<size_t>(its[i].from)]) <= params.max_excursion_m) {
-                    const int a = find(kept_items.back().to), b = find(its[i].from);
-                    if (a != b)
-                        parent[static_cast<size_t>(b)] = a;
+                if (!own && !kept_items.empty() && kept_items.back().to >= 0 && its[i].from >= 0) {
+                    const int exit = kept_items.back().to, entry = its[i].from;
+                    if (Dist(node_pos[static_cast<size_t>(exit)], node_pos[static_cast<size_t>(entry)]) <= cut_resolution_m) {
+                        const int a = find(exit), b = find(entry);
+                        if (a != b)
+                            parent[static_cast<size_t>(b)] = a;
+                    } else if (find(exit) != find(entry)) {
+                        // The two lines stop short of the junction between
+                        // them: a connector joins them, shared by every
+                        // route making that passage.
+                        const std::pair<int, int> key{std::min(exit, entry), std::max(exit, entry)};
+                        auto found = connectors.find(key);
+                        if (found == connectors.end()) {
+                            Proto link;
+                            link.from = key.first;
+                            link.to = key.second;
+                            link.pts = {node_pos[static_cast<size_t>(key.first)], node_pos[static_cast<size_t>(key.second)]};
+                            found = connectors.emplace(key, static_cast<int>(protos.size())).first;
+                            protos.push_back(std::move(link));
+                        }
+                        // Its shape: the tracks' points between the two
+                        // line ends (a hairpin tip, a junction's curve).
+                        Proto &link = protos[static_cast<size_t>(found->second)];
+                        link.routes.insert(t);
+                        const size_t from_point = kept_items.back().last, to_point = its[i].first;
+                        if (from_point < to_point)
+                            link.runs.push_back({t, from_point, to_point, exit == key.first});
+                        kept_items.push_back({found->second, exit == key.first, exit, entry, from_point, to_point});
+                    }
                 }
                 kept_items.push_back(its[i]);
             }
@@ -897,11 +1184,172 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
                 continue;
             const int prev = i > 0 ? its[i - 1].to : -1;
             const int next = i + 1 < its.size() ? its[i + 1].from : -1;
-            its[i].from = prev >= 0 ? prev : new_node(pr.pts.front());
-            its[i].to = next >= 0 ? next : new_node(pr.pts.back());
+            its[i].from = prev >= 0 ? prev : end_node(pr.pts.front());
+            its[i].to = next >= 0 ? next : end_node(pr.pts.back());
             pr.from = its[i].from;
             pr.to = its[i].to;
         }
+    }
+
+    // 5a. Bundles: outings that leave the shared network at the
+    // same node and rejoin it at the same node along nearly the same way
+    // followed one path the heat map could not draw (a switchback whose legs
+    // are closer than the GPS spread). Own parts joining the same two nodes,
+    // of similar length, whose shapes stay within max(25 m, trace width) of
+    // each other on average, are one segment travelled by all of them. The
+    // same holds for any two segments, shared ones included.
+    {
+        const double bundle_distance = std::max(25.0, params.trace_width_m);
+        auto shape_of = [&](const Proto &pr, bool reversed) {
+            const size_t samples = 20;
+            std::vector<XY> line = pr.pts;
+            if (reversed)
+                std::reverse(line.begin(), line.end());
+            const double length = Length(line);
+            std::vector<XY> shape;
+            for (size_t j = 0; j < samples; ++j)
+                shape.push_back(AlongFrom(line, 0, length * static_cast<double>(j) / static_cast<double>(samples - 1)));
+            return shape;
+        };
+        auto mean_distance = [](const std::vector<XY> &a, const std::vector<XY> &b) {
+            double sum = 0.0;
+            for (size_t j = 0; j < a.size(); ++j)
+                sum += Dist(a[j], b[j]);
+            return sum / static_cast<double>(a.size());
+        };
+        // Candidates: own parts between two nodes. Their ends need not be the
+        // same nodes: runs leave and rejoin a path a little apart, so ends
+        // within the cut resolution match, and merging joins those nodes.
+        const double end_distance = cut_resolution_m;
+        // Shared segments take part too: a heat-map line and a bundle of own
+        // parts can describe the same path side by side. The busiest
+        // segments come first and absorb the others.
+        std::vector<size_t> candidates;
+        for (size_t p = 0; p < protos.size(); ++p) {
+            const Proto &pr = protos[p];
+            if (!pr.routes.empty() && pr.from >= 0 && pr.to >= 0 && pr.pts.size() >= 2)
+                candidates.push_back(p);
+        }
+        std::stable_sort(candidates.begin(), candidates.end(), [&](size_t a, size_t b) {
+            return protos[a].routes.size() > protos[b].routes.size();
+        });
+        std::vector<int> merged_into(protos.size(), -1);
+        std::vector<bool> merged_reversed(protos.size(), false);
+        std::vector<size_t> bundles;  // representative of each bundle
+        std::vector<std::vector<XY>> bundle_shapes;
+        for (size_t p : candidates) {
+            const Proto &pr = protos[p];
+            const XY &start = pr.pts.front(), &end = pr.pts.back();
+            bool joined = false;
+            for (size_t b = 0; b < bundles.size() && !joined; ++b) {
+                const Proto &rep = protos[bundles[b]];
+                const double ratio = Length(pr.pts) / std::max(1.0, Length(rep.pts));
+                if (ratio < 0.7 || ratio > 1.0 / 0.7)
+                    continue;
+                // Orientation: the pairing of ends that fits; both are tried
+                // when the ends are close (a loop).
+                for (bool reversed : {false, true}) {
+                    const XY &a = reversed ? end : start, &z = reversed ? start : end;
+                    if (Dist(a, rep.pts.front()) > end_distance || Dist(z, rep.pts.back()) > end_distance)
+                        continue;
+                    if (mean_distance(bundle_shapes[b], shape_of(pr, reversed)) > bundle_distance)
+                        continue;
+                    const size_t r = bundles[b];
+                    merged_into[p] = static_cast<int>(r);
+                    merged_reversed[p] = reversed;
+                    Proto &target = protos[r];
+                    for (const Run &run : pr.runs)
+                        target.runs.push_back({run.track, run.first, run.last, run.forward != reversed});
+                    target.routes.insert(pr.routes.begin(), pr.routes.end());
+                    // The ends meet the representative's nodes.
+                    const int pr_start = reversed ? pr.to : pr.from, pr_end = reversed ? pr.from : pr.to;
+                    for (auto [mine, theirs] : {std::pair<int, int>{pr_start, target.from}, {pr_end, target.to}}) {
+                        const int x = find(theirs), y = find(mine);
+                        if (x != y)
+                            parent[static_cast<size_t>(y)] = x;
+                    }
+                    joined = true;
+                    break;
+                }
+            }
+            if (!joined) {
+                bundles.push_back(p);
+                bundle_shapes.push_back(shape_of(pr, false));
+            }
+        }
+        for (size_t p = 0; p < protos.size(); ++p)
+            if (merged_into[p] >= 0)
+                protos[p].routes.clear();
+        for (std::vector<Item> &its : items)
+            for (Item &it : its) {
+                const int target = merged_into[static_cast<size_t>(it.proto)];
+                if (target < 0)
+                    continue;
+                if (merged_reversed[static_cast<size_t>(it.proto)])
+                    it.forward = !it.forward;
+                it.proto = target;
+            }
+    }
+
+    // 5b. Shape of the shared segments: the median of the tracks' runs
+    // along each, compared at equal fractions of their length, between the
+    // segment's two node positions. The heat-map line is a corridor's
+    // centre: where a path bends tighter than the trace width (a
+    // switchback), the corridor is a blob and its centre cuts the bends;
+    // the tracks themselves keep them.
+    for (Proto &pr : protos) {
+        if (pr.runs.empty() || pr.pts.size() < 2)
+            continue;
+        std::vector<std::vector<XY>> shapes;
+        double total_length = 0.0;
+        for (const Run &run : pr.runs) {
+            std::vector<XY> shape(analysis.xy[run.track].begin() + static_cast<long>(run.first),
+                                  analysis.xy[run.track].begin() + static_cast<long>(run.last) + 1);
+            if (!run.forward)
+                std::reverse(shape.begin(), shape.end());
+            total_length += Length(shape);
+            shapes.push_back(std::move(shape));
+        }
+        const double mean_length = total_length / static_cast<double>(shapes.size());
+        const size_t samples = std::max<size_t>(2, static_cast<size_t>(std::ceil(mean_length / params.cell_m)) + 1);
+        std::vector<XY> shape(samples);
+        std::vector<double> xs(shapes.size()), ys(shapes.size());
+        for (size_t j = 0; j < samples; ++j) {
+            const double fraction = static_cast<double>(j) / static_cast<double>(samples - 1);
+            for (size_t r = 0; r < shapes.size(); ++r) {
+                const XY q = AlongFrom(shapes[r], 0, fraction * Length(shapes[r]));
+                xs[r] = q.x;
+                ys[r] = q.y;
+            }
+            // Median per coordinate: a run's detour does not drag the shape.
+            std::nth_element(xs.begin(), xs.begin() + static_cast<long>(xs.size() / 2), xs.end());
+            std::nth_element(ys.begin(), ys.begin() + static_cast<long>(ys.size() / 2), ys.end());
+            shape[j] = {xs[xs.size() / 2], ys[ys.size() / 2]};
+        }
+        shape.front() = pr.pts.front();  // anchored on the nodes
+        shape.back() = pr.pts.back();
+        pr.pts = std::move(shape);
+    }
+
+    // 6a. Nothing finer than the trace width can be told apart: a segment
+    // shorter than it is a junction seen at too fine a scale. Its two ends
+    // become one node and the segment goes; routes stay connected through
+    // the merged node (their steps on it are dropped below).
+    // A single-route loop back to its own node, shorter than an excursion,
+    // is GPS wandering (a pause, a detour round an obstacle): it goes too.
+    const double min_segment_m = std::max(params.trace_width_m, params.cell_m);
+    for (Proto &pr : protos) {
+        if (pr.routes.size() == 1 && pr.from >= 0 && find(pr.from) == find(pr.to) &&
+            Length(pr.pts) < params.max_excursion_m) {
+            pr.routes.clear();
+            continue;
+        }
+        if (pr.routes.empty() || pr.from < 0 || pr.to < 0 || Length(pr.pts) >= min_segment_m)
+            continue;
+        const int a = find(pr.from), b = find(pr.to);
+        if (a != b)
+            parent[static_cast<size_t>(b)] = a;
+        pr.routes.clear();
     }
 
     // 6. Output: final node ids (merged), segments used by a route, routes.
@@ -912,20 +1360,34 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
             used.insert(pr.from);
             used.insert(pr.to);
         }
+    // A node's position is its medoid: the member position nearest all the
+    // others. The centroid of nodes merged from two paths lies between them,
+    // on neither; the medoid is on one.
     std::map<int, int> final_of_root;
-    std::vector<XY> sum_pos;
-    std::vector<int> sum_n;
+    std::vector<std::vector<XY>> members;
     for (int prov : used) {
         const int root = find(prov);
         auto it = final_of_root.find(root);
         if (it == final_of_root.end()) {
-            it = final_of_root.emplace(root, static_cast<int>(sum_pos.size())).first;
-            sum_pos.push_back({0.0, 0.0});
-            sum_n.push_back(0);
+            it = final_of_root.emplace(root, static_cast<int>(members.size())).first;
+            members.emplace_back();
         }
-        sum_pos[static_cast<size_t>(it->second)].x += node_pos[static_cast<size_t>(prov)].x;
-        sum_pos[static_cast<size_t>(it->second)].y += node_pos[static_cast<size_t>(prov)].y;
-        ++sum_n[static_cast<size_t>(it->second)];
+        members[static_cast<size_t>(it->second)].push_back(node_pos[static_cast<size_t>(prov)]);
+    }
+    std::vector<XY> final_pos;
+    for (const std::vector<XY> &group : members) {
+        XY best = group.front();
+        double best_sum = 1e300;
+        for (const XY &candidate : group) {
+            double sum = 0.0;
+            for (const XY &other : group)
+                sum += Dist(candidate, other);
+            if (sum < best_sum) {
+                best_sum = sum;
+                best = candidate;
+            }
+        }
+        final_pos.push_back(best);
     }
     auto node_id = [&](int prov) { return final_of_root[find(prov)]; };
     std::vector<int> seg_id(protos.size(), -1);
@@ -938,6 +1400,18 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
         sg.from = node_id(pr.from);
         sg.to = node_id(pr.to);
         std::vector<XY> pts = Simplify(pr.pts, params.cell_m * 0.3);
+        // The line meets its nodes: ends moved onto them when close, or
+        // extended to them.
+        for (bool at_start : {true, false}) {
+            const XY node = final_pos[static_cast<size_t>(at_start ? sg.from : sg.to)];
+            XY &end = at_start ? pts.front() : pts.back();
+            if (Dist(end, node) <= params.cell_m)
+                end = node;
+            else if (at_start)
+                pts.insert(pts.begin(), node);
+            else
+                pts.push_back(node);
+        }
         sg.length_m = Length(pts);
         for (const XY &q : pts) {
             double lon, lat;
@@ -950,10 +1424,10 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
         seg_id[i] = sg.id;
         net.segments.push_back(std::move(sg));
     }
-    for (size_t n = 0; n < sum_pos.size(); ++n) {
+    for (size_t n = 0; n < final_pos.size(); ++n) {
         NetworkNode nd;
         nd.id = static_cast<int>(n);
-        analysis.pr.Inv(sum_pos[n].x / sum_n[n], sum_pos[n].y / sum_n[n], nd.lon, nd.lat);
+        analysis.pr.Inv(final_pos[n].x, final_pos[n].y, nd.lon, nd.lat);
         net.nodes.push_back(nd);
     }
     for (size_t t = 0; t < tracks.size(); ++t) {
@@ -966,6 +1440,11 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
         }
         net.routes.push_back(std::move(r));
     }
+    core::CleanupParams cleanup;
+    cleanup.min_turn_m = std::max(80.0, 2.0 * params.trace_width_m);
+    cleanup.max_loop_m = params.max_excursion_m;
+    cleanup.duplicate_distance_m = std::max(25.0, params.trace_width_m);
+    core::CleanUpNetwork(net, cleanup);
     return net;
 }
-} // namespace core
+} // namespace heatmap

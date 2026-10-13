@@ -54,6 +54,13 @@ void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::
         ctl.AddFilter(static_cast<const or_filter_vtable *>(p.info->vtable));
         core::LogLine("filter plugin %s (%s)", p.info->name, p.path.c_str());
     }
+    const core::PluginScan segment_methods = core::LoadPlugins(roots, OR_PLUGIN_SEGMENTS);
+    for (const core::LoadedPlugin &p : segment_methods.loaded) {
+        ctl.AddSegmentMethod(static_cast<const or_segments_vtable *>(p.info->vtable));
+        core::LogLine("segments plugin %s (%s)", p.info->name, p.path.c_str());
+    }
+    for (const std::string &p : segment_methods.problems)
+        out.PushText(app::IntentKind::ReportError, "Plugin refused: " + p);
     const core::PluginScan inputs = core::LoadPlugins(roots, OR_PLUGIN_INPUT);
     for (const std::string &p : filters.problems)
         out.PushText(app::IntentKind::ReportError, "Plugin refused: " + p);
@@ -120,7 +127,8 @@ int main()
         app::ListViewController list_vc;
         app::MapViewController map_vc;
         app::OutingViewController outing_vc;
-        app::Controllers controllers{model, app_ctl, main_vc, list_vc, map_vc, outing_vc};
+        app::ComparisonViewController comparison_vc;
+        app::Controllers controllers{model, app_ctl, main_vc, list_vc, map_vc, outing_vc, comparison_vc};
         app::Intents intents;
         const or_input_vtable *input = nullptr;
         void *input_handle = nullptr;
@@ -134,7 +142,8 @@ int main()
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
-            const ui::ViewModels view_models{main_vc.ViewModel(), list_vc.ViewModel(), map_vc.ViewModel(), outing_vc.ViewModel()};
+            const ui::ViewModels view_models{main_vc.ViewModel(), list_vc.ViewModel(), map_vc.ViewModel(),
+                                             outing_vc.ViewModel(), comparison_vc.ViewModel()};
             ui::DrawMainView(model, view_models, textures, intents);
             ImGui::Render();
 

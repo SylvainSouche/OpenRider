@@ -5,6 +5,7 @@
 #pragma once
 
 #include "app/app_controller.h"
+#include "app/comparison_view_controller.h"
 #include "app/list_view_controller.h"
 #include "app/main_view_controller.h"
 #include "app/map_view_controller.h"
@@ -20,6 +21,7 @@ struct Controllers {
     ListViewController &list;      ///< owner of ListViewModel
     MapViewController &map;        ///< owner of MapViewModel
     OutingViewController &outing;  ///< owner of OutingViewModel
+    ComparisonViewController &comparison;  ///< owner of ComparisonViewModel
 };
 
 /// One frame: pending intents first (the views' reports), then background

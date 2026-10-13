@@ -35,6 +35,12 @@
     "status": "rejected",
     "type": "ai"
   },
+  "ai-comparison-axes": {
+    "active": true,
+    "id": "0f87-6ace-35a8-bf1a",
+    "status": "proposed",
+    "type": "ai"
+  },
   "ai-config-json": {
     "active": true,
     "id": "0f87-6acd-0462-bcd6",
@@ -113,6 +119,12 @@
     "status": "accepted",
     "type": "ai"
   },
+  "ai-network-reference-tuning": {
+    "active": true,
+    "id": "0f87-6ace-1013-3096",
+    "status": "proposed",
+    "type": "ai"
+  },
   "ai-network-split-entries": {
     "active": true,
     "id": "0f87-6acd-c829-2a05",
@@ -153,6 +165,12 @@
     "active": true,
     "id": "0f87-6acc-e47b-e36b",
     "status": "accepted",
+    "type": "ai"
+  },
+  "ai-resolution-follows-width": {
+    "active": true,
+    "id": "0f87-6acd-ddbe-2e43",
+    "status": "proposed",
     "type": "ai"
   },
   "ai-road-running-now": {
@@ -237,6 +255,12 @@
     "active": false,
     "id": "0f87-6acc-ef43-bc15",
     "status": "rejected",
+    "type": "ai"
+  },
+  "ai-velocity-bundles": {
+    "active": true,
+    "id": "0f87-6ace-24c3-e4be",
+    "status": "proposed",
     "type": "ai"
   },
   "ai-window-from-p10": {
@@ -449,6 +473,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "comparison-hover": {
+    "active": true,
+    "id": "0f87-6ace-37d9-2162",
+    "status": "confirmed",
+    "type": "req"
+  },
   "con-opentopo-license": {
     "active": true,
     "id": "0f87-6acc-eb23-9dc5",
@@ -635,6 +665,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-cut-at-turnarounds": {
+    "active": true,
+    "id": "0f87-6ace-1013-722f",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-delay-per-service": {
     "active": true,
     "id": "0f87-6acc-ecd4-3e20",
@@ -803,6 +839,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-matching-plugin": {
+    "active": true,
+    "id": "0f87-6ace-2f7b-7129",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-moving-time-from-raw": {
     "active": true,
     "id": "0f87-6acd-d8c6-0017",
@@ -812,6 +854,12 @@
   "dec-network-in-overview": {
     "active": true,
     "id": "0f87-6acd-d9d9-c97c",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-no-cut-without-junction": {
+    "active": true,
+    "id": "0f87-6ace-13b5-4f88",
     "status": "recorded",
     "type": "dec"
   },
@@ -971,15 +1019,33 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-same-routes-one-segment": {
+    "active": true,
+    "id": "0f87-6ace-3222-5c1e",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-screen-simplify": {
     "active": true,
     "id": "0f87-6acd-5e67-b080",
     "status": "recorded",
     "type": "dec"
   },
+  "dec-segment-comparison": {
+    "active": true,
+    "id": "0f87-6ace-35a8-e3bd",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-segment-network": {
     "active": true,
     "id": "0f87-6acd-c828-7612",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-segments-plugins": {
+    "active": true,
+    "id": "0f87-6ace-2ba9-411a",
     "status": "recorded",
     "type": "dec"
   },
@@ -1493,6 +1559,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-comparison-hover": {
+    "active": true,
+    "id": "0f87-6ace-37d9-900e",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-compat-header": {
     "active": true,
     "id": "0f87-6acd-2e44-0deb",
@@ -1613,6 +1685,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-merge-through-nodes": {
+    "active": true,
+    "id": "0f87-6ace-13b5-2444",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-motion": {
     "active": true,
     "id": "0f87-6acd-33a9-4f41",
@@ -1691,15 +1769,39 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-same-routes-merge": {
+    "active": true,
+    "id": "0f87-6ace-3222-ba6b",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-screen-simplify": {
     "active": true,
     "id": "0f87-6acd-5e67-4b57",
     "status": "verified",
     "type": "impl"
   },
+  "impl-segment-comparison": {
+    "active": true,
+    "id": "0f87-6ace-35a8-5c96",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-segments": {
     "active": true,
     "id": "0f87-6acd-6028-c636",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-segments-matching": {
+    "active": true,
+    "id": "0f87-6ace-2f7b-f4d7",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-segments-plugins": {
+    "active": true,
+    "id": "0f87-6ace-2ba9-bc80",
     "status": "verified",
     "type": "impl"
   },
@@ -1784,6 +1886,12 @@
   "impl-track-style": {
     "active": true,
     "id": "0f87-6acd-32ed-0d05",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-turnarounds": {
+    "active": true,
+    "id": "0f87-6ace-1013-e03e",
     "status": "verified",
     "type": "impl"
   },
@@ -2417,9 +2525,21 @@
     "status": "recorded",
     "type": "obs"
   },
+  "obs-runfromhome-reference": {
+    "active": true,
+    "id": "0f87-6ace-1013-0521",
+    "status": "recorded",
+    "type": "obs"
+  },
   "obs-segments-first-run": {
     "active": true,
     "id": "0f87-6acd-60ee-8bd1",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-short-segments-wide-trace": {
+    "active": true,
+    "id": "0f87-6acd-ddbe-1efd",
     "status": "recorded",
     "type": "obs"
   },
@@ -2462,6 +2582,12 @@
   "obs-summit-pause-walking": {
     "active": true,
     "id": "0f87-6acd-2c65-d457",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-switchback-averaged": {
+    "active": true,
+    "id": "0f87-6ace-24c3-046a",
     "status": "recorded",
     "type": "obs"
   },
@@ -3185,6 +3311,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "segment-comparison-panel": {
+    "active": true,
+    "id": "0f87-6ace-35a8-b8d3",
+    "status": "confirmed",
+    "type": "req"
+  },
   "segment-kinds": {
     "active": true,
     "id": "0f87-6acc-e576-b2f1",
@@ -3194,6 +3326,12 @@
   "segment-outing": {
     "active": true,
     "id": "0f87-6acc-e576-5f2e",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-cut-at-turnarounds": {
+    "active": true,
+    "id": "0f87-6ace-1013-8329",
     "status": "confirmed",
     "type": "req"
   },
@@ -3215,9 +3353,27 @@
     "status": "confirmed",
     "type": "req"
   },
+  "segments-no-cut-without-junction": {
+    "active": false,
+    "id": "0f87-6ace-13b5-3521",
+    "status": "superseded",
+    "type": "req"
+  },
+  "segments-one-segment-without-branching": {
+    "active": true,
+    "id": "0f87-6ace-3222-cc20",
+    "status": "proposed",
+    "type": "req"
+  },
   "segments-overview-display": {
     "active": true,
     "id": "0f87-6acd-d9d9-73f8",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-plugin-kind": {
+    "active": true,
+    "id": "0f87-6ace-2ba9-64e0",
     "status": "confirmed",
     "type": "req"
   },

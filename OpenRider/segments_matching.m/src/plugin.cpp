@@ -1,0 +1,54 @@
+// The segments plugin entry point: track matching (matching.h) behind the
+// plugin ABI (openrider/segments.h).
+
+#include <openrider/plugin.h>
+#include <openrider/segments.h>
+
+#include "core/segment_exchange.h"
+#include "matching/matching.h"
+
+#include <cstdio>
+
+namespace {
+
+// Indices into kParams.
+enum Param { Tolerance, MinNew, MaxAngle, ParamCount };
+
+const or_filter_param kParams[ParamCount] = {
+    {"tolerance_m", "Matching distance (m)", 15.0, 3.0, 50.0},
+    {"min_new_m", "Shortest new path (m)", 40.0, 10.0, 300.0},
+    {"max_angle_deg", "Direction tolerance (deg)", 50.0, 15.0, 85.0},
+};
+
+// Builds the network of `tracks` with the declared parameters `values`.
+int MatchingBuild(const or_segment_track *tracks, size_t count, const double *values, or_segment_cancel_cb cancel,
+                  void *user, or_segment_network **out, char *err, size_t errlen)
+{
+    if (!out || (count > 0 && !tracks) || !values) {
+        if (err && errlen)
+            std::snprintf(err, errlen, "matching: missing arguments");
+        return 1;
+    }
+    const std::vector<core::OverviewTrack> input = core::ImportTracks(tracks, count);
+    matching::MatchParams params;
+    params.tolerance_m = values[Tolerance];
+    params.min_new_m = values[MinNew];
+    params.max_angle_deg = values[MaxAngle];
+    const core::SegmentNetwork network =
+        matching::BuildNetwork(input, params, [&] { return cancel && cancel(user) != 0; });
+    *out = core::ExportNetwork(network, input);
+    return 0;
+}
+
+void MatchingFree(or_segment_network *network) { core::FreeExportedNetwork(network); }
+
+const or_segments_vtable kVtable = {"matching", "Matching the tracks", ParamCount, kParams, MatchingBuild,
+                                    MatchingFree};
+const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_SEGMENTS, "matching", "0.1", &kVtable};
+
+} // namespace
+
+extern "C" __attribute__((visibility("default"))) const or_plugin_info *openrider_plugin(void)
+{
+    return &kInfo;
+}
