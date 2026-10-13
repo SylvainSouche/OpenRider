@@ -3,9 +3,10 @@
 /// (module-level utilities).
 #pragma once
 
-#include "core/segments.h"
 #include "matching/matching.h"
 #include "matching/network.h"
+
+#include <openrider/sdk/segments.h>
 
 #include <set>
 #include <vector>
@@ -14,19 +15,19 @@ namespace matching {
 
 /// Each track's chain of segments, and the tracks using each edge.
 struct TrackChains {
-    std::vector<core::NetworkRoute> routes;  ///< one per track, in input order
+    std::vector<openrider::sdk::NetworkRoute> routes;  ///< one per track, in input order
     std::vector<std::set<int>> users;        ///< per edge: tracks using it (input indices)
 };
 
 /// Cuts edges where a track turns back mid-edge (matched with `params`);
 /// requests on an edge closer than `merge_m` make one cut.
-void CutAtTurnArounds(Network &network, const std::vector<std::vector<core::XY>> &lines, const MatchParams &params,
+void CutAtTurnArounds(Network &network, const std::vector<std::vector<openrider::sdk::XY>> &lines, const MatchParams &params,
                       double merge_m);
 
 /// Each track's chain: its matched states collapsed into steps (one per
 /// edge travelled in one direction).
-TrackChains ChainTracks(const Network &network, const std::vector<std::vector<core::XY>> &lines,
-                        const std::vector<core::OverviewTrack> &tracks, const MatchParams &params);
+TrackChains ChainTracks(const Network &network, const std::vector<std::vector<openrider::sdk::XY>> &lines,
+                        const std::vector<openrider::sdk::OverviewTrack> &tracks, const MatchParams &params);
 
 /// Nodes closer than `distance_m` are one junction (tracks leaving a path a
 /// few metres apart each cut it): edges are re-pointed to the first node of

@@ -6,7 +6,7 @@
 #include "app/app_model.h"
 #include "app/intents.h"
 
-#include "core/series.h"
+#include <openrider/sdk/series.h>
 
 #include <vector>
 
@@ -15,8 +15,8 @@ namespace app {
 /// What the comparison panel keeps of its presentation.
 struct ComparisonViewModel {
     std::vector<bool> shown;                                      ///< per ComparedRun: drawn on the map and graphs
-    core::XAxis xaxis = core::XAxis::Distance;                    ///< distance: position along the segment
-    std::vector<core::SeriesSpec> graphs = {core::SeriesSpec{}};  ///< stacked graphs; starts with one
+    openrider::sdk::XAxis xaxis = openrider::sdk::XAxis::Distance;                    ///< distance: position along the segment
+    std::vector<openrider::sdk::SeriesSpec> graphs = {openrider::sdk::SeriesSpec{}};  ///< stacked graphs; starts with one
     bool hovering = false;                                        ///< the mouse is over a graph
     double hover_x = 0.0;                                         ///< its position on the x axis (km or min)
 };

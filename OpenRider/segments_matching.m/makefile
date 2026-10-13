@@ -3,6 +3,6 @@
 # tracks into it one after the other.
 LIB=openrider_segments_matching
 PLUGIN_KIND=segments
-LIBS=core
+LIBS=openrider_sdk
 TESTS_CXX=matching_test
 .include "mk.lib.mk"

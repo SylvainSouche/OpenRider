@@ -6,9 +6,9 @@
 
 namespace matching {
 
-using core::Dist;
-using core::Length;
-using core::XY;
+using openrider::sdk::Dist;
+using openrider::sdk::Length;
+using openrider::sdk::XY;
 
 void Network::Reindex()
 {
@@ -92,11 +92,11 @@ void Network::Average()
                 edge.stations[s] = {edge.sums[s].x / edge.weights[s], edge.sums[s].y / edge.weights[s]};
 }
 
-std::vector<core::RouteStep> Network::ShortestPath(int from, int to, double max_length) const
+std::vector<openrider::sdk::RouteStep> Network::ShortestPath(int from, int to, double max_length) const
 {
     const size_t count = nodes.size();
     std::vector<double> distance(count, kInfinity);
-    std::vector<core::RouteStep> via(count, {-1, true});  // step arriving at each node
+    std::vector<openrider::sdk::RouteStep> via(count, {-1, true});  // step arriving at each node
     std::vector<bool> done(count, false);
     distance[static_cast<size_t>(from)] = 0.0;
     for (;;) {
@@ -124,9 +124,9 @@ std::vector<core::RouteStep> Network::ShortestPath(int from, int to, double max_
             }
         }
     }
-    std::vector<core::RouteStep> path;
+    std::vector<openrider::sdk::RouteStep> path;
     for (int node = to; node != from;) {
-        const core::RouteStep step = via[static_cast<size_t>(node)];
+        const openrider::sdk::RouteStep step = via[static_cast<size_t>(node)];
         path.push_back(step);
         const Edge &edge = edges[static_cast<size_t>(step.segment)];
         node = step.forward ? edge.from : edge.to;

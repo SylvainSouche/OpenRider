@@ -2,9 +2,8 @@
 /// The input plugin the model's outings come from.
 #pragma once
 
-#include "core/result.h"
-
 #include <openrider/input.h>
+#include <openrider/sdk/result.h>
 
 #include <string>
 #include <vector>
@@ -32,7 +31,7 @@ public:
     /// Loads every recorded point of outing `id` into `points` (replacing
     /// them).
     /// @return the plugin's error, if any
-    core::Status LoadPoints(const std::string &id, std::vector<or_point> &points) const;
+    openrider::sdk::Status LoadPoints(const std::string &id, std::vector<or_point> &points) const;
 
 private:
     const or_input_vtable *vtable_ = nullptr;  ///< the plugin

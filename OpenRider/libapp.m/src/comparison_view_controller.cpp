@@ -23,7 +23,7 @@ void ComparisonViewController::Handle(const Intent &intent)
         view_model_.shown.assign(view_model_.shown.size(), intent.i != 0);
         break;
     case IntentKind::SetComparisonXAxis:
-        view_model_.xaxis = static_cast<core::XAxis>(intent.i);
+        view_model_.xaxis = static_cast<openrider::sdk::XAxis>(intent.i);
         view_model_.hovering = false;
         break;
     case IntentKind::ComparisonHover:
@@ -34,7 +34,7 @@ void ComparisonViewController::Handle(const Intent &intent)
         view_model_.hovering = false;
         break;
     case IntentKind::AddComparisonGraph:
-        view_model_.graphs.push_back(core::SeriesSpec{});
+        view_model_.graphs.push_back(openrider::sdk::SeriesSpec{});
         break;
     case IntentKind::RemoveComparisonGraph:
         if (graph_count > 1 && intent.i >= 0 && intent.i < graph_count)

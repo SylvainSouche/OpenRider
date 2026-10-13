@@ -5,12 +5,12 @@
 namespace app {
 
 const TrackStyleOption kTrackStyles[6] = {
-    {"Solid colour", core::SeriesKind::Altitude},  // kind unused for solid
-    {"Speed", core::SeriesKind::Speed},
-    {"Heart rate", core::SeriesKind::HeartRate},
-    {"Altitude", core::SeriesKind::Altitude},
-    {"Grade", core::SeriesKind::Grade},
-    {"Vertical speed", core::SeriesKind::VerticalSpeed},
+    {"Solid colour", openrider::sdk::SeriesKind::Altitude},  // kind unused for solid
+    {"Speed", openrider::sdk::SeriesKind::Speed},
+    {"Heart rate", openrider::sdk::SeriesKind::HeartRate},
+    {"Altitude", openrider::sdk::SeriesKind::Altitude},
+    {"Grade", openrider::sdk::SeriesKind::Grade},
+    {"Vertical speed", openrider::sdk::SeriesKind::VerticalSpeed},
 };
 
 void MapOrigin(const MapViewModel &view_model, double &left, double &top)

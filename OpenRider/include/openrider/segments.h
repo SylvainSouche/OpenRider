@@ -54,9 +54,15 @@ struct or_segment {
 struct or_route_step {
     uint32_t segment;  /**< segment index */
     uint32_t forward;  /**< 1: travelled from `from` to `to`; 0: backwards */
+    uint32_t first;    /**< first point of the track on this step (index in its input points) */
+    uint32_t last;     /**< last point of the track on this step, inclusive */
 };
 
-/** A track as a chain of segments; consecutive steps share a node. */
+/** A track as a chain of segments; consecutive steps share a node, and
+ * their point ranges follow each other: a step's first point is the
+ * previous step's last (where the track passes the node between them).
+ * The first step starts at the track's first point, the last step ends at
+ * its last point. */
 struct or_segment_route {
     size_t step_count;             /**< number of steps */
     struct or_route_step *steps;   /**< in travel order */
@@ -81,6 +87,7 @@ typedef int (*or_segment_cancel_cb)(void *user);
  * success; on failure, non-zero with a message written to err (errlen
  * bytes, always NUL-terminated). */
 struct or_segments_vtable {
+    size_t struct_size;                     /**< sizeof(struct or_segments_vtable) as built */
     const char *id;                         /**< e.g. "heatmap" */
     const char *label;                      /**< e.g. "Heat map of the tracks" */
     size_t param_count;                     /**< number of entries in params */

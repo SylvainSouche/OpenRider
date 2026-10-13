@@ -5,14 +5,14 @@
 
 namespace matching {
 
-using core::Dist;
-using core::Length;
-using core::XY;
+using openrider::sdk::Dist;
+using openrider::sdk::Length;
+using openrider::sdk::XY;
 
 std::vector<XY> Stations(const std::vector<XY> &line, double step)
 {
     const double length = Length(line);
-    return core::Resampled(line, std::max<size_t>(2, static_cast<size_t>(std::ceil(length / step)) + 1));
+    return openrider::sdk::Resampled(line, std::max<size_t>(2, static_cast<size_t>(std::ceil(length / step)) + 1));
 }
 
 

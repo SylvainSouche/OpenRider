@@ -21,11 +21,11 @@ void OutingViewController::Handle(const Intent &intent, const AppModel &model)
     const int graph_count = static_cast<int>(view_model_.graphs.size());
     switch (intent.kind) {
     case IntentKind::SetXAxis:
-        view_model_.xaxis = static_cast<core::XAxis>(intent.i);
+        view_model_.xaxis = static_cast<openrider::sdk::XAxis>(intent.i);
         view_model_.hover_index = -1;
         break;
     case IntentKind::AddGraph:
-        view_model_.graphs.push_back(core::SeriesSpec{});
+        view_model_.graphs.push_back(openrider::sdk::SeriesSpec{});
         break;
     case IntentKind::RemoveGraph:
         if (graph_count > 1 && intent.i >= 0 && intent.i < graph_count)
@@ -40,12 +40,12 @@ void OutingViewController::Handle(const Intent &intent, const AppModel &model)
             break;
         // Find the sample under the mouse in the hovered graph, then publish
         // its source point so that the map and the other graphs show it too.
-        const core::SeriesSpec &spec = view_model_.graphs[static_cast<size_t>(intent.i)];
-        const core::Series series = GraphSeries(model.points, view_model_.xaxis, spec);
+        const openrider::sdk::SeriesSpec &spec = view_model_.graphs[static_cast<size_t>(intent.i)];
+        const openrider::sdk::Series series = GraphSeries(model.points, view_model_.xaxis, spec);
         if (series.x.empty())
             break;
         size_t hovered = 0;
-        if (spec.type == core::GraphType::Histogram) {
+        if (spec.type == openrider::sdk::GraphType::Histogram) {
             // The bar under the mouse: the last edge at or left of it.
             for (size_t k = 0; k + 1 < series.x.size(); ++k)
                 if (series.x[k] <= intent.x)

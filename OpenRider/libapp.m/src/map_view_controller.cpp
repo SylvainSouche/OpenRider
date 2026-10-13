@@ -4,6 +4,7 @@
 
 #include "core/log.h"
 #include "core/outing_selection.h"
+#include "core/plugin_thread.h"
 #include "core/plugins.h"
 #include "maptiles/mercator.h"
 
@@ -103,10 +104,12 @@ bool MapViewController::AddLayer(const std::string &json)
     // The first protocol that opens the definition describes the layer.
     for (const or_tiles_vtable *tiles_vtable : plugins_) {
         char error[256] = "";
-        void *handle = tiles_vtable->open(info.json.c_str(), error, sizeof error);
+        void *handle = nullptr;
+        core::CallPlugin(tiles_vtable, [&] { handle = tiles_vtable->open(info.json.c_str(), error, sizeof error); });
         if (!handle)
             continue;
-        const or_tile_layer *layer = tiles_vtable->layer(handle);
+        const or_tile_layer *layer = nullptr;
+        core::CallPlugin(tiles_vtable, [&] { layer = tiles_vtable->layer(handle); });
         info.id = layer->id;
         info.name = layer->name;
         info.attribution = layer->attribution ? layer->attribution : "";
@@ -115,7 +118,7 @@ bool MapViewController::AddLayer(const std::string &json)
         info.min_zoom = layer->min_zoom;
         info.max_zoom = layer->max_zoom;
         info.tile_size = layer->tile_size;
-        tiles_vtable->close(handle);
+        core::CallPlugin(tiles_vtable, [&] { tiles_vtable->close(handle); });
         view_model_.layers.push_back(info);
         return true;
     }
@@ -127,7 +130,7 @@ void MapViewController::Shutdown()
     fetcher_.reset();  // joins the workers before the layer goes away
     cache_.reset();
     if (tiles_vtable_ && layer_)
-        tiles_vtable_->close(layer_);
+        core::CallPlugin(tiles_vtable_, [&] { tiles_vtable_->close(layer_); });
     layer_ = nullptr;
 }
 
@@ -171,7 +174,8 @@ std::string MapViewController::Select(int index)
     std::string why;
     for (const or_tiles_vtable *tiles_vtable : plugins_) {
         char error[256] = "";
-        void *handle = tiles_vtable->open(info.json.c_str(), error, sizeof error);
+        void *handle = nullptr;
+        core::CallPlugin(tiles_vtable, [&] { handle = tiles_vtable->open(info.json.c_str(), error, sizeof error); });
         if (!handle) {
             why += error;
             continue;
@@ -237,7 +241,7 @@ void MapViewController::FitComparison(const AppModel &model)
 void MapViewController::FitOverview(const AppModel &model)
 {
     double west = 180, east = -180, south = 90, north = -90;
-    for (const core::OverviewTrack &track : model.tracks) {
+    for (const openrider::sdk::OverviewTrack &track : model.tracks) {
         west = std::min(west, track.west);
         east = std::max(east, track.east);
         south = std::min(south, track.south);
@@ -288,8 +292,8 @@ void MapViewController::PublishVisible(const AppModel &model, Intents &out)
 {
     const maptiles::GeoBox box = MapViewBox(view_model_);
     std::vector<std::string> ids;
-    for (const core::OverviewTrack &track : model.tracks)
-        if (core::TrackInBox(track, box.west, box.south, box.east, box.north))
+    for (const openrider::sdk::OverviewTrack &track : model.tracks)
+        if (openrider::sdk::TrackInBox(track, box.west, box.south, box.east, box.north))
             ids.push_back(track.id);
     if (ids != last_visible_) {
         last_visible_ = ids;
@@ -373,7 +377,7 @@ void MapViewController::UpdateHover(const AppModel &model, double mouse_x, doubl
     const double mouse_world_y = top + view_model_.height / 2.0 + mouse_y;
     const maptiles::GeoBox box = MapViewBox(view_model_);
     double nearest = kHoverPx * kHoverPx;
-    for (const core::OverviewTrack &track : model.tracks) {
+    for (const openrider::sdk::OverviewTrack &track : model.tracks) {
         if (!shown.count(track.id) || track.east < box.west || track.west > box.east || track.north < box.south ||
             track.south > box.north)
             continue;
@@ -404,7 +408,7 @@ void MapViewController::UpdateSegmentHover(const AppModel &model, double mouse_x
     double nearest = kHoverPx * kHoverPx;
     bool nearest_shared = false;
     for (size_t g = 0; g < model.segment_groups.size(); ++g)
-        for (const core::NetworkSegment &segment : model.segment_groups[g].network.segments) {
+        for (const openrider::sdk::NetworkSegment &segment : model.segment_groups[g].network.segments) {
             double previous_x = 0.0, previous_y = 0.0;
             for (size_t i = 0; i < segment.lat.size(); ++i) {
                 double x, y;

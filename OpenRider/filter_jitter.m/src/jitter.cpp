@@ -8,8 +8,7 @@
 
 #include <openrider/filter.h>
 #include <openrider/plugin.h>
-
-#include "core/motion.h"
+#include <openrider/sdk/motion.h>
 
 #include <algorithm>
 #include <cmath>
@@ -37,7 +36,7 @@ int JitterApply(const or_point *points, size_t count, const double *values, unsi
         return 1;
     }
     const std::vector<or_point> pts(points, points + count);
-    core::MotionParams mp;
+    openrider::sdk::MotionParams mp;
     mp.ref_distance_m = values[0];
     mp.still_fraction = values[1];
     mp.speed_window_s = values[2];
@@ -46,13 +45,13 @@ int JitterApply(const or_point *points, size_t count, const double *values, unsi
     for (size_t i = 0; i < count; ++i)
         keep[i] = 1;
     // 1. Not-moving stretches keep only their two ends.
-    const std::vector<bool> still = core::NotMovingMask(pts, mp);
+    const std::vector<bool> still = openrider::sdk::NotMovingMask(pts, mp);
     for (size_t i = 1; i + 1 < count; ++i)
         if (still[i] && still[i - 1] && still[i + 1])
             keep[i] = 0;
 
     // 2. Positions implying more than `overspeed` x the max moving speed.
-    const std::vector<double> ma = core::MovingAverageSpeed(pts, mp.speed_window_s);
+    const std::vector<double> ma = openrider::sdk::MovingAverageSpeed(pts, mp.speed_window_s);
     double max_ms = 0.0;
     for (size_t i = 0; i < count; ++i)
         if (!still[i] && !std::isnan(ma[i]))
@@ -64,7 +63,7 @@ int JitterApply(const or_point *points, size_t count, const double *values, unsi
                 continue;
             if (prev < count) {
                 const double dt = pts[i].t_s - pts[prev].t_s;
-                const double d = core::HaversineM(pts[prev].lat, pts[prev].lon, pts[i].lat, pts[i].lon);
+                const double d = openrider::sdk::HaversineM(pts[prev].lat, pts[prev].lon, pts[i].lat, pts[i].lon);
                 if (dt > 0.0 && d / dt > overspeed * max_ms) {
                     keep[i] = 0;
                     continue;
@@ -76,9 +75,9 @@ int JitterApply(const or_point *points, size_t count, const double *values, unsi
     return 0;
 }
 
-const or_filter_vtable kVtable = {OR_FILTER_TRACK, "jitter", "Jitter while not moving",
+const or_filter_vtable kVtable = {sizeof(or_filter_vtable), OR_FILTER_TRACK, "jitter", "Jitter while not moving",
                                   sizeof kParams / sizeof kParams[0], kParams, JitterApply};
-const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_FILTER, "jitter", "0.1", &kVtable};
+const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_FILTER, OR_PLUGIN_THREAD_SAFE, "jitter", "0.1", &kVtable};
 
 } // namespace
 

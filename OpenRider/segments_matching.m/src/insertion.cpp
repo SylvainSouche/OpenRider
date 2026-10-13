@@ -5,7 +5,7 @@
 
 namespace matching {
 
-using core::XY;
+using openrider::sdk::XY;
 
 bool Alongside(const Network &network, const std::vector<XY> &pass, size_t first, size_t last, const MatchParams &params)
 {

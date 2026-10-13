@@ -6,8 +6,9 @@
 #include "app/app_model.h"
 #include "app/map_view_controller.h"
 
-#include "core/series.h"
 #include "maptiles/coverage.h"
+
+#include <openrider/sdk/series.h>
 
 #include <vector>
 
@@ -27,7 +28,7 @@ std::vector<int> MapOfferedLayers(const MapViewModel &view_model, const AppModel
 /// A way of colouring the outing track.
 struct TrackStyleOption {
     const char *name;       ///< display name
-    core::SeriesKind kind;  ///< series the colour follows (unused for solid)
+    openrider::sdk::SeriesKind kind;  ///< series the colour follows (unused for solid)
 };
 
 /// The track styles offered, index 0 being a solid colour.

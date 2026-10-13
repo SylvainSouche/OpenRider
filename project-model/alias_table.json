@@ -23,6 +23,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "ai-abi-versioning": {
+    "active": true,
+    "id": "0f87-6ace-69c5-124e",
+    "status": "accepted",
+    "type": "ai"
+  },
   "ai-activities-dbs-only": {
     "active": true,
     "id": "0f87-6acc-fbfb-6f30",
@@ -83,6 +89,12 @@
     "status": "proposed",
     "type": "ai"
   },
+  "ai-host-services": {
+    "active": true,
+    "id": "0f87-6ace-69c6-cb7c",
+    "status": "accepted",
+    "type": "ai"
+  },
   "ai-http-libcurl": {
     "active": true,
     "id": "0f87-6acd-0462-095e",
@@ -99,6 +111,12 @@
     "active": true,
     "id": "0f87-6acc-edca-f2d0",
     "status": "accepted",
+    "type": "ai"
+  },
+  "ai-input-thread-safe": {
+    "active": false,
+    "id": "0f87-6ace-69c6-bffd",
+    "status": "superseded",
     "type": "ai"
   },
   "ai-largely-within-80-95": {
@@ -155,6 +173,18 @@
     "status": "accepted",
     "type": "ai"
   },
+  "ai-planned-plugin-kinds": {
+    "active": true,
+    "id": "0f87-6ace-69c6-22d3",
+    "status": "proposed",
+    "type": "ai"
+  },
+  "ai-plugin-layers": {
+    "active": true,
+    "id": "0f87-6ace-69c5-6a1b",
+    "status": "proposed",
+    "type": "ai"
+  },
   "ai-prototype-p1": {
     "active": true,
     "id": "0f87-6acc-feee-4f97",
@@ -189,6 +219,12 @@
     "active": true,
     "id": "0f87-6acd-5f9a-4c3e",
     "status": "proposed",
+    "type": "ai"
+  },
+  "ai-segments-step-ranges": {
+    "active": true,
+    "id": "0f87-6ace-69c6-fd0d",
+    "status": "accepted",
     "type": "ai"
   },
   "ai-sqlite-amalgamation": {
@@ -581,6 +617,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "dec-abi2-versioning-host": {
+    "active": true,
+    "id": "0f87-6ace-6b86-304f",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-active-fetch": {
     "active": true,
     "id": "0f87-6acc-ec91-4c67",
@@ -959,9 +1001,21 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-plugin-api-spec": {
+    "active": true,
+    "id": "0f87-6ace-69c5-f408",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-plugin-paths": {
     "active": true,
     "id": "0f87-6acd-1ba1-0128",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-plugin-thread-safety": {
+    "active": true,
+    "id": "0f87-6ace-6b5d-fd85",
     "status": "recorded",
     "type": "dec"
   },
@@ -1046,6 +1100,12 @@
   "dec-segment-network": {
     "active": true,
     "id": "0f87-6acd-c828-7612",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-segment-step-ranges": {
+    "active": true,
+    "id": "0f87-6ace-6be3-a186",
     "status": "recorded",
     "type": "dec"
   },
@@ -1559,6 +1619,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "impl-abi2-versioning": {
+    "active": true,
+    "id": "0f87-6ace-72ef-5cb5",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-c-pref": {
     "active": false,
     "id": "0f87-6acc-e6f8-94d9",
@@ -1793,6 +1859,18 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-plugin-sdk": {
+    "active": true,
+    "id": "0f87-6ace-6e83-98f6",
+    "status": "asserted",
+    "type": "impl"
+  },
+  "impl-plugin-thread-safety": {
+    "active": true,
+    "id": "0f87-6ace-72ef-00b1",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-same-routes-merge": {
     "active": true,
     "id": "0f87-6ace-3222-ba6b",
@@ -1809,6 +1887,12 @@
     "active": true,
     "id": "0f87-6ace-35a8-5c96",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-segment-step-ranges": {
+    "active": true,
+    "id": "0f87-6ace-72ef-1201",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-segments": {

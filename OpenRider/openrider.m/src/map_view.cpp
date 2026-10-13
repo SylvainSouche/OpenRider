@@ -94,7 +94,7 @@ void DrawOverviewTracks(const app::AppModel &model, const app::MapViewModel &vie
         listed[model.outings[i].raw.id] = i;
     const maptiles::GeoBox box = app::MapViewBox(view_model);
     std::vector<ImVec2> hovered;
-    for (const core::OverviewTrack &track : model.tracks) {
+    for (const openrider::sdk::OverviewTrack &track : model.tracks) {
         const auto listed_index = listed.find(track.id);
         if (listed_index == listed.end() || track.east < box.west || track.west > box.east || track.north < box.south || track.south > box.north)
             continue;
@@ -124,9 +124,9 @@ void DrawSegmentNetworks(const app::AppModel &model, const app::MapViewModel &vi
 {
     size_t most_routes = 2;
     for (const core::SegmentGroup &group : model.segment_groups)
-        for (const core::NetworkSegment &segment : group.network.segments)
+        for (const openrider::sdk::NetworkSegment &segment : group.network.segments)
             most_routes = std::max(most_routes, segment.route_ids.size());
-    auto line_of = [&](const core::NetworkSegment &segment) {
+    auto line_of = [&](const openrider::sdk::NetworkSegment &segment) {
         std::vector<ImVec2> line;
         for (size_t i = 0; i < segment.lat.size(); ++i)
             line.push_back(frame.At(segment.lon[i], segment.lat[i]));
@@ -135,7 +135,7 @@ void DrawSegmentNetworks(const app::AppModel &model, const app::MapViewModel &vi
     // Single-route segments first, so that shared ones are drawn over them.
     for (int pass = 0; pass < 2; ++pass)
         for (const core::SegmentGroup &group : model.segment_groups)
-            for (const core::NetworkSegment &segment : group.network.segments) {
+            for (const openrider::sdk::NetworkSegment &segment : group.network.segments) {
                 if (segment.Shared() != (pass == 1))
                     continue;
                 const std::vector<ImVec2> line = line_of(segment);
@@ -151,12 +151,12 @@ void DrawSegmentNetworks(const app::AppModel &model, const app::MapViewModel &vi
                                              2.5f + 3.0f * static_cast<float>(share));
             }
     for (const core::SegmentGroup &group : model.segment_groups)
-        for (const core::NetworkNode &node : group.network.nodes)
+        for (const openrider::sdk::NetworkNode &node : group.network.nodes)
             frame.draw_list->AddCircleFilled(frame.At(node.lon, node.lat), 2.5f, IM_COL32(30, 30, 30, 200));
     if (view_model.hovered_group >= 0 && view_model.hovered_group < static_cast<int>(model.segment_groups.size())) {
-        const core::SegmentNetwork &network = model.segment_groups[static_cast<size_t>(view_model.hovered_group)].network;
+        const openrider::sdk::SegmentNetwork &network = model.segment_groups[static_cast<size_t>(view_model.hovered_group)].network;
         if (view_model.hovered_segment >= 0 && view_model.hovered_segment < static_cast<int>(network.segments.size())) {
-            const core::NetworkSegment &segment = network.segments[static_cast<size_t>(view_model.hovered_segment)];
+            const openrider::sdk::NetworkSegment &segment = network.segments[static_cast<size_t>(view_model.hovered_segment)];
             const std::vector<ImVec2> line = line_of(segment);
             if (line.size() > 1)
                 frame.draw_list->AddPolyline(line.data(), static_cast<int>(line.size()), IM_COL32(255, 140, 0, 255),
@@ -192,7 +192,7 @@ void DrawSegmentNetworks(const app::AppModel &model, const app::MapViewModel &vi
 // passage's colour where it is at the cursor.
 void DrawComparedPassages(const app::AppModel &model, const app::ComparisonViewModel &view_model, const Frame &frame)
 {
-    const core::NetworkSegment &segment = model.comparison.segment;
+    const openrider::sdk::NetworkSegment &segment = model.comparison.segment;
     std::vector<ImVec2> line;
     for (size_t i = 0; i < segment.lat.size(); ++i)
         line.push_back(frame.At(segment.lon[i], segment.lat[i]));
@@ -252,9 +252,9 @@ void DrawOutingTrack(const app::AppModel &model, const ViewModels &view_models, 
     std::vector<double> values;
     double low = 0.0, high = 1.0;
     if (style > 0) {
-        core::SeriesSpec spec;
+        openrider::sdk::SeriesSpec spec;
         spec.kind = app::kTrackStyles[style].kind;
-        values = core::ComputeSeries(points, view_models.outing.xaxis, spec).y;
+        values = openrider::sdk::ComputeSeries(points, view_models.outing.xaxis, spec).y;
         std::vector<double> defined;
         for (double v : values)
             if (!std::isnan(v))
@@ -279,7 +279,7 @@ void DrawOutingTrack(const app::AppModel &model, const ViewModels &view_models, 
             frame.draw_list->AddRectFilled(ImVec2(legend_origin.x + bar_width * k / 24.0f, legend_origin.y + 14), ImVec2(legend_origin.x + bar_width * (k + 1) / 24.0f, legend_origin.y + 14 + bar_height),
                                 Gradient(k / 23.0));
         char legend[64];
-        std::snprintf(legend, sizeof legend, "%s (%s)", core::SeriesLabel(spec.kind), core::SeriesUnit(spec));
+        std::snprintf(legend, sizeof legend, "%s (%s)", openrider::sdk::SeriesLabel(spec.kind), openrider::sdk::SeriesUnit(spec));
         frame.draw_list->AddText(legend_origin, IM_COL32(40, 40, 40, 255), legend);
         char text[32];
         std::snprintf(text, sizeof text, "%.0f", low);

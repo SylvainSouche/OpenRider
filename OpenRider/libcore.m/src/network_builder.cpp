@@ -1,6 +1,8 @@
 #include "core/network_builder.h"
 
-#include "core/segment_exchange.h"
+#include "core/plugin_thread.h"
+
+#include <openrider/sdk/segment_exchange.h>
 
 namespace core {
 
@@ -86,7 +88,10 @@ void NetworkBuilder::Run()
                 superseded = true;
                 break;
             }
-            Result<SegmentNetwork> network = RunSegments(request.plugin, group.tracks, request.values, Superseded, this);
+            openrider::sdk::Result<openrider::sdk::SegmentNetwork> network;
+            CallPlugin(request.plugin, [&] {
+                network = openrider::sdk::RunSegments(request.plugin, group.tracks, request.values, Superseded, this);
+            });
             if (!network.Ok()) {
                 error = network.error;
                 continue;

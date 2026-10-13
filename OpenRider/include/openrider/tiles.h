@@ -37,6 +37,7 @@ struct or_tile_layer {
  * non-zero with a message written to err (errlen bytes, always
  * NUL-terminated). */
 struct or_tiles_vtable {
+    size_t struct_size;       /**< sizeof(struct or_tiles_vtable) as built */
     const char *protocol;     /**< e.g. "xyz"; matched against a layer's "protocol" */
     /** Opens a layer from its JSON definition; NULL if this protocol does
      * not accept it. */

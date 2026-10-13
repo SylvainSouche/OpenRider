@@ -25,8 +25,8 @@
 /// Callers group tracks of similar activities before calling.
 #pragma once
 
-#include "core/overview.h"
-#include "core/segments.h"
+#include <openrider/sdk/overview.h>
+#include <openrider/sdk/segments.h>
 
 #include <functional>
 #include <vector>
@@ -44,7 +44,7 @@ struct MatchParams {
 /// Builds the segment network of `tracks` (see the file description).
 /// `cancelled`, when given, is polled between passes; once it returns true
 /// the result is incomplete and must be discarded.
-core::SegmentNetwork BuildNetwork(const std::vector<core::OverviewTrack> &tracks, const MatchParams &params,
+openrider::sdk::SegmentNetwork BuildNetwork(const std::vector<openrider::sdk::OverviewTrack> &tracks, const MatchParams &params,
                                   const std::function<bool()> &cancelled = {});
 
 } // namespace matching

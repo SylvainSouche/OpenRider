@@ -1,5 +1,7 @@
 #include "core/overview_loader.h"
 
+#include "core/plugin_thread.h"
+
 namespace core {
 
 OverviewLoader::~OverviewLoader() { Stop(); }
@@ -18,16 +20,17 @@ void OverviewLoader::Start(const or_input_vtable *input, void *handle, std::vect
         return;
     if (worker_.joinable())
         worker_.join();
+    stop_ = false;  // a previous Stop() must not end this load at once
     done_ = 0;
     total_ = ids.size();
     loading_ = true;
     worker_ = std::thread(&OverviewLoader::Run, this, input, handle, std::move(ids));
 }
 
-void OverviewLoader::Take(std::vector<OverviewTrack> &out)
+void OverviewLoader::Take(std::vector<openrider::sdk::OverviewTrack> &out)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (OverviewTrack &t : pending_)
+    for (openrider::sdk::OverviewTrack &t : pending_)
         out.push_back(std::move(t));
     pending_.clear();
 }
@@ -43,8 +46,10 @@ void OverviewLoader::Run(const or_input_vtable *input, void *handle, std::vector
             static_cast<std::vector<or_point> *>(user)->push_back(*p);
             return 0;
         };
-        if (input->load_points(handle, id.c_str(), cb, &pts, err, sizeof err) == 0) {
-            OverviewTrack t = ThinTrack(id, pts, kOverviewSpacingM);
+        int rc = 0;
+        CallPlugin(input, [&] { rc = input->load_points(handle, id.c_str(), cb, &pts, err, sizeof err); });
+        if (rc == 0) {
+            openrider::sdk::OverviewTrack t = openrider::sdk::ThinTrack(id, pts, openrider::sdk::kOverviewSpacingM);
             if (!t.lat.empty()) {
                 std::lock_guard<std::mutex> lock(mutex_);
                 pending_.push_back(std::move(t));

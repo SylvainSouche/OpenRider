@@ -3,9 +3,8 @@
 /// activities.
 #pragma once
 
-#include "core/overview.h"
-#include "core/segments.h"
-
+#include <openrider/sdk/overview.h>
+#include <openrider/sdk/segments.h>
 #include <openrider/segments.h>
 
 #include <atomic>
@@ -19,13 +18,13 @@ namespace core {
 /// Tracks of similar activities, analysed together.
 struct TrackGroup {
     std::string sport;                  ///< FIT sport shared by the tracks
-    std::vector<OverviewTrack> tracks;  ///< the group's tracks
+    std::vector<openrider::sdk::OverviewTrack> tracks;  ///< the group's tracks
 };
 
 /// The segment network of one group.
 struct SegmentGroup {
     std::string sport;       ///< FIT sport of the group
-    SegmentNetwork network;  ///< its segments, nodes and routes
+    openrider::sdk::SegmentNetwork network;  ///< its segments, nodes and routes
 };
 
 /// Builds the segment network of each group with a segments plugin on a

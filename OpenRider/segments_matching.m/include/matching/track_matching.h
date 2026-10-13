@@ -28,6 +28,6 @@ struct State {
 /// end of a segment to the start of the next through their common node;
 /// turning back on a segment costs kTurnCost, entering or leaving the
 /// network kSwitchCost.
-std::vector<State> MatchTrack(const Network &network, const std::vector<core::XY> &line, const MatchParams &params);
+std::vector<State> MatchTrack(const Network &network, const std::vector<openrider::sdk::XY> &line, const MatchParams &params);
 
 } // namespace matching

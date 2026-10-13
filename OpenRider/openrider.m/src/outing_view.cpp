@@ -5,7 +5,7 @@
 
 #include <implot.h>
 
-#include "core/overview.h"
+#include "core/long_date.h"
 
 #include <algorithm>
 #include <cmath>
@@ -55,7 +55,7 @@ void DrawStatistics(const app::AppModel &model, const app::OutingViewModel &view
     or_outing shown = outing.raw;
     double moving_speed = shown.moving_s > 0.0 ? shown.distance_m / shown.moving_s : std::numeric_limits<double>::quiet_NaN();
     if ((filtered || view_model.stats_computed) && !model.points.empty()) {
-        const core::ComputedStats &computed = model.computed;
+        const openrider::sdk::ComputedStats &computed = model.computed;
         shown.distance_m = computed.distance_m;
         shown.duration_s = computed.duration_s;
         shown.moving_s = computed.moving_s;
@@ -165,19 +165,19 @@ void DrawGraphs(const app::AppModel &model, const app::OutingViewModel &view_mod
     if (!ImPlot::BeginSubplots("##graphs", rows, 1, ImVec2(-1.0f, height),
                                ImPlotSubplotFlags_LinkAllX | ImPlotSubplotFlags_NoTitle))
         return;
-    const char *xlabel = view_model.xaxis == core::XAxis::Time ? "time (min)" : "distance (km)";
+    const char *xlabel = view_model.xaxis == openrider::sdk::XAxis::Time ? "time (min)" : "distance (km)";
     bool any_hover = false;
     for (int graph = 0; graph < rows; ++graph) {
-        const core::SeriesSpec &spec = view_model.graphs[static_cast<size_t>(graph)];
-        const core::Series series = app::GraphSeries(model.points, view_model.xaxis, spec);
+        const openrider::sdk::SeriesSpec &spec = view_model.graphs[static_cast<size_t>(graph)];
+        const openrider::sdk::Series series = app::GraphSeries(model.points, view_model.xaxis, spec);
         char ylabel[64];
-        std::snprintf(ylabel, sizeof ylabel, "%s (%s)", core::SeriesLabel(spec.kind), core::SeriesUnit(spec));
+        std::snprintf(ylabel, sizeof ylabel, "%s (%s)", openrider::sdk::SeriesLabel(spec.kind), openrider::sdk::SeriesUnit(spec));
         char id[16];
         std::snprintf(id, sizeof id, "##g%d", graph);
         if (!ImPlot::BeginPlot(id, ImVec2(-1.0f, 0.0f), ImPlotFlags_NoLegend))
             continue;
         ImPlot::SetupAxes(graph == rows - 1 ? xlabel : nullptr, ylabel, ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
-        if (spec.type == core::GraphType::Histogram) {
+        if (spec.type == openrider::sdk::GraphType::Histogram) {
             ImPlotSpec bars;
             bars.Flags = ImPlotStairsFlags_Shaded;
             bars.FillAlpha = 0.5f;
@@ -268,7 +268,7 @@ void DrawSegmentTooltip(const app::AppModel &model, const app::MapViewModel &vie
     const core::SegmentGroup &group = model.segment_groups[static_cast<size_t>(view_model.hovered_group)];
     if (view_model.hovered_segment < 0 || view_model.hovered_segment >= static_cast<int>(group.network.segments.size()))
         return;
-    const core::NetworkSegment &segment = group.network.segments[static_cast<size_t>(view_model.hovered_segment)];
+    const openrider::sdk::NetworkSegment &segment = group.network.segments[static_cast<size_t>(view_model.hovered_segment)];
     std::vector<const core::Outing *> routes;
     for (const std::string &id : segment.route_ids)
         for (const core::Outing &outing : model.outings)

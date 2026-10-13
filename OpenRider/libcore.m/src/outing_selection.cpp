@@ -1,6 +1,7 @@
 #include "core/outing_selection.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
 namespace core {
@@ -27,21 +28,33 @@ std::vector<size_t> SelectOutings(const std::vector<Outing> &outings, const Outi
     for (size_t i = 0; i < outings.size(); ++i)
         if (OutingMatches(outings[i], filter))
             selected.push_back(i);
-    auto less = [&](size_t a, size_t b) {
+    const bool numeric = key == SortKey::Distance || key == SortKey::Duration || key == SortKey::Ascent;
+    auto value = [&](size_t i) {
+        const or_outing &outing = outings[i].raw;
+        return key == SortKey::Distance ? outing.distance_m
+               : key == SortKey::Duration ? outing.duration_s
+                                          : outing.ascent_m;
+    };
+    auto text_less = [&](size_t a, size_t b) {
         const or_outing &x = outings[a].raw;
         const or_outing &y = outings[b].raw;
-        switch (key) {
-        case SortKey::Name: return std::strcmp(x.name, y.name) < 0;
-        case SortKey::Type: return outings[a].type.Key() < outings[b].type.Key();
-        case SortKey::Distance: return x.distance_m < y.distance_m;
-        case SortKey::Duration: return x.duration_s < y.duration_s;
-        case SortKey::Ascent: return x.ascent_m < y.ascent_m;
-        case SortKey::Date: break;
-        }
+        if (key == SortKey::Name)
+            return std::strcmp(x.name, y.name) < 0;
+        if (key == SortKey::Type)
+            return outings[a].type.Key() < outings[b].type.Key();
         return std::strcmp(x.start_local, y.start_local) < 0;
     };
     std::stable_sort(selected.begin(), selected.end(), [&](size_t a, size_t b) {
-        return ascending ? less(a, b) : less(b, a);
+        if (!numeric)
+            return ascending ? text_less(a, b) : text_less(b, a);
+        // A value the source does not have is NaN (input ABI). Outings
+        // without one sort last whatever the direction: a NaN compared with
+        // < would break the strict weak ordering std::stable_sort requires
+        // (undefined behaviour).
+        const double x = value(a), y = value(b);
+        if (std::isnan(x) || std::isnan(y))
+            return !std::isnan(x) && std::isnan(y);
+        return ascending ? x < y : y < x;
     });
     return selected;
 }

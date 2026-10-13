@@ -3,6 +3,7 @@
 #include "app/reports.h"
 
 #include "core/log.h"
+#include "core/plugin_thread.h"
 
 namespace app {
 
@@ -69,7 +70,7 @@ void OutingDomain::Select(int index)
     if (!outing || !input_.Ready() || model_.points_id == outing->raw.id)
         return;
     model_.points_id = outing->raw.id;
-    const core::Status loaded = input_.LoadPoints(outing->raw.id, model_.raw_points);
+    const openrider::sdk::Status loaded = input_.LoadPoints(outing->raw.id, model_.raw_points);
     if (!loaded.Ok())
         ReportError(model_, std::string("Cannot load points of ") + outing->raw.name + ": " + loaded.error);
     core::LogLine("loaded %zu points for %s", model_.raw_points.size(), outing->raw.id);
@@ -85,8 +86,12 @@ void OutingDomain::ApplyFilters()
             continue;
         std::vector<unsigned char> keep(model_.points.size(), 1);
         char error[256] = "";
-        if (filter.vtable->apply_track(model_.points.data(), model_.points.size(), filter.values.data(), keep.data(),
-                                       error, sizeof error) != 0) {
+        int rc = 0;
+        core::CallPlugin(filter.vtable, [&] {
+            rc = filter.vtable->apply_track(model_.points.data(), model_.points.size(), filter.values.data(),
+                                            keep.data(), error, sizeof error);
+        });
+        if (rc != 0) {
             ReportError(model_, std::string("Filter ") + filter.vtable->label + " failed: " + error);
             continue;
         }
@@ -98,7 +103,7 @@ void OutingDomain::ApplyFilters()
         model_.points.swap(kept);
     }
     // Moving time from the raw points (dec-moving-time-from-raw).
-    model_.computed = core::ComputeStats(model_.points, core::MotionParams{}, &model_.raw_points);
+    model_.computed = openrider::sdk::ComputeStats(model_.points, openrider::sdk::MotionParams{}, &model_.raw_points);
 }
 
 } // namespace app

@@ -14,8 +14,8 @@ constexpr double kPi = 3.14159265358979323846;
 
 } // namespace
 
-using core::Dist;
-using core::XY;
+using openrider::sdk::Dist;
+using openrider::sdk::XY;
 
 std::vector<State> MatchTrack(const Network &network, const std::vector<XY> &line, const MatchParams &params)
 {

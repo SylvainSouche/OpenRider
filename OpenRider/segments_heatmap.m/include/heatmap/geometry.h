@@ -3,17 +3,17 @@
 /// local projection, grid cells, densifying and simplifying polylines.
 #pragma once
 
-#include "core/plane_geometry.h"
+#include <openrider/sdk/plane_geometry.h>
 
 #include <cstdint>
 #include <vector>
 
 namespace heatmap {
 
-using core::AlongFrom;
-using core::Dist;
-using core::Length;
-using core::XY;
+using openrider::sdk::AlongFrom;
+using openrider::sdk::Dist;
+using openrider::sdk::Length;
+using openrider::sdk::XY;
 
 /// Pi.
 inline constexpr double kPi = 3.14159265358979323846;

@@ -6,32 +6,32 @@
 
 namespace ui {
 
-void DrawGraphControls(const std::vector<core::SeriesSpec> &graphs, core::XAxis xaxis, const GraphIntents &intents,
+void DrawGraphControls(const std::vector<openrider::sdk::SeriesSpec> &graphs, openrider::sdk::XAxis xaxis, const GraphIntents &intents,
                        app::Intents &out)
 {
-    static const core::SeriesKind kinds[] = {core::SeriesKind::Altitude,    core::SeriesKind::Speed,
-                                             core::SeriesKind::HeartRate,   core::SeriesKind::Cadence,
-                                             core::SeriesKind::Temperature, core::SeriesKind::VerticalSpeed,
-                                             core::SeriesKind::Grade};
+    static const openrider::sdk::SeriesKind kinds[] = {openrider::sdk::SeriesKind::Altitude,    openrider::sdk::SeriesKind::Speed,
+                                             openrider::sdk::SeriesKind::HeartRate,   openrider::sdk::SeriesKind::Cadence,
+                                             openrider::sdk::SeriesKind::Temperature, openrider::sdk::SeriesKind::VerticalSpeed,
+                                             openrider::sdk::SeriesKind::Grade};
     ImGui::TextUnformatted("X axis:");
     ImGui::SameLine();
-    if (ImGui::RadioButton("Time", xaxis == core::XAxis::Time))
-        out.Push(intents.set_xaxis, static_cast<int>(core::XAxis::Time));
+    if (ImGui::RadioButton("Time", xaxis == openrider::sdk::XAxis::Time))
+        out.Push(intents.set_xaxis, static_cast<int>(openrider::sdk::XAxis::Time));
     ImGui::SameLine();
-    if (ImGui::RadioButton("Distance", xaxis == core::XAxis::Distance))
-        out.Push(intents.set_xaxis, static_cast<int>(core::XAxis::Distance));
+    if (ImGui::RadioButton("Distance", xaxis == openrider::sdk::XAxis::Distance))
+        out.Push(intents.set_xaxis, static_cast<int>(openrider::sdk::XAxis::Distance));
     ImGui::SameLine();
     if (ImGui::Button("+ Add graph"))
         out.Push(intents.add);
 
     for (size_t graph = 0; graph < graphs.size(); ++graph) {
-        core::SeriesSpec spec = graphs[graph];  // edited locally, sent as an intent
+        openrider::sdk::SeriesSpec spec = graphs[graph];  // edited locally, sent as an intent
         bool changed = false;
         ImGui::PushID(static_cast<int>(graph));
         ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::BeginCombo("##series", core::SeriesLabel(spec.kind))) {
-            for (core::SeriesKind kind : kinds)
-                if (ImGui::Selectable(core::SeriesLabel(kind), spec.kind == kind)) {
+        if (ImGui::BeginCombo("##series", openrider::sdk::SeriesLabel(spec.kind))) {
+            for (openrider::sdk::SeriesKind kind : kinds)
+                if (ImGui::Selectable(openrider::sdk::SeriesLabel(kind), spec.kind == kind)) {
                     spec.kind = kind;
                     changed = true;
                 }
@@ -39,17 +39,17 @@ void DrawGraphControls(const std::vector<core::SeriesSpec> &graphs, core::XAxis 
         }
         ImGui::SameLine();
         ImGui::SetNextItemWidth(95.0f);
-        int type = spec.type == core::GraphType::Histogram ? 1 : 0;
+        int type = spec.type == openrider::sdk::GraphType::Histogram ? 1 : 0;
         static const char *type_names[] = {"Curve", "Histogram"};
         if (ImGui::Combo("##type", &type, type_names, 2)) {
-            spec.type = type == 1 ? core::GraphType::Histogram : core::GraphType::Curve;
+            spec.type = type == 1 ? openrider::sdk::GraphType::Histogram : openrider::sdk::GraphType::Curve;
             changed = true;
         }
-        if (spec.kind == core::SeriesKind::VerticalSpeed) {
+        if (spec.kind == openrider::sdk::SeriesKind::VerticalSpeed) {
             static const double windows[] = {30.0, 60.0, 300.0};
             static const char *window_names[] = {"30 s", "1 min", "5 min"};
-            static const core::VSpeedUnit units[] = {core::VSpeedUnit::MetresPerHour, core::VSpeedUnit::MetresPerMinute,
-                                                     core::VSpeedUnit::MetresPerSecond};
+            static const openrider::sdk::VSpeedUnit units[] = {openrider::sdk::VSpeedUnit::MetresPerHour, openrider::sdk::VSpeedUnit::MetresPerMinute,
+                                                     openrider::sdk::VSpeedUnit::MetresPerSecond};
             ImGui::SameLine();
             ImGui::SetNextItemWidth(80.0f);
             int window = spec.vspeed_window_s == 30.0 ? 0 : spec.vspeed_window_s == 300.0 ? 2 : 1;
@@ -59,18 +59,18 @@ void DrawGraphControls(const std::vector<core::SeriesSpec> &graphs, core::XAxis 
             }
             ImGui::SameLine();
             ImGui::SetNextItemWidth(80.0f);
-            if (ImGui::BeginCombo("##unit", core::SeriesUnit(spec))) {
-                for (core::VSpeedUnit unit : units) {
-                    core::SeriesSpec unit_spec = spec;
+            if (ImGui::BeginCombo("##unit", openrider::sdk::SeriesUnit(spec))) {
+                for (openrider::sdk::VSpeedUnit unit : units) {
+                    openrider::sdk::SeriesSpec unit_spec = spec;
                     unit_spec.vspeed_unit = unit;
-                    if (ImGui::Selectable(core::SeriesUnit(unit_spec), spec.vspeed_unit == unit)) {
+                    if (ImGui::Selectable(openrider::sdk::SeriesUnit(unit_spec), spec.vspeed_unit == unit)) {
                         spec.vspeed_unit = unit;
                         changed = true;
                     }
                 }
                 ImGui::EndCombo();
             }
-        } else if (spec.kind == core::SeriesKind::Grade) {
+        } else if (spec.kind == openrider::sdk::SeriesKind::Grade) {
             static const char *window_names[] = {"100 m", "1000 m"};
             int window = spec.grade_window_m == 1000.0 ? 1 : 0;
             ImGui::SameLine();

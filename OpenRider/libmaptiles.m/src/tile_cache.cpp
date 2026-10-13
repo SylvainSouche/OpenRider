@@ -72,23 +72,23 @@ bool TileCache::Get(const std::string &layer, int z, int x, int y, std::string &
 }
 
 // @impl 0f87-6acd-2f33-dc20
-core::Status TileCache::Put(const std::string &layer, int z, int x, int y, const std::string &bytes)
+openrider::sdk::Status TileCache::Put(const std::string &layer, int z, int x, int y, const std::string &bytes)
 {
     const std::string path = Path(layer, z, x, y);
     const std::string dir = path.substr(0, path.find_last_of('/'));
     if (!core::MakeDirs(dir))
-        return core::Status::Failure("cannot create cache directory " + dir);
+        return openrider::sdk::Status::Failure("cannot create cache directory " + dir);
     // Atomic: write a temporary file, then rename it into place. The name is
     // unique per process and per call, so concurrent writers never collide.
     const std::string temporary = path + ".tmp" + std::to_string(getpid()) + "-" +
                                   std::to_string(reinterpret_cast<uintptr_t>(&bytes));
     FILE *file = std::fopen(temporary.c_str(), "wb");
     if (!file)
-        return core::Status::Failure("cannot write " + temporary);
+        return openrider::sdk::Status::Failure("cannot write " + temporary);
     const bool written = std::fwrite(bytes.data(), 1, bytes.size(), file) == bytes.size();
     if (std::fclose(file) != 0 || !written || std::rename(temporary.c_str(), path.c_str()) != 0) {
         std::remove(temporary.c_str());
-        return core::Status::Failure("cannot store tile " + path);
+        return openrider::sdk::Status::Failure("cannot store tile " + path);
     }
     // The running total avoids a full scan per write; the first write after
     // start-up scans once to learn the real size.
@@ -100,7 +100,7 @@ core::Status TileCache::Put(const std::string &layer, int z, int x, int y, const
     }
     if (over_maximum)
         Evict();
-    return core::Status::Success();
+    return openrider::sdk::Status::Success();
 }
 
 void TileCache::Evict()

@@ -20,7 +20,7 @@ void AppController::LoadTypes(const std::string &labels_json, const std::string 
         ReportError(model_, "Cannot read the activity type tables");
         return;
     }
-    core::Status status = model_.types.LoadLabels(labels_json);
+    openrider::sdk::Status status = model_.types.LoadLabels(labels_json);
     if (!status.Ok())
         ReportError(model_, status.error);
     status = model_.types.LoadSource(source, source_json);

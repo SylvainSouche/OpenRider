@@ -6,7 +6,8 @@
 #include "app/dispatch.h"
 #include "app/graphs.h"
 
-#include "core/segment_exchange.h"
+#include <openrider/sdk/route_ranges.h>
+#include <openrider/sdk/segment_exchange.h>
 
 #include <chrono>
 #include <cmath>
@@ -43,7 +44,7 @@ int FakePoints(void *, const char *, or_point_cb cb, void *user, char *, size_t)
     return 0;
 }
 
-const or_input_vtable kInput = {nullptr, nullptr, FakeList, FakePoints};
+const or_input_vtable kInput = {sizeof(or_input_vtable), nullptr, nullptr, FakeList, FakePoints};
 
 // Keeps every other point.
 int HalfFilter(const or_point *, size_t n, const double *, unsigned char *keep, char *, size_t)
@@ -53,32 +54,33 @@ int HalfFilter(const or_point *, size_t n, const double *, unsigned char *keep, 
     return 0;
 }
 const or_filter_param kParams[] = {{"k", "K", 1.0, 0.0, 2.0}};
-const or_filter_vtable kHalf = {OR_FILTER_TRACK, "half", "Half", 1, kParams, HalfFilter};
+const or_filter_vtable kHalf = {sizeof(or_filter_vtable), OR_FILTER_TRACK, "half", "Half", 1, kParams, HalfFilter};
 
 // Segments plugin: one shared segment along the first track, followed by
 // every track.
 int FakeSegments(const or_segment_track *tracks, size_t count, const double *, or_segment_cancel_cb, void *,
                  or_segment_network **out, char *, size_t)
 {
-    const std::vector<core::OverviewTrack> input = core::ImportTracks(tracks, count);
-    core::SegmentNetwork network;
+    const std::vector<openrider::sdk::OverviewTrack> input = openrider::sdk::ImportTracks(tracks, count);
+    openrider::sdk::SegmentNetwork network;
     network.nodes = {{0, input[0].lon.front(), input[0].lat.front()}, {1, input[0].lon.back(), input[0].lat.back()}};
-    core::NetworkSegment segment;
+    openrider::sdk::NetworkSegment segment;
     segment.from = 0;
     segment.to = 1;
     segment.lon = input[0].lon;
     segment.lat = input[0].lat;
-    for (const core::OverviewTrack &track : input) {
+    for (const openrider::sdk::OverviewTrack &track : input) {
         segment.route_ids.push_back(track.id);
         network.routes.push_back({track.id, {{0, true}}});
     }
     network.segments.push_back(segment);
-    *out = core::ExportNetwork(network, input);
+    openrider::sdk::AssignStepRanges(network, input);
+    *out = openrider::sdk::ExportNetwork(network, input);
     return 0;
 }
-void FreeSegments(or_segment_network *network) { core::FreeExportedNetwork(network); }
+void FreeSegments(or_segment_network *network) { openrider::sdk::FreeExportedNetwork(network); }
 const or_filter_param kSegmentParams[] = {{"width", "Width", 8.0, 1.0, 50.0}};
-const or_segments_vtable kSegments = {"fake", "Fake", 1, kSegmentParams, FakeSegments, FreeSegments};
+const or_segments_vtable kSegments = {sizeof(or_segments_vtable), "fake", "Fake", 1, kSegmentParams, FakeSegments, FreeSegments};
 
 struct Fixture {
     app::AppModel model;
@@ -204,7 +206,7 @@ ATF_TEST_CASE_BODY(segments_follow_the_overview)
     ATF_REQUIRE_EQ(f.model.segment_groups.size(), 1u);
     ATF_REQUIRE_EQ(f.model.segment_groups[0].sport, "running");
     bool shared = false;
-    for (const core::NetworkSegment &segment : f.model.segment_groups[0].network.segments)
+    for (const openrider::sdk::NetworkSegment &segment : f.model.segment_groups[0].network.segments)
         shared = shared || segment.route_ids.size() == 2;
     ATF_REQUIRE(shared);
 
@@ -241,7 +243,7 @@ ATF_TEST_CASE_BODY(segment_comparison)
     ATF_REQUIRE_EQ(f.model.comparison.runs.size(), 2u);
     ATF_REQUIRE_EQ(f.model.outings[f.model.comparison.runs[0].outing].raw.id, std::string("id1"));  // newest first
     ATF_REQUIRE_EQ(f.model.comparison.runs[0].points.front().t_s, 0.0);  // time from the entry
-    ATF_REQUIRE(f.model.comparison.runs[0].duration_s > 80.0);
+    ATF_REQUIRE_EQ(f.model.comparison.runs[0].duration_s, 99.0);  // the step's range: the whole outing
     ATF_REQUIRE_EQ(f.comparison.ViewModel().shown.size(), 2u);
     ATF_REQUIRE(f.comparison.ViewModel().shown[1]);
 
@@ -256,9 +258,9 @@ ATF_TEST_CASE_BODY(segment_comparison)
     f.Send(app::IntentKind::ComparisonHover, 0, 0, 0.1);
     ATF_REQUIRE(f.comparison.ViewModel().hovering);
     const app::ComparedRun &run = f.model.comparison.runs[0];
-    const size_t point = app::PassagePointAt(run, core::XAxis::Distance, 0.1);
+    const size_t point = app::PassagePointAt(run, openrider::sdk::XAxis::Distance, 0.1);
     ATF_REQUIRE(std::fabs(run.along_m[point] - 100.0) < 10.0);
-    ATF_REQUIRE(std::fabs(app::PassageX(run, core::XAxis::Time, point) - run.points[point].t_s / 60.0) < 1e-9);
+    ATF_REQUIRE(std::fabs(app::PassageX(run, openrider::sdk::XAxis::Time, point) - run.points[point].t_s / 60.0) < 1e-9);
     f.Send(app::IntentKind::ComparisonHoverEnd);
     ATF_REQUIRE(!f.comparison.ViewModel().hovering);
 

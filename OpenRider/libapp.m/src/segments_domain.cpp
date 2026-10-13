@@ -80,7 +80,7 @@ void SegmentsDomain::Update()
         for (size_t i : core::SelectOutings(model_.outings, filter, core::SortKey::Date, true))
             sport_of[model_.outings[i].raw.id] = model_.outings[i].type.sport;
         std::map<std::string, core::TrackGroup> groups;
-        for (const core::OverviewTrack &track : model_.tracks) {
+        for (const openrider::sdk::OverviewTrack &track : model_.tracks) {
             const auto shown = sport_of.find(track.id);
             if (shown == sport_of.end())
                 continue;
@@ -101,7 +101,7 @@ void SegmentsDomain::Update()
             ReportError(model_, "Segment identification failed: " + error);
         size_t shared = 0;
         for (const core::SegmentGroup &group : model_.segment_groups)
-            for (const core::NetworkSegment &segment : group.network.segments)
+            for (const openrider::sdk::NetworkSegment &segment : group.network.segments)
                 shared += segment.Shared() ? 1 : 0;
         char status[160];
         std::snprintf(status, sizeof status, "%zu shared segments in %zu activity groups", shared,

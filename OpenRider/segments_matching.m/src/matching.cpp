@@ -1,12 +1,13 @@
 #include "matching/matching.h"
 
-#include "core/local_projection.h"
-#include "core/network_cleanup.h"
 #include "matching/insertion.h"
 #include "matching/network.h"
 #include "matching/output.h"
 #include "matching/routes.h"
 #include "matching/track_geometry.h"
+
+#include <openrider/sdk/local_projection.h>
+#include <openrider/sdk/network_cleanup.h>
 
 #include <algorithm>
 
@@ -14,28 +15,28 @@ namespace matching {
 
 namespace {
 
-using core::XY;
+using openrider::sdk::XY;
 
 // Projection around the tracks' centre.
-core::LocalProjection CentredProjection(const std::vector<core::OverviewTrack> &tracks)
+openrider::sdk::LocalProjection CentredProjection(const std::vector<openrider::sdk::OverviewTrack> &tracks)
 {
     double west = 1e9, east = -1e9, south = 1e9, north = -1e9;
-    for (const core::OverviewTrack &track : tracks)
+    for (const openrider::sdk::OverviewTrack &track : tracks)
         for (size_t i = 0; i < track.lat.size(); ++i) {
             west = std::min(west, track.lon[i]);
             east = std::max(east, track.lon[i]);
             south = std::min(south, track.lat[i]);
             north = std::max(north, track.lat[i]);
         }
-    return core::LocalProjection((west + east) / 2.0, (south + north) / 2.0);
+    return openrider::sdk::LocalProjection((west + east) / 2.0, (south + north) / 2.0);
 }
 
 // Each track in the plane, resampled every station_m.
-std::vector<std::vector<XY>> ProjectTracks(const std::vector<core::OverviewTrack> &tracks,
-                                           const core::LocalProjection &projection, const MatchParams &params)
+std::vector<std::vector<XY>> ProjectTracks(const std::vector<openrider::sdk::OverviewTrack> &tracks,
+                                           const openrider::sdk::LocalProjection &projection, const MatchParams &params)
 {
     std::vector<std::vector<XY>> lines;
-    for (const core::OverviewTrack &track : tracks) {
+    for (const openrider::sdk::OverviewTrack &track : tracks) {
         std::vector<XY> line;
         for (size_t i = 0; i < track.lat.size(); ++i)
             line.push_back(projection.Forward(track.lon[i], track.lat[i]));
@@ -73,12 +74,12 @@ bool InsertTracks(Network &network, const std::vector<std::vector<XY>> &lines, c
 } // namespace
 
 // @impl 0f87-6ace-2f7b-f4d7
-core::SegmentNetwork BuildNetwork(const std::vector<core::OverviewTrack> &tracks, const MatchParams &params,
+openrider::sdk::SegmentNetwork BuildNetwork(const std::vector<openrider::sdk::OverviewTrack> &tracks, const MatchParams &params,
                                   const std::function<bool()> &cancelled)
 {
     if (tracks.empty())
         return {};
-    const core::LocalProjection projection = CentredProjection(tracks);
+    const openrider::sdk::LocalProjection projection = CentredProjection(tracks);
     const std::vector<std::vector<XY>> lines = ProjectTracks(tracks, projection, params);
 
     // 1-3. The network grown pass after pass.
@@ -97,14 +98,14 @@ core::SegmentNetwork BuildNetwork(const std::vector<core::OverviewTrack> &tracks
     TrackChains chains = ChainTracks(network, lines, tracks, final_params);
     MergeCloseNodes(network, params.tolerance_m);
     FillChainGaps(network, chains);
-    core::SegmentNetwork result = ToSegmentNetwork(network, std::move(chains), tracks, projection);
+    openrider::sdk::SegmentNetwork result = ToSegmentNetwork(network, std::move(chains), tracks, projection);
 
     // 5. Shared clean-up (removes the unused segments and nodes too).
-    core::CleanupParams cleanup;
+    openrider::sdk::CleanupParams cleanup;
     cleanup.min_turn_m = arm;
     cleanup.max_loop_m = 150.0;
     cleanup.duplicate_distance_m = std::max(25.0, 1.5 * params.tolerance_m);
-    core::CleanUpNetwork(result, cleanup);
+    openrider::sdk::CleanUpNetwork(result, cleanup);
     return result;
 }
 

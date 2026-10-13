@@ -128,8 +128,8 @@ int XyzTileUrl(void *h, size_t server, int z, int x, int y, char *url, size_t le
     return 0;
 }
 
-const or_tiles_vtable kVtable = {"xyz", XyzOpen, XyzClose, XyzLayer, XyzTileUrl};
-const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_TILES, "xyz", "0.1", &kVtable};
+const or_tiles_vtable kVtable = {sizeof(or_tiles_vtable), "xyz", XyzOpen, XyzClose, XyzLayer, XyzTileUrl};
+const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_TILES, OR_PLUGIN_THREAD_SAFE, "xyz", "0.1", &kVtable};
 
 } // namespace
 

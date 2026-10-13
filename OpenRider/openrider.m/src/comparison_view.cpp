@@ -6,7 +6,7 @@
 
 #include <implot.h>
 
-#include "core/overview.h"
+#include "core/long_date.h"
 
 #include <cmath>
 #include <cstdio>
@@ -80,13 +80,13 @@ void DrawComparisonGraphs(const app::AppModel &model, const app::ComparisonViewM
     if (!ImPlot::BeginSubplots("##comparison_graphs", rows, 1, ImVec2(-1.0f, height),
                                ImPlotSubplotFlags_LinkAllX | ImPlotSubplotFlags_NoTitle))
         return;
-    const bool distance = view_model.xaxis == core::XAxis::Distance;
+    const bool distance = view_model.xaxis == openrider::sdk::XAxis::Distance;
     const char *xlabel = distance ? "along the segment (km)" : "time from entry (min)";
     bool any_hover = false;
     for (int g = 0; g < rows; ++g) {
-        const core::SeriesSpec &spec = view_model.graphs[static_cast<size_t>(g)];
+        const openrider::sdk::SeriesSpec &spec = view_model.graphs[static_cast<size_t>(g)];
         char ylabel[64];
-        std::snprintf(ylabel, sizeof ylabel, "%s (%s)", core::SeriesLabel(spec.kind), core::SeriesUnit(spec));
+        std::snprintf(ylabel, sizeof ylabel, "%s (%s)", openrider::sdk::SeriesLabel(spec.kind), openrider::sdk::SeriesUnit(spec));
         char id[24];
         std::snprintf(id, sizeof id, "##comparison%d", g);
         if (!ImPlot::BeginPlot(id, ImVec2(-1.0f, 0.0f), g == 0 ? ImPlotFlags_None : ImPlotFlags_NoLegend))
@@ -104,8 +104,8 @@ void DrawComparisonGraphs(const app::AppModel &model, const app::ComparisonViewM
             const std::string label = PassageLabel(model, run);
             ImPlotSpec style;
             style.LineColor = RunColour(r);
-            const core::Series series = app::GraphSeries(run.points, view_model.xaxis, spec);
-            if (spec.type == core::GraphType::Histogram) {
+            const openrider::sdk::Series series = app::GraphSeries(run.points, view_model.xaxis, spec);
+            if (spec.type == openrider::sdk::GraphType::Histogram) {
                 ImPlot::PlotStairs(label.c_str(), series.x.data(), series.y.data(), static_cast<int>(series.x.size()), style);
                 continue;
             }
@@ -137,7 +137,7 @@ void DrawComparisonGraphs(const app::AppModel &model, const app::ComparisonViewM
                     if (std::isnan(reading.value))
                         ImGui::Text("%s  -", label.c_str());
                     else
-                        ImGui::Text("%s  %.1f %s", label.c_str(), reading.value, core::SeriesUnit(spec));
+                        ImGui::Text("%s  %.1f %s", label.c_str(), reading.value, openrider::sdk::SeriesUnit(spec));
                 }
                 ImGui::EndTooltip();
             }

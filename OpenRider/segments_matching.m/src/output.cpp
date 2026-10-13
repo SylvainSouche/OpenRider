@@ -5,23 +5,23 @@
 
 namespace matching {
 
-using core::Length;
-using core::XY;
+using openrider::sdk::Length;
+using openrider::sdk::XY;
 
-core::SegmentNetwork ToSegmentNetwork(const Network &network, TrackChains chains,
-                                      const std::vector<core::OverviewTrack> &tracks,
-                                      const core::LocalProjection &projection)
+openrider::sdk::SegmentNetwork ToSegmentNetwork(const Network &network, TrackChains chains,
+                                      const std::vector<openrider::sdk::OverviewTrack> &tracks,
+                                      const openrider::sdk::LocalProjection &projection)
 {
-    core::SegmentNetwork result;
+    openrider::sdk::SegmentNetwork result;
     for (size_t n = 0; n < network.nodes.size(); ++n) {
-        core::NetworkNode node;
+        openrider::sdk::NetworkNode node;
         node.id = static_cast<int>(n);
         projection.Inverse(network.nodes[n], node.lon, node.lat);
         result.nodes.push_back(node);
     }
     for (size_t e = 0; e < network.edges.size(); ++e) {
         const Edge &edge = network.edges[e];
-        core::NetworkSegment segment;
+        openrider::sdk::NetworkSegment segment;
         segment.id = static_cast<int>(e);
         segment.from = edge.from;
         segment.to = edge.to;

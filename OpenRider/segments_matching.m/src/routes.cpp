@@ -8,8 +8,8 @@
 
 namespace matching {
 
-using core::Dist;
-using core::XY;
+using openrider::sdk::Dist;
+using openrider::sdk::XY;
 
 void CutAtTurnArounds(Network &network, const std::vector<std::vector<XY>> &lines, const MatchParams &params,
                       double merge_m)
@@ -38,12 +38,12 @@ void CutAtTurnArounds(Network &network, const std::vector<std::vector<XY>> &line
 }
 
 TrackChains ChainTracks(const Network &network, const std::vector<std::vector<XY>> &lines,
-                        const std::vector<core::OverviewTrack> &tracks, const MatchParams &params)
+                        const std::vector<openrider::sdk::OverviewTrack> &tracks, const MatchParams &params)
 {
     TrackChains chains;
     chains.users.resize(network.edges.size());
     for (size_t t = 0; t < lines.size(); ++t) {
-        core::NetworkRoute route;
+        openrider::sdk::NetworkRoute route;
         route.id = tracks[t].id;
         for (const State &state : MatchTrack(network, lines[t], params)) {
             if (state.edge < 0)
@@ -79,8 +79,8 @@ void MergeCloseNodes(Network &network, double distance_m)
 void FillChainGaps(const Network &network, TrackChains &chains)
 {
     for (size_t t = 0; t < chains.routes.size(); ++t) {
-        std::vector<core::RouteStep> filled;
-        for (const core::RouteStep &step : chains.routes[t].steps) {
+        std::vector<openrider::sdk::RouteStep> filled;
+        for (const openrider::sdk::RouteStep &step : chains.routes[t].steps) {
             if (!filled.empty()) {
                 const Edge &previous = network.edges[static_cast<size_t>(filled.back().segment)];
                 const Edge &next = network.edges[static_cast<size_t>(step.segment)];
@@ -88,7 +88,7 @@ void FillChainGaps(const Network &network, TrackChains &chains)
                 const int entry = step.forward ? next.from : next.to;
                 if (exit != entry) {
                     const double jump = Dist(network.nodes[static_cast<size_t>(exit)], network.nodes[static_cast<size_t>(entry)]);
-                    for (const core::RouteStep &between : network.ShortestPath(exit, entry, 2.0 * jump + 100.0)) {
+                    for (const openrider::sdk::RouteStep &between : network.ShortestPath(exit, entry, 2.0 * jump + 100.0)) {
                         filled.push_back(between);
                         chains.users[static_cast<size_t>(between.segment)].insert(static_cast<int>(t));
                     }

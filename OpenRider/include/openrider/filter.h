@@ -37,6 +37,7 @@ struct or_filter_param {
  * success; on failure, non-zero with a message written to err (errlen
  * bytes, always NUL-terminated). */
 struct or_filter_vtable {
+    size_t struct_size;       /**< sizeof(struct or_filter_vtable) as built */
     uint32_t kind;            /**< enum or_filter_kind */
     const char *id;           /**< e.g. "jitter" */
     const char *label;        /**< e.g. "Jitter while not moving" */

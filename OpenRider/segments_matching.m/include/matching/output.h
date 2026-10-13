@@ -3,10 +3,11 @@
 /// utilities).
 #pragma once
 
-#include "core/local_projection.h"
-#include "core/segments.h"
 #include "matching/network.h"
 #include "matching/routes.h"
+
+#include <openrider/sdk/local_projection.h>
+#include <openrider/sdk/segments.h>
 
 #include <vector>
 
@@ -14,8 +15,8 @@ namespace matching {
 
 /// Every node and edge in WGS84, the edges' lines smoothed and ending on
 /// their nodes, with the tracks using them; and the chains as routes.
-core::SegmentNetwork ToSegmentNetwork(const Network &network, TrackChains chains,
-                                      const std::vector<core::OverviewTrack> &tracks,
-                                      const core::LocalProjection &projection);
+openrider::sdk::SegmentNetwork ToSegmentNetwork(const Network &network, TrackChains chains,
+                                      const std::vector<openrider::sdk::OverviewTrack> &tracks,
+                                      const openrider::sdk::LocalProjection &projection);
 
 } // namespace matching

@@ -48,7 +48,7 @@ void DrawComparisonView(const app::AppModel &model, const ViewModels &view_model
 
 /// The intents graph controls push: they belong to the panel showing them.
 struct GraphIntents {
-    app::IntentKind set_xaxis;  ///< i: core::XAxis
+    app::IntentKind set_xaxis;  ///< i: openrider::sdk::XAxis
     app::IntentKind add;        ///< appends a graph
     app::IntentKind remove;     ///< i: graph index
     app::IntentKind set_spec;   ///< i: graph index, spec
@@ -56,7 +56,7 @@ struct GraphIntents {
 
 /// The x axis choice, an "add graph" button and one row of controls per
 /// graph (series, type, window/unit, remove).
-void DrawGraphControls(const std::vector<core::SeriesSpec> &graphs, core::XAxis xaxis, const GraphIntents &intents,
+void DrawGraphControls(const std::vector<openrider::sdk::SeriesSpec> &graphs, openrider::sdk::XAxis xaxis, const GraphIntents &intents,
                        app::Intents &out);
 
 /// The map, `width` x `height` pixels at the cursor: tiles, tracks,
