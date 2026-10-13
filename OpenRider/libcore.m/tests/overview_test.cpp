@@ -2,8 +2,10 @@
 
 #include "core/library.h"
 #include "core/outing_selection.h"
-#include "core/overview.h"
+#include "core/long_date.h"
 #include "core/overview_loader.h"
+
+#include <openrider/sdk/overview.h>
 
 #include <chrono>
 #include <cmath>
@@ -38,11 +40,11 @@ int FakePoints(void *, const char *, or_point_cb cb, void *user, char *, size_t)
 const or_input_vtable kInput = {nullptr, nullptr, nullptr, FakePoints};
 
 // Waits for a load to end, then takes its tracks.
-std::vector<core::OverviewTrack> Finish(core::OverviewLoader &loader)
+std::vector<openrider::sdk::OverviewTrack> Finish(core::OverviewLoader &loader)
 {
     for (int i = 0; i < 2000 && loader.Loading(); ++i)
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    std::vector<core::OverviewTrack> tracks;
+    std::vector<openrider::sdk::OverviewTrack> tracks;
     loader.Take(tracks);
     return tracks;
 }
@@ -53,7 +55,7 @@ ATF_TEST_CASE_WITHOUT_HEAD(thinning_keeps_shape_and_ends);
 ATF_TEST_CASE_BODY(thinning_keeps_shape_and_ends)
 {
     const auto pts = LineKm();
-    const auto t = core::ThinTrack("1", pts, 30.0);
+    const auto t = openrider::sdk::ThinTrack("1", pts, 30.0);
     ATF_REQUIRE(t.lat.size() >= 33 && t.lat.size() <= 36);  // ~1000 m / 30 m
     ATF_REQUIRE_EQ(t.lat.front(), pts.front().lat);
     ATF_REQUIRE_EQ(t.lat.back(), pts.back().lat);
@@ -63,10 +65,10 @@ ATF_TEST_CASE_BODY(thinning_keeps_shape_and_ends)
 ATF_TEST_CASE_WITHOUT_HEAD(partly_within_the_view);
 ATF_TEST_CASE_BODY(partly_within_the_view)
 {
-    const auto t = core::ThinTrack("1", LineKm(), 30.0);
-    ATF_REQUIRE(core::TrackInBox(t, 6.5, 45.904, 6.7, 46.0));   // northern half shown
-    ATF_REQUIRE(!core::TrackInBox(t, 6.7, 45.0, 6.8, 46.0));    // view east of it
-    ATF_REQUIRE(!core::TrackInBox(core::OverviewTrack{}, -180, -90, 180, 90));
+    const auto t = openrider::sdk::ThinTrack("1", LineKm(), 30.0);
+    ATF_REQUIRE(openrider::sdk::TrackInBox(t, 6.5, 45.904, 6.7, 46.0));   // northern half shown
+    ATF_REQUIRE(!openrider::sdk::TrackInBox(t, 6.7, 45.0, 6.8, 46.0));    // view east of it
+    ATF_REQUIRE(!openrider::sdk::TrackInBox(openrider::sdk::OverviewTrack{}, -180, -90, 180, 90));
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(long_dates_by_language);

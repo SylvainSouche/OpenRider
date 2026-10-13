@@ -46,12 +46,12 @@ constexpr const char *kGenericIcon = "\xee\x9c\xae";  // U+E72E person-simple
 
 } // namespace
 
-Status TypeCatalog::LoadLabels(const std::string &json_text)
+openrider::sdk::Status TypeCatalog::LoadLabels(const std::string &json_text)
 {
     cJSON *root = cJSON_Parse(json_text.c_str());
     if (!cJSON_IsObject(root)) {
         cJSON_Delete(root);
-        return Status::Failure("activity type labels: invalid JSON");
+        return openrider::sdk::Status::Failure("activity type labels: invalid JSON");
     }
     const cJSON *item = nullptr;
     cJSON_ArrayForEach(item, root) {
@@ -62,16 +62,16 @@ Status TypeCatalog::LoadLabels(const std::string &json_text)
                                           Utf8FromHex(JsonString(item, "icon")), rgb};
     }
     cJSON_Delete(root);
-    return Status::Success();
+    return openrider::sdk::Status::Success();
 }
 
 // @impl 0f87-6acd-2587-fdb3
-Status TypeCatalog::LoadSource(const std::string &source, const std::string &json_text)
+openrider::sdk::Status TypeCatalog::LoadSource(const std::string &source, const std::string &json_text)
 {
     cJSON *root = cJSON_Parse(json_text.c_str());
     if (!cJSON_IsObject(root)) {
         cJSON_Delete(root);
-        return Status::Failure(source + " type table: invalid JSON");
+        return openrider::sdk::Status::Failure(source + " type table: invalid JSON");
     }
     auto &table = sources_[source];
     const cJSON *item = nullptr;
@@ -83,7 +83,7 @@ Status TypeCatalog::LoadSource(const std::string &source, const std::string &jso
         table[item->string] = t;
     }
     cJSON_Delete(root);
-    return Status::Success();
+    return openrider::sdk::Status::Success();
 }
 
 ActivityType TypeCatalog::Resolve(const std::string &source, const std::string &source_type,

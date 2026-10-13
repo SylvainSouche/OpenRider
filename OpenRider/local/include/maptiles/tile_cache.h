@@ -2,7 +2,7 @@
 /// Disk cache of raw tile files.
 #pragma once
 
-#include "core/result.h"
+#include <openrider/sdk/result.h>
 
 #include <cstdint>
 #include <mutex>
@@ -32,7 +32,7 @@ public:
     bool Get(const std::string &layer, int z, int x, int y, std::string &bytes);
 
     /// Stores a tile atomically, then evicts when the cache is over its maximum.
-    core::Status Put(const std::string &layer, int z, int x, int y, const std::string &bytes);
+    openrider::sdk::Status Put(const std::string &layer, int z, int x, int y, const std::string &bytes);
 
     /// Scans the whole cache and deletes the least recently used tiles until
     /// it fits; called by Put() when the running total exceeds the maximum.

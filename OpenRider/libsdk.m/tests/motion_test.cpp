@@ -1,7 +1,7 @@
 #include <atf-c++.hpp>
 
-#include "core/motion.h"
-#include "core/stats.h"
+#include <openrider/sdk/motion.h>
+#include <openrider/sdk/stats.h>
 
 #include <cmath>
 
@@ -40,8 +40,8 @@ ATF_TEST_CASE_WITHOUT_HEAD(percentile_ignores_nan);
 ATF_TEST_CASE_BODY(percentile_ignores_nan)
 {
     const double nan = std::numeric_limits<double>::quiet_NaN();
-    ATF_REQUIRE_EQ(core::Percentile({5, nan, 1, 3, 2, 4, 6, 7, 8, 9, 10}, 10.0), 2.0);
-    ATF_REQUIRE(std::isnan(core::Percentile({nan}, 10.0)));
+    ATF_REQUIRE_EQ(openrider::sdk::Percentile({5, nan, 1, 3, 2, 4, 6, 7, 8, 9, 10}, 10.0), 2.0);
+    ATF_REQUIRE(std::isnan(openrider::sdk::Percentile({nan}, 10.0)));
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(window_scales_with_activity);
@@ -49,7 +49,7 @@ ATF_TEST_CASE_BODY(window_scales_with_activity)
 {
     // Moving 1.5 m/s most of the time, so the 10th percentile is the walk
     // speed or the pause; the window is 50 m at that speed (finite, > 0).
-    const double w = core::StillWindowS(WalkWithPause(), core::MotionParams{});
+    const double w = openrider::sdk::StillWindowS(WalkWithPause(), openrider::sdk::MotionParams{});
     ATF_REQUIRE(!std::isnan(w) && w > 0.0);
 }
 
@@ -57,7 +57,7 @@ ATF_TEST_CASE_WITHOUT_HEAD(pause_is_not_moving);
 ATF_TEST_CASE_BODY(pause_is_not_moving)
 {
     const auto pts = WalkWithPause();
-    const auto still = core::NotMovingMask(pts, core::MotionParams{});
+    const auto still = openrider::sdk::NotMovingMask(pts, openrider::sdk::MotionParams{});
     int in_pause = 0, in_walk = 0;
     for (size_t i = 0; i < pts.size(); ++i) {
         if (i >= 620 && i < 790)
@@ -72,7 +72,7 @@ ATF_TEST_CASE_BODY(pause_is_not_moving)
 ATF_TEST_CASE_WITHOUT_HEAD(stats_moving_time_excludes_pause);
 ATF_TEST_CASE_BODY(stats_moving_time_excludes_pause)
 {
-    const auto st = core::ComputeStats(WalkWithPause(), core::MotionParams{});
+    const auto st = openrider::sdk::ComputeStats(WalkWithPause(), openrider::sdk::MotionParams{});
     ATF_REQUIRE(std::fabs(st.duration_s - 2818.0) < 1e-6);
     ATF_REQUIRE(st.moving_s < st.duration_s - 360.0);  // most of the 7 min pause removed
     ATF_REQUIRE(st.moving_s > 2350.0);
@@ -82,7 +82,7 @@ ATF_TEST_CASE_BODY(stats_moving_time_excludes_pause)
     ATF_REQUIRE(st.max_speed_ms > 1.9);
     const auto pts = WalkWithPause();
     const std::vector<or_point> walk(pts.begin(), pts.begin() + 600);
-    ATF_REQUIRE(std::fabs(core::ComputeStats(walk, core::MotionParams{}).max_speed_ms - 1.5) < 0.01);
+    ATF_REQUIRE(std::fabs(openrider::sdk::ComputeStats(walk, openrider::sdk::MotionParams{}).max_speed_ms - 1.5) < 0.01);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(ascent_with_hysteresis);
@@ -98,7 +98,7 @@ ATF_TEST_CASE_BODY(ascent_with_hysteresis)
         p.dist_m = i;
         pts.push_back(p);
     }
-    const auto st = core::ComputeStats(pts, core::MotionParams{});
+    const auto st = openrider::sdk::ComputeStats(pts, openrider::sdk::MotionParams{});
     ATF_REQUIRE(std::fabs(st.ascent_m - 20.0) < 1e-6);   // +/-2 m noise ignored
     ATF_REQUIRE(std::fabs(st.descent_m - 15.0) < 1e-6);
     ATF_REQUIRE_EQ(st.max_alt_m, 1021.0);

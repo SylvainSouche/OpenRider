@@ -9,7 +9,7 @@
 
 #include <vector>
 
-namespace core {
+namespace openrider::sdk {
 
 /// The graphs' x axis: time in minutes, or distance in km.
 enum class XAxis { Time, Distance };
@@ -73,4 +73,4 @@ std::vector<double> VerticalSpeed(const std::vector<or_point> &points, double wi
 /// +/- window/2 metres of distance, divided by the distance they span.
 std::vector<double> Grade(const std::vector<or_point> &points, double window_m);
 
-} // namespace core
+} // namespace openrider::sdk

@@ -1,10 +1,10 @@
-#include "core/stats.h"
+#include <openrider/sdk/stats.h>
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 
-namespace core {
+namespace openrider::sdk {
 
 // @impl 0f87-6acd-33a9-9fc2
 ComputedStats ComputeStats(const std::vector<or_point> &points, const MotionParams &motion,
@@ -67,4 +67,4 @@ ComputedStats ComputeStats(const std::vector<or_point> &points, const MotionPara
     return s;
 }
 
-} // namespace core
+} // namespace openrider::sdk

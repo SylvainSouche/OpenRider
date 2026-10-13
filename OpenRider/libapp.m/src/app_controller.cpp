@@ -1,8 +1,9 @@
 #include "app/app_controller.h"
 
 #include "core/log.h"
-#include "core/segment_passages.h"
 #include "core/outing_selection.h"
+
+#include <openrider/sdk/segment_passages.h>
 
 #include <algorithm>
 #include <cmath>
@@ -28,7 +29,7 @@ void AppController::LoadTypes(const std::string &labels_json, const std::string 
         Report("Cannot read the activity type tables");
         return;
     }
-    core::Status status = model_.types.LoadLabels(labels_json);
+    openrider::sdk::Status status = model_.types.LoadLabels(labels_json);
     if (!status.Ok())
         Report(status.error);
     status = model_.types.LoadSource(source, source_json);
@@ -68,7 +69,7 @@ void AppController::OpenComparison(int group, int segment)
 {
     if (!input_ || group < 0 || group >= static_cast<int>(model_.segment_groups.size()))
         return;
-    const core::SegmentNetwork &network = model_.segment_groups[static_cast<size_t>(group)].network;
+    const openrider::sdk::SegmentNetwork &network = model_.segment_groups[static_cast<size_t>(group)].network;
     if (segment < 0 || segment >= static_cast<int>(network.segments.size()))
         return;
     SegmentComparison &comparison = model_.comparison;
@@ -92,7 +93,7 @@ void AppController::OpenComparison(int group, int segment)
         if (input_->load_points(handle_, id.c_str(), append_point, &points, error, sizeof error) != 0)
             continue;
         int pass = 0;
-        for (core::SegmentPassage &passage : core::FindPassages(points, comparison.segment, kPassageDistanceM, kPassageCoverage)) {
+        for (openrider::sdk::SegmentPassage &passage : openrider::sdk::FindPassages(points, comparison.segment, kPassageDistanceM, kPassageCoverage)) {
             ComparedRun run;
             run.outing = outing;
             run.pass = ++pass;
@@ -210,7 +211,7 @@ void AppController::UpdateSegments()
         for (size_t i : core::SelectOutings(model_.outings, filter, core::SortKey::Date, true))
             sport_of[model_.outings[i].raw.id] = model_.outings[i].type.sport;
         std::map<std::string, core::TrackGroup> groups;
-        for (const core::OverviewTrack &track : model_.tracks) {
+        for (const openrider::sdk::OverviewTrack &track : model_.tracks) {
             const auto shown = sport_of.find(track.id);
             if (shown == sport_of.end())
                 continue;
@@ -231,7 +232,7 @@ void AppController::UpdateSegments()
             Report("Segment identification failed: " + error);
         size_t shared = 0;
         for (const core::SegmentGroup &group : model_.segment_groups)
-            for (const core::NetworkSegment &segment : group.network.segments)
+            for (const openrider::sdk::NetworkSegment &segment : group.network.segments)
                 shared += segment.Shared() ? 1 : 0;
         char status[160];
         std::snprintf(status, sizeof status, "%zu shared segments in %zu activity groups", shared,
@@ -288,7 +289,7 @@ void AppController::ApplyFilters()
         core::LogLine("filter %s kept %zu of %zu points", filter.vtable->id, kept.size(), model_.points.size());
         model_.points.swap(kept);
     }
-    model_.computed = core::ComputeStats(model_.points, core::MotionParams{}, &model_.raw_points);
+    model_.computed = openrider::sdk::ComputeStats(model_.points, openrider::sdk::MotionParams{}, &model_.raw_points);
 }
 
 void AppController::Handle(const Intent &intent, Intents &out)

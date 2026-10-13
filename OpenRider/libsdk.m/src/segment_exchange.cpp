@@ -1,4 +1,4 @@
-#include "core/segment_exchange.h"
+#include <openrider/sdk/segment_exchange.h>
 
 #include <algorithm>
 #include <cmath>
@@ -6,7 +6,7 @@
 #include <cstring>
 #include <map>
 
-namespace core {
+namespace openrider::sdk {
 
 Result<SegmentNetwork> RunSegments(const or_segments_vtable *plugin, const std::vector<OverviewTrack> &tracks,
                                    const std::vector<double> &values, or_segment_cancel_cb cancel, void *user)
@@ -159,4 +159,4 @@ std::vector<OverviewTrack> ImportTracks(const or_segment_track *tracks, size_t c
     return out;
 }
 
-} // namespace core
+} // namespace openrider::sdk

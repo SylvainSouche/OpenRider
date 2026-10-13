@@ -1,9 +1,9 @@
-#include "core/series.h"
+#include <openrider/sdk/series.h>
 
 #include <cmath>
 #include <limits>
 
-namespace core {
+namespace openrider::sdk {
 
 namespace {
 
@@ -190,4 +190,4 @@ Series HistogramSeries(const std::vector<or_point> &points, XAxis axis, const Se
     return s;
 }
 
-} // namespace core
+} // namespace openrider::sdk

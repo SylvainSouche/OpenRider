@@ -5,7 +5,8 @@
 #pragma once
 
 #include "core/outing_selection.h"
-#include "core/series.h"
+
+#include <openrider/sdk/series.h>
 
 #include <string>
 #include <vector>
@@ -50,7 +51,7 @@ enum class IntentKind {
     SetTrackColour,      ///< x: packed RGBA as a double (0..2^32)
 
     // OutingViewController
-    SetXAxis,            ///< i: core::XAxis
+    SetXAxis,            ///< i: openrider::sdk::XAxis
     AddGraph,            ///< appends a graph
     RemoveGraph,         ///< i: graph index
     SetGraphSpec,        ///< i: graph index, spec
@@ -61,7 +62,7 @@ enum class IntentKind {
     // ComparisonViewController
     ToggleComparedRun,       ///< i: run index
     ShowAllComparedRuns,     ///< i: 1 all, 0 none
-    SetComparisonXAxis,      ///< i: core::XAxis
+    SetComparisonXAxis,      ///< i: openrider::sdk::XAxis
     AddComparisonGraph,      ///< appends a graph
     RemoveComparisonGraph,   ///< i: graph index
     SetComparisonGraphSpec,  ///< i: graph index, spec
@@ -88,7 +89,7 @@ struct Intent {
     double y = 0.0;                ///< second real argument
     std::string text;              ///< text argument
     std::vector<std::string> ids;  ///< outing ids argument
-    core::SeriesSpec spec;         ///< graph specification argument
+    openrider::sdk::SeriesSpec spec;         ///< graph specification argument
 };
 
 /// Intents collected during a frame and dispatched afterwards; controllers

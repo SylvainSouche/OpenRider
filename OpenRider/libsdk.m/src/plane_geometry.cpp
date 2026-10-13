@@ -1,9 +1,9 @@
-#include "core/plane_geometry.h"
+#include <openrider/sdk/plane_geometry.h>
 
 #include <algorithm>
 #include <cmath>
 
-namespace core {
+namespace openrider::sdk {
 
 double Dist(const XY &a, const XY &b) { return std::hypot(a.x - b.x, a.y - b.y); }
 
@@ -75,4 +75,4 @@ std::vector<XY> Resampled(const std::vector<XY> &line, size_t samples)
     return out;
 }
 
-} // namespace core
+} // namespace openrider::sdk

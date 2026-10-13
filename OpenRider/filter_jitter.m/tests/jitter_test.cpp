@@ -2,8 +2,7 @@
 
 #include <openrider/filter.h>
 #include <openrider/plugin.h>
-
-#include "core/stats.h"
+#include <openrider/sdk/stats.h>
 
 #include <cmath>
 #include <limits>
@@ -109,8 +108,8 @@ ATF_TEST_CASE_BODY(stats_after_filter_are_clean)
     const auto pts = Outing();
     std::vector<unsigned char> keep;
     const auto clean = Filtered(pts, keep);
-    const auto raw = core::ComputeStats(pts, core::MotionParams{});
-    const auto st = core::ComputeStats(clean, core::MotionParams{});
+    const auto raw = openrider::sdk::ComputeStats(pts, openrider::sdk::MotionParams{});
+    const auto st = openrider::sdk::ComputeStats(clean, openrider::sdk::MotionParams{});
     ATF_REQUIRE(raw.max_speed_ms > 1.9);                  // jitter and spike inflate it
     ATF_REQUIRE(std::fabs(st.max_speed_ms - 1.5) < 0.05); // back to the walk
     ATF_REQUIRE(std::fabs(st.distance_m - 3600.0) < 20.0);
@@ -119,7 +118,7 @@ ATF_TEST_CASE_BODY(stats_after_filter_are_clean)
     ATF_REQUIRE(std::fabs(st.moving_s - raw.moving_s) < 60.0);
     // With the raw points given, moving time is exactly the raw one: the
     // filter cannot make the user move longer.
-    const auto anchored = core::ComputeStats(clean, core::MotionParams{}, &pts);
+    const auto anchored = openrider::sdk::ComputeStats(clean, openrider::sdk::MotionParams{}, &pts);
     ATF_REQUIRE_EQ(anchored.moving_s, raw.moving_s);
     ATF_REQUIRE(anchored.distance_m < raw.distance_m);
 }

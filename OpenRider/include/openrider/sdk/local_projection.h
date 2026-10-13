@@ -2,9 +2,9 @@
 /// Local metric projection of WGS84 positions.
 #pragma once
 
-#include "core/plane_geometry.h"
+#include <openrider/sdk/plane_geometry.h>
 
-namespace core {
+namespace openrider::sdk {
 
 /// Equirectangular projection around a centre: metres east and north of
 /// it. Accurate to a fraction of a percent over a few tens of kilometres,
@@ -27,4 +27,4 @@ private:
     double ky_;    ///< metres per degree north
 };
 
-} // namespace core
+} // namespace openrider::sdk

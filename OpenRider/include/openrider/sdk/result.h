@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 
-namespace core {
+namespace openrider::sdk {
 
 /// The outcome of an operation producing a `T`: a value, or an error.
 template <class T>
@@ -38,4 +38,4 @@ struct Status {
     static Status Failure(std::string error) { return Status{std::move(error)}; }
 };
 
-} // namespace core
+} // namespace openrider::sdk

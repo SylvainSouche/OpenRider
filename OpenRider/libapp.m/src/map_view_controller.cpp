@@ -237,7 +237,7 @@ void MapViewController::FitComparison(const AppModel &model)
 void MapViewController::FitOverview(const AppModel &model)
 {
     double west = 180, east = -180, south = 90, north = -90;
-    for (const core::OverviewTrack &track : model.tracks) {
+    for (const openrider::sdk::OverviewTrack &track : model.tracks) {
         west = std::min(west, track.west);
         east = std::max(east, track.east);
         south = std::min(south, track.south);
@@ -288,8 +288,8 @@ void MapViewController::PublishVisible(const AppModel &model, Intents &out)
 {
     const maptiles::GeoBox box = MapViewBox(view_model_);
     std::vector<std::string> ids;
-    for (const core::OverviewTrack &track : model.tracks)
-        if (core::TrackInBox(track, box.west, box.south, box.east, box.north))
+    for (const openrider::sdk::OverviewTrack &track : model.tracks)
+        if (openrider::sdk::TrackInBox(track, box.west, box.south, box.east, box.north))
             ids.push_back(track.id);
     if (ids != last_visible_) {
         last_visible_ = ids;
@@ -373,7 +373,7 @@ void MapViewController::UpdateHover(const AppModel &model, double mouse_x, doubl
     const double mouse_world_y = top + view_model_.height / 2.0 + mouse_y;
     const maptiles::GeoBox box = MapViewBox(view_model_);
     double nearest = kHoverPx * kHoverPx;
-    for (const core::OverviewTrack &track : model.tracks) {
+    for (const openrider::sdk::OverviewTrack &track : model.tracks) {
         if (!shown.count(track.id) || track.east < box.west || track.west > box.east || track.north < box.south ||
             track.south > box.north)
             continue;
@@ -404,7 +404,7 @@ void MapViewController::UpdateSegmentHover(const AppModel &model, double mouse_x
     double nearest = kHoverPx * kHoverPx;
     bool nearest_shared = false;
     for (size_t g = 0; g < model.segment_groups.size(); ++g)
-        for (const core::NetworkSegment &segment : model.segment_groups[g].network.segments) {
+        for (const openrider::sdk::NetworkSegment &segment : model.segment_groups[g].network.segments) {
             double previous_x = 0.0, previous_y = 0.0;
             for (size_t i = 0; i < segment.lat.size(); ++i) {
                 double x, y;

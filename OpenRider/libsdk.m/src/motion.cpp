@@ -1,10 +1,10 @@
-#include "core/motion.h"
+#include <openrider/sdk/motion.h>
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 
-namespace core {
+namespace openrider::sdk {
 
 namespace {
 constexpr double kNaN = std::numeric_limits<double>::quiet_NaN();
@@ -120,4 +120,4 @@ std::vector<bool> NotMovingMask(const std::vector<or_point> &points, const Motio
     return out;
 }
 
-} // namespace core
+} // namespace openrider::sdk

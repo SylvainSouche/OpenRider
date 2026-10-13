@@ -4,7 +4,8 @@
 #include <atf-c++.hpp>
 
 #include "core/network_builder.h"
-#include "core/segment_exchange.h"
+
+#include <openrider/sdk/segment_exchange.h>
 
 #include <chrono>
 #include <thread>
@@ -12,9 +13,9 @@
 namespace {
 
 // A straight track northwards from (45.9, 6.6), `length_m` long, points every 10 m.
-core::OverviewTrack Straight(const std::string &id, double length_m)
+openrider::sdk::OverviewTrack Straight(const std::string &id, double length_m)
 {
-    core::OverviewTrack track;
+    openrider::sdk::OverviewTrack track;
     track.id = id;
     for (double d = 0.0; d <= length_m; d += 10.0) {
         track.lat.push_back(45.9 + d / 111320.0);
@@ -29,24 +30,24 @@ core::OverviewTrack Straight(const std::string &id, double length_m)
 int FakeBuild(const or_segment_track *tracks, size_t count, const double *, or_segment_cancel_cb, void *,
               or_segment_network **out, char *, size_t)
 {
-    const std::vector<core::OverviewTrack> input = core::ImportTracks(tracks, count);
-    core::SegmentNetwork network;
+    const std::vector<openrider::sdk::OverviewTrack> input = openrider::sdk::ImportTracks(tracks, count);
+    openrider::sdk::SegmentNetwork network;
     network.nodes = {{0, input[0].lon.front(), input[0].lat.front()}, {1, input[0].lon.back(), input[0].lat.back()}};
-    core::NetworkSegment segment;
+    openrider::sdk::NetworkSegment segment;
     segment.from = 0;
     segment.to = 1;
     segment.lon = input[0].lon;
     segment.lat = input[0].lat;
-    for (const core::OverviewTrack &track : input) {
+    for (const openrider::sdk::OverviewTrack &track : input) {
         segment.route_ids.push_back(track.id);
         network.routes.push_back({track.id, {{0, true}}});
     }
     network.segments.push_back(segment);
-    *out = core::ExportNetwork(network, input);
+    *out = openrider::sdk::ExportNetwork(network, input);
     return 0;
 }
 
-void FakeFree(or_segment_network *network) { core::FreeExportedNetwork(network); }
+void FakeFree(or_segment_network *network) { openrider::sdk::FreeExportedNetwork(network); }
 
 const or_filter_param kParams[] = {{"width", "Width", 8.0, 1.0, 50.0}};
 const or_segments_vtable kFake = {"fake", "Fake", 1, kParams, FakeBuild, FakeFree};
@@ -107,10 +108,10 @@ ATF_TEST_CASE_BODY(many_requests_coalesce)
 ATF_TEST_CASE_WITHOUT_HEAD(exchange_round_trip);
 ATF_TEST_CASE_BODY(exchange_round_trip)
 {
-    const std::vector<core::OverviewTrack> tracks = {Straight("a", 100), Straight("b", 100)};
-    core::SegmentNetwork network;
+    const std::vector<openrider::sdk::OverviewTrack> tracks = {Straight("a", 100), Straight("b", 100)};
+    openrider::sdk::SegmentNetwork network;
     network.nodes = {{0, 6.6, 45.9}, {1, 6.6, 45.901}};
-    core::NetworkSegment segment;
+    openrider::sdk::NetworkSegment segment;
     segment.from = 0;
     segment.to = 1;
     segment.lon = {6.6, 6.6};
@@ -119,9 +120,9 @@ ATF_TEST_CASE_BODY(exchange_round_trip)
     segment.route_ids = {"b"};
     network.segments.push_back(segment);
     network.routes = {{"a", {}}, {"b", {{0, false}}}};
-    or_segment_network *exported = core::ExportNetwork(network, tracks);
-    const core::SegmentNetwork back = core::ImportNetwork(*exported, tracks);
-    core::FreeExportedNetwork(exported);
+    or_segment_network *exported = openrider::sdk::ExportNetwork(network, tracks);
+    const openrider::sdk::SegmentNetwork back = openrider::sdk::ImportNetwork(*exported, tracks);
+    openrider::sdk::FreeExportedNetwork(exported);
     ATF_REQUIRE_EQ(back.segments.size(), 1u);
     ATF_REQUIRE_EQ(back.segments[0].route_ids.at(0), "b");
     ATF_REQUIRE_EQ(back.segments[0].length_m, 111.0);

@@ -28,8 +28,8 @@
 /// Callers group tracks of similar activities before calling.
 #pragma once
 
-#include "core/overview.h"
-#include "core/segments.h"
+#include <openrider/sdk/overview.h>
+#include <openrider/sdk/segments.h>
 
 #include <functional>
 #include <string>
@@ -37,12 +37,12 @@
 
 namespace heatmap {
 
-using core::NetworkNode;
-using core::NetworkRoute;
-using core::NetworkSegment;
-using core::OverviewTrack;
-using core::RouteStep;
-using core::SegmentNetwork;
+using openrider::sdk::NetworkNode;
+using openrider::sdk::NetworkRoute;
+using openrider::sdk::NetworkSegment;
+using openrider::sdk::OverviewTrack;
+using openrider::sdk::RouteStep;
+using openrider::sdk::SegmentNetwork;
 
 /// Parameters of segment inference.
 struct SegmentParams {

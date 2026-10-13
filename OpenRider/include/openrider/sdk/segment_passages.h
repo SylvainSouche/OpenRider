@@ -5,14 +5,13 @@
 /// network.
 #pragma once
 
-#include "core/plane_geometry.h"
-#include "core/segments.h"
-
 #include <openrider/input.h>
+#include <openrider/sdk/plane_geometry.h>
+#include <openrider/sdk/segments.h>
 
 #include <vector>
 
-namespace core {
+namespace openrider::sdk {
 
 /// Where a point lies relative to a line.
 struct LinePosition {
@@ -39,4 +38,4 @@ struct SegmentPassage {
 std::vector<SegmentPassage> FindPassages(const std::vector<or_point> &points, const NetworkSegment &segment,
                                          double max_distance_m, double min_coverage);
 
-} // namespace core
+} // namespace openrider::sdk

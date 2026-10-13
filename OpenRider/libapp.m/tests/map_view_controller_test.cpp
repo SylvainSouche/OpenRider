@@ -34,9 +34,9 @@ int FakeUrl(void *, size_t, int z, int x, int y, char *url, size_t len)
 }
 const or_tiles_vtable kTiles = {"fake", FakeOpen, FakeClose, FakeLayerInfo, FakeUrl};
 
-core::OverviewTrack LineTrack(const char *id, double lon0)
+openrider::sdk::OverviewTrack LineTrack(const char *id, double lon0)
 {
-    core::OverviewTrack t;
+    openrider::sdk::OverviewTrack t;
     t.id = id;
     for (int i = 0; i <= 20; ++i) {
         t.lat.push_back(45.90 + i * 0.001);

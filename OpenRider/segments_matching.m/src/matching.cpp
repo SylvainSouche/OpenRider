@@ -1,8 +1,8 @@
 #include "matching/matching.h"
 
-#include "core/local_projection.h"
-#include "core/network_cleanup.h"
-#include "core/plane_geometry.h"
+#include <openrider/sdk/local_projection.h>
+#include <openrider/sdk/network_cleanup.h>
+#include <openrider/sdk/plane_geometry.h>
 
 #include <algorithm>
 #include <cmath>
@@ -16,9 +16,9 @@ namespace matching {
 
 namespace {
 
-using core::Dist;
-using core::Length;
-using core::XY;
+using openrider::sdk::Dist;
+using openrider::sdk::Length;
+using openrider::sdk::XY;
 
 constexpr double kInfinity = std::numeric_limits<double>::infinity();
 constexpr double kPi = 3.14159265358979323846;
@@ -313,7 +313,7 @@ std::vector<State> Match(const Network &network, const std::vector<XY> &line, co
 std::vector<XY> Stations(const std::vector<XY> &line, double step)
 {
     const double length = Length(line);
-    return core::Resampled(line, std::max<size_t>(2, static_cast<size_t>(std::ceil(length / step)) + 1));
+    return openrider::sdk::Resampled(line, std::max<size_t>(2, static_cast<size_t>(std::ceil(length / step)) + 1));
 }
 
 // Cuts edges at the requested (edge, station) places, highest station
@@ -425,11 +425,11 @@ void Insert(Network &network, const std::vector<XY> &pass, int route, const Matc
 // Shortest path from node `from` to node `to` through the network
 // (Dijkstra on segment lengths), as steps; empty when none is shorter than
 // `max_length`.
-std::vector<core::RouteStep> ShortestPath(const Network &network, int from, int to, double max_length)
+std::vector<openrider::sdk::RouteStep> ShortestPath(const Network &network, int from, int to, double max_length)
 {
     const size_t count = network.nodes.size();
     std::vector<double> distance(count, kInfinity);
-    std::vector<core::RouteStep> via(count, {-1, true});  // step arriving at each node
+    std::vector<openrider::sdk::RouteStep> via(count, {-1, true});  // step arriving at each node
     std::vector<bool> done(count, false);
     distance[static_cast<size_t>(from)] = 0.0;
     for (;;) {
@@ -457,9 +457,9 @@ std::vector<core::RouteStep> ShortestPath(const Network &network, int from, int 
             }
         }
     }
-    std::vector<core::RouteStep> path;
+    std::vector<openrider::sdk::RouteStep> path;
     for (int node = to; node != from;) {
-        const core::RouteStep step = via[static_cast<size_t>(node)];
+        const openrider::sdk::RouteStep step = via[static_cast<size_t>(node)];
         path.push_back(step);
         const Edge &edge = network.edges[static_cast<size_t>(step.segment)];
         node = step.forward ? edge.from : edge.to;
@@ -471,24 +471,24 @@ std::vector<core::RouteStep> ShortestPath(const Network &network, int from, int 
 } // namespace
 
 // @impl 0f87-6ace-2f7b-f4d7
-core::SegmentNetwork BuildNetwork(const std::vector<core::OverviewTrack> &tracks, const MatchParams &params,
+openrider::sdk::SegmentNetwork BuildNetwork(const std::vector<openrider::sdk::OverviewTrack> &tracks, const MatchParams &params,
                                   const std::function<bool()> &cancelled)
 {
-    core::SegmentNetwork result;
+    openrider::sdk::SegmentNetwork result;
     if (tracks.empty())
         return result;
     // Local projection around the tracks' centre.
     double west = 1e9, east = -1e9, south = 1e9, north = -1e9;
-    for (const core::OverviewTrack &track : tracks)
+    for (const openrider::sdk::OverviewTrack &track : tracks)
         for (size_t i = 0; i < track.lat.size(); ++i) {
             west = std::min(west, track.lon[i]);
             east = std::max(east, track.lon[i]);
             south = std::min(south, track.lat[i]);
             north = std::max(north, track.lat[i]);
         }
-    const core::LocalProjection projection((west + east) / 2.0, (south + north) / 2.0);
+    const openrider::sdk::LocalProjection projection((west + east) / 2.0, (south + north) / 2.0);
     std::vector<std::vector<XY>> lines;
-    for (const core::OverviewTrack &track : tracks) {
+    for (const openrider::sdk::OverviewTrack &track : tracks) {
         std::vector<XY> line;
         for (size_t i = 0; i < track.lat.size(); ++i)
             line.push_back(projection.Forward(track.lon[i], track.lat[i]));
@@ -546,10 +546,10 @@ core::SegmentNetwork BuildNetwork(const std::vector<core::OverviewTrack> &tracks
     network.Reindex();
 
     // Each track's chain of segments.
-    std::vector<core::NetworkRoute> routes;
+    std::vector<openrider::sdk::NetworkRoute> routes;
     std::vector<std::set<int>> users(network.edges.size());
     for (size_t t = 0; t < lines.size(); ++t) {
-        core::NetworkRoute route;
+        openrider::sdk::NetworkRoute route;
         route.id = tracks[t].id;
         for (const State &state : Match(network, lines[t], final_params)) {
             if (state.edge < 0)
@@ -584,8 +584,8 @@ core::SegmentNetwork BuildNetwork(const std::vector<core::OverviewTrack> &tracks
     // went is the shortest path between them through the network, unless
     // that path is much longer than the jump (then it went elsewhere).
     for (size_t t = 0; t < routes.size(); ++t) {
-        std::vector<core::RouteStep> filled;
-        for (const core::RouteStep &step : routes[t].steps) {
+        std::vector<openrider::sdk::RouteStep> filled;
+        for (const openrider::sdk::RouteStep &step : routes[t].steps) {
             if (!filled.empty()) {
                 const Edge &previous = network.edges[static_cast<size_t>(filled.back().segment)];
                 const Edge &next = network.edges[static_cast<size_t>(step.segment)];
@@ -593,7 +593,7 @@ core::SegmentNetwork BuildNetwork(const std::vector<core::OverviewTrack> &tracks
                 const int entry = step.forward ? next.from : next.to;
                 if (exit != entry) {
                     const double jump = Dist(network.nodes[static_cast<size_t>(exit)], network.nodes[static_cast<size_t>(entry)]);
-                    for (const core::RouteStep &between : ShortestPath(network, exit, entry, 2.0 * jump + 100.0)) {
+                    for (const openrider::sdk::RouteStep &between : ShortestPath(network, exit, entry, 2.0 * jump + 100.0)) {
                         filled.push_back(between);
                         users[static_cast<size_t>(between.segment)].insert(static_cast<int>(t));
                     }
@@ -606,14 +606,14 @@ core::SegmentNetwork BuildNetwork(const std::vector<core::OverviewTrack> &tracks
 
     // Output: every node, every segment some track uses.
     for (size_t n = 0; n < network.nodes.size(); ++n) {
-        core::NetworkNode node;
+        openrider::sdk::NetworkNode node;
         node.id = static_cast<int>(n);
         projection.Inverse(network.nodes[n], node.lon, node.lat);
         result.nodes.push_back(node);
     }
     for (size_t e = 0; e < network.edges.size(); ++e) {
         const Edge &edge = network.edges[e];
-        core::NetworkSegment segment;
+        openrider::sdk::NetworkSegment segment;
         segment.id = static_cast<int>(e);
         segment.from = edge.from;
         segment.to = edge.to;
@@ -634,11 +634,11 @@ core::SegmentNetwork BuildNetwork(const std::vector<core::OverviewTrack> &tracks
     result.routes = std::move(routes);
 
     // 5. Shared clean-up (removes the unused segments and nodes too).
-    core::CleanupParams cleanup;
+    openrider::sdk::CleanupParams cleanup;
     cleanup.min_turn_m = arm;
     cleanup.max_loop_m = 150.0;
     cleanup.duplicate_distance_m = std::max(25.0, 1.5 * params.tolerance_m);
-    core::CleanUpNetwork(result, cleanup);
+    openrider::sdk::CleanUpNetwork(result, cleanup);
     return result;
 }
 

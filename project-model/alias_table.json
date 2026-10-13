@@ -1829,6 +1829,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-plugin-sdk": {
+    "active": true,
+    "id": "0f87-6ace-6e83-98f6",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-same-routes-merge": {
     "active": true,
     "id": "0f87-6ace-3222-ba6b",

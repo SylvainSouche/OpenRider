@@ -2,9 +2,9 @@
 // behind the plugin ABI (openrider/segments.h).
 
 #include <openrider/plugin.h>
+#include <openrider/sdk/segment_exchange.h>
 #include <openrider/segments.h>
 
-#include "core/segment_exchange.h"
 #include "heatmap/heatmap.h"
 
 #include <cstdio>
@@ -28,17 +28,17 @@ int HeatmapBuild(const or_segment_track *tracks, size_t count, const double *val
             std::snprintf(err, errlen, "heatmap: missing arguments");
         return 1;
     }
-    const std::vector<core::OverviewTrack> input = core::ImportTracks(tracks, count);
+    const std::vector<openrider::sdk::OverviewTrack> input = openrider::sdk::ImportTracks(tracks, count);
     heatmap::SegmentParams params;
     params.trace_width_m = values[TraceWidth];
     params.cell_m = values[CellSize];
-    const core::SegmentNetwork network =
+    const openrider::sdk::SegmentNetwork network =
         heatmap::BuildNetwork(input, params, [&] { return cancel && cancel(user) != 0; });
-    *out = core::ExportNetwork(network, input);
+    *out = openrider::sdk::ExportNetwork(network, input);
     return 0;
 }
 
-void HeatmapFree(or_segment_network *network) { core::FreeExportedNetwork(network); }
+void HeatmapFree(or_segment_network *network) { openrider::sdk::FreeExportedNetwork(network); }
 
 const or_segments_vtable kVtable = {"heatmap", "Heat map of the tracks", ParamCount, kParams, HeatmapBuild,
                                     HeatmapFree};

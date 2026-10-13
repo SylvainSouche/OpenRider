@@ -2,9 +2,8 @@
 /// Background loading of every outing's track for the overview map.
 #pragma once
 
-#include "core/overview.h"
-
 #include <openrider/input.h>
+#include <openrider/sdk/overview.h>
 
 #include <atomic>
 #include <mutex>
@@ -37,7 +36,7 @@ public:
     size_t Total() const { return total_.load(); }
 
     /// Appends the tracks read so far to `out`.
-    void Take(std::vector<OverviewTrack> &out);
+    void Take(std::vector<openrider::sdk::OverviewTrack> &out);
 
     /// Interrupts a running load and waits for it; call before closing the input.
     void Stop();
@@ -52,7 +51,7 @@ private:
     std::atomic<size_t> done_{0};       ///< outings processed
     std::atomic<size_t> total_{0};      ///< outings to process
     std::mutex mutex_;                     ///< guards pending_
-    std::vector<OverviewTrack> pending_;   ///< read, not yet taken
+    std::vector<openrider::sdk::OverviewTrack> pending_;   ///< read, not yet taken
 };
 
 } // namespace core

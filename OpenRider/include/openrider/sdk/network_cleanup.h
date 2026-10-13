@@ -4,9 +4,9 @@
 /// dropping junction blobs, merging duplicate descriptions of one path.
 #pragma once
 
-#include "core/segments.h"
+#include <openrider/sdk/segments.h>
 
-namespace core {
+namespace openrider::sdk {
 
 /// Settings of CleanUpNetwork().
 struct CleanupParams {
@@ -38,4 +38,4 @@ bool MergeDuplicates(SegmentNetwork &network, double max_distance_m);
 /// Rounds of the three above until nothing changes.
 void CleanUpNetwork(SegmentNetwork &network, const CleanupParams &params);
 
-} // namespace core
+} // namespace openrider::sdk

@@ -1,13 +1,13 @@
-#include "core/network_cleanup.h"
+#include <openrider/sdk/network_cleanup.h>
 
-#include "core/plane_geometry.h"
+#include <openrider/sdk/plane_geometry.h>
 
 #include <algorithm>
 #include <cmath>
 #include <set>
 #include <string>
 
-namespace core {
+namespace openrider::sdk {
 
 namespace {
 
@@ -413,4 +413,4 @@ void CleanUpNetwork(SegmentNetwork &network, const CleanupParams &params)
     MergeThroughNodes(network, params.min_turn_m);
 }
 
-} // namespace core
+} // namespace openrider::sdk

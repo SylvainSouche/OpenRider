@@ -9,7 +9,7 @@
 
 #include <vector>
 
-namespace core {
+namespace openrider::sdk {
 
 /// Parameters of the not-moving rule.
 struct MotionParams {
@@ -36,4 +36,4 @@ double StillWindowS(const std::vector<or_point> &points, const MotionParams &par
 /// window centred on the point span less than still_fraction * ref_distance.
 std::vector<bool> NotMovingMask(const std::vector<or_point> &points, const MotionParams &params);
 
-} // namespace core
+} // namespace openrider::sdk

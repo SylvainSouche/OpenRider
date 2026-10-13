@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace core {
+namespace openrider::sdk {
 
 /// A junction of the segment network.
 struct NetworkNode {
@@ -61,4 +61,4 @@ struct SegmentNetwork {
     std::vector<NetworkRoute> routes;      ///< one per input track
 };
 
-} // namespace core
+} // namespace openrider::sdk

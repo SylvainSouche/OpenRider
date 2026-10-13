@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace core {
+namespace openrider::sdk {
 
 /// A point of the local plane, metres east (x) and north (y).
 struct XY {
@@ -31,4 +31,4 @@ double DistanceToLine(const XY &q, const std::vector<XY> &line);
 /// kept).
 std::vector<XY> Resampled(const std::vector<XY> &line, size_t samples);
 
-} // namespace core
+} // namespace openrider::sdk

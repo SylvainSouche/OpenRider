@@ -1,6 +1,6 @@
 #include "heatmap/heatmap.h"
 
-#include "core/network_cleanup.h"
+#include <openrider/sdk/network_cleanup.h>
 
 #include <algorithm>
 #include <cmath>
@@ -1440,11 +1440,11 @@ SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const Segm
         }
         net.routes.push_back(std::move(r));
     }
-    core::CleanupParams cleanup;
+    openrider::sdk::CleanupParams cleanup;
     cleanup.min_turn_m = std::max(80.0, 2.0 * params.trace_width_m);
     cleanup.max_loop_m = params.max_excursion_m;
     cleanup.duplicate_distance_m = std::max(25.0, params.trace_width_m);
-    core::CleanUpNetwork(net, cleanup);
+    openrider::sdk::CleanUpNetwork(net, cleanup);
     return net;
 }
 } // namespace heatmap

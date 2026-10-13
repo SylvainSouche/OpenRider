@@ -169,7 +169,7 @@ void TileFetcher::Worker()
         ReadyTile ready;
         ready.key = key;
         if (have_bytes) {
-            core::Result<Image> image = DecodeTile(bytes);
+            openrider::sdk::Result<Image> image = DecodeTile(bytes);
             if (image.Ok())
                 ready.image = std::move(image.value);
             else

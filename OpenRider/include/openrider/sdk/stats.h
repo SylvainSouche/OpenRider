@@ -4,13 +4,12 @@
 /// values to Garmin's.
 #pragma once
 
-#include "core/motion.h"
-
 #include <openrider/input.h>
+#include <openrider/sdk/motion.h>
 
 #include <vector>
 
-namespace core {
+namespace openrider::sdk {
 
 /// Statistics of an outing computed from its points.
 struct ComputedStats {
@@ -39,4 +38,4 @@ constexpr double kAltitudeHysteresisM = 3.0;
 ComputedStats ComputeStats(const std::vector<or_point> &points, const MotionParams &motion,
                            const std::vector<or_point> *raw = nullptr);
 
-} // namespace core
+} // namespace openrider::sdk

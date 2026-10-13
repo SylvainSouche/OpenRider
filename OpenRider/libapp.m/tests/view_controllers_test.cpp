@@ -65,9 +65,9 @@ ATF_TEST_CASE_BODY(graph_stack_keeps_one)
     ATF_REQUIRE_EQ(c.ViewModel().graphs.size(), 1u);
     c.Handle(Intent(app::IntentKind::AddGraph), m);
     app::Intent spec = Intent(app::IntentKind::SetGraphSpec, 1);
-    spec.spec.kind = core::SeriesKind::VerticalSpeed;
+    spec.spec.kind = openrider::sdk::SeriesKind::VerticalSpeed;
     c.Handle(spec, m);
-    ATF_REQUIRE(c.ViewModel().graphs[1].kind == core::SeriesKind::VerticalSpeed);
+    ATF_REQUIRE(c.ViewModel().graphs[1].kind == openrider::sdk::SeriesKind::VerticalSpeed);
     c.Handle(Intent(app::IntentKind::RemoveGraph, 0), m);
     ATF_REQUIRE_EQ(c.ViewModel().graphs.size(), 1u);
 }
@@ -82,8 +82,8 @@ ATF_TEST_CASE_BODY(hover_finds_the_point)
     ATF_REQUIRE_EQ(c.ViewModel().hover_index, 150);
     // Histogram: the bar holding x = 2.5 min starts at minute 2 (point 120).
     app::Intent spec = Intent(app::IntentKind::SetGraphSpec, 0);
-    spec.spec.kind = core::SeriesKind::VerticalSpeed;
-    spec.spec.type = core::GraphType::Histogram;
+    spec.spec.kind = openrider::sdk::SeriesKind::VerticalSpeed;
+    spec.spec.type = openrider::sdk::GraphType::Histogram;
     c.Handle(spec, m);
     c.Handle(Intent(app::IntentKind::GraphHover, 0, 2.5), m);
     ATF_REQUIRE_EQ(c.ViewModel().hover_index, 120);

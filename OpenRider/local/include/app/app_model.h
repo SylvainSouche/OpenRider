@@ -6,12 +6,12 @@
 #include "core/library.h"
 #include "core/network_builder.h"
 #include "core/outing_selection.h"
-#include "core/overview.h"
-#include "core/stats.h"
 #include "core/type_catalog.h"
 
 #include <openrider/filter.h>
 #include <openrider/input.h>
+#include <openrider/sdk/overview.h>
+#include <openrider/sdk/stats.h>
 #include <openrider/segments.h>
 
 #include <set>
@@ -57,7 +57,7 @@ struct SegmentComparison {
     bool open = false;               ///< the comparison panel is shown
     unsigned generation = 0;         ///< changes with every comparison opened
     std::string sport;               ///< activity group of the segment
-    core::NetworkSegment segment;    ///< a copy: networks are rebuilt
+    openrider::sdk::NetworkSegment segment;    ///< a copy: networks are rebuilt
     std::vector<ComparedRun> runs;   ///< newest outing first
 };
 
@@ -78,7 +78,7 @@ struct AppModel {
 
     /// @name Every track, thinned, for the overview
     /// @{
-    std::vector<core::OverviewTrack> tracks;  ///< loaded so far
+    std::vector<openrider::sdk::OverviewTrack> tracks;  ///< loaded so far
     bool tracks_loading = false;              ///< the load is running
     size_t tracks_done = 0;                   ///< outings processed so far
     size_t tracks_total = 0;                  ///< outings to process
@@ -105,7 +105,7 @@ struct AppModel {
     std::string points_id;             ///< outing the points belong to
     std::vector<or_point> raw_points;  ///< as recorded
     std::vector<or_point> points;      ///< after the enabled track filters
-    core::ComputedStats computed;      ///< statistics computed from them
+    openrider::sdk::ComputedStats computed;      ///< statistics computed from them
     std::vector<FilterState> filters;  ///< every filter plugin, in load order
     /// @}
 

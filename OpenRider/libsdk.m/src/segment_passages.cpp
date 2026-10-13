@@ -1,11 +1,11 @@
-#include "core/segment_passages.h"
+#include <openrider/sdk/segment_passages.h>
 
-#include "core/local_projection.h"
+#include <openrider/sdk/local_projection.h>
 
 #include <algorithm>
 #include <cmath>
 
-namespace core {
+namespace openrider::sdk {
 
 LinePosition PositionOnLine(const XY &q, const std::vector<XY> &line)
 {
@@ -126,4 +126,4 @@ std::vector<SegmentPassage> FindPassages(const std::vector<or_point> &points, co
     return passages;
 }
 
-} // namespace core
+} // namespace openrider::sdk

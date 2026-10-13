@@ -33,10 +33,10 @@ It does not add features.
 Rules:
 
 1. A plugin binary depends at run time on the system and on what it bundles,
-   never on an application library. (Today `filter_jitter`,
-   `segments_heatmap` and `segments_matching` load `libcore.1.dylib`: this
-   is what the SDK fixes.) A test checks the installed plugins' run-time
-   dependencies.
+   never on an application library. Checked by the `plugin_sealing.tst`
+   test module on the built plugins (until the SDK was extracted,
+   `filter_jitter`, `segments_heatmap` and `segments_matching` loaded
+   `libcore.1.dylib`).
 2. The SDK is the single implementation of every rule shared by the
    application and plugins (e.g. the not-moving rule behind moving time and
    the jitter filter). `libcore` uses the SDK; it does not duplicate it.
@@ -223,20 +223,30 @@ GPL v2 and cannot be taken into OpenRider (BSD-3).
 
 ## 6. L1 domains (SDK, C++, namespace `openrider::sdk`)
 
-| Domain | Header | Content | Stability | From today's code |
-|---|---|---|---|---|
-| Geometry | `sdk/geometry.h` | haversine; local projection; plane points, distances, lengths, point along a line, distance to a line, resampling, densifying, Douglas-Peucker simplification | stable | `core/motion.h` (haversine), `core/local_projection.h`, `core/plane_geometry.h`, the heat map's `geometry.h` |
-| Tracks | `sdk/track.h` | a track type (positions, times, per-point noise); thinning; points while stopped; GPS jitter estimate; turn-arounds (one detector, the two in-tree variants merged); passages along a line | provisional | `core/overview.h` (thinning), `core/segment_passages.h`, the two plugins' turn-around detectors |
-| Motion | `sdk/motion.h` | motion parameters; moving-average speed; percentile; still window; not-moving mask | stable | `core/motion.h` |
-| Series | `sdk/series.h` | derived series of an outing: speed, altitude, vertical speed and grade over windows, histograms per period; x axes | stable | `core/series.h` |
-| Statistics | `sdk/stats.h` | outing statistics from points (moving time from the raw points) | stable | `core/stats.h` |
-| Networks | `sdk/network.h` | segment network types; clean-up (pass-through merging, short loops, duplicates) | provisional, as 5.6 | `core/segments.h`, `core/network_cleanup.h` |
-| ABI glue | `sdk/abi.h` | declared parameters and their default values; writing an error into the caller's buffer; C <-> C++ conversions for each kind (tracks, networks...) and the matching `free` | stable for existing kinds | `core/segment_exchange.h` |
-| Result type | `sdk/result.h` | `Result<T>` / `Status`, errors without exceptions | stable | `core/result.h` |
+In place: module `libsdk.m` (static library `openrider_sdk`), headers in
+`include/openrider/sdk/`. `libcore` and the in-tree plugins link it; the
+plugins' outputs were unchanged by the move (compared byte for byte).
+
+| Domain | Headers | Content | Stability |
+|---|---|---|---|
+| Geometry | `plane_geometry.h`, `local_projection.h` | local projection; plane points, distances, lengths, point along a line, distance to a line, resampling | stable |
+| Motion | `motion.h` | motion parameters; haversine; moving-average speed; percentile; still window; not-moving mask | stable |
+| Tracks | `overview.h`, `segment_passages.h` | track type (positions, per-point noise, box); thinning; GPS noise per point; position on a line; passages along a segment | provisional (passages become a fallback, 5.6) |
+| Series | `series.h` | derived series of an outing: speed, altitude, vertical speed and grade over windows, histograms per period; x axes | stable |
+| Statistics | `stats.h` | outing statistics from points (moving time from the raw points) | stable |
+| Networks | `segments.h`, `network_cleanup.h` | segment network types; clean-up (pass-through merging, short loops, duplicates) | provisional, as 5.6 |
+| ABI glue | `segment_exchange.h` | segments kind: C <-> C++ conversions of tracks and networks, the matching `free`, running a plugin | stable for the existing kind |
+| Result type | `result.h` | `Result<T>` / `Status`, errors without exceptions | stable |
+
+Not moved yet, as they would change the plugins' results or need a design
+of their own: the heat map's own geometry helpers (densifying,
+simplification), one turn-around detector replacing the two plugins'
+variants, and generic declared-parameter helpers (`abi.h`) for all kinds.
 
 Stays private in `libcore`: the outing library and its scan, background
 loaders and builders, the activity type catalog, outing selection, plugin
-loading, paths, the session log files, long-date formatting.
+loading, paths, the session log files, long-date formatting
+(`core/long_date.h`, split from the overview code).
 
 ## 7. Decisions (all taken 2026-10-13)
 
@@ -251,9 +261,7 @@ loading, paths, the session log files, long-date formatting.
 ## 8. Next steps (no new feature)
 
 1. ~~Review and decide §7~~ (done).
-2. Extract the SDK (§6) and move the in-tree plugins onto it; a test checks
-   no plugin depends on an application library; plugin outputs compared
-   byte for byte before and after.
+2. ~~Extract the SDK~~ (done: §6, `plugin_sealing.tst`, outputs identical).
 3. ABI 2: versioning, `flags` with the thread-safety flag and the
    application's single-thread dispatch for the others, `init()`, host log
    and progress, segment step ranges with source indices (the comparison

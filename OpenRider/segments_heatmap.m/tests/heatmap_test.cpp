@@ -12,10 +12,10 @@ constexpr double kKx = 111320.0 * 0.69591;  // cos(45.9 deg)
 constexpr double kKy = 110540.0;
 
 // A track from metric points (x east, y north), one point every 10 m.
-core::OverviewTrack Track(const std::string &id, const std::vector<std::pair<double, double>> &corners,
+openrider::sdk::OverviewTrack Track(const std::string &id, const std::vector<std::pair<double, double>> &corners,
                           double offset, unsigned seed)
 {
-    core::OverviewTrack t;
+    openrider::sdk::OverviewTrack t;
     t.id = id;
     t.west = t.south = 1e9;
     t.east = t.north = -1e9;
@@ -42,7 +42,7 @@ core::OverviewTrack Track(const std::string &id, const std::vector<std::pair<dou
 
 // Two outings sharing y = 0 from x = 0 to x = 1000 m, arriving and leaving
 // from different places, one 3 m north of the path and one 3 m south.
-std::vector<core::OverviewTrack> TwoTracks()
+std::vector<openrider::sdk::OverviewTrack> TwoTracks()
 {
     return {Track("a", {{-300, 400}, {0, 0}, {1000, 0}, {1300, 400}}, 3.0, 7),
             Track("b", {{-300, -400}, {0, 0}, {1000, 0}, {1300, -400}}, -3.0, 11)};
@@ -109,12 +109,12 @@ ATF_TEST_CASE_BODY(single_track_has_no_common_segment)
 namespace {
 
 // Consecutive steps of every route share a node.
-void RequireConnected(const core::SegmentNetwork &net)
+void RequireConnected(const openrider::sdk::SegmentNetwork &net)
 {
-    for (const core::NetworkRoute &r : net.routes)
+    for (const openrider::sdk::NetworkRoute &r : net.routes)
         for (size_t i = 1; i < r.steps.size(); ++i) {
-            const core::NetworkSegment &a = net.segments[static_cast<size_t>(r.steps[i - 1].segment)];
-            const core::NetworkSegment &b = net.segments[static_cast<size_t>(r.steps[i].segment)];
+            const openrider::sdk::NetworkSegment &a = net.segments[static_cast<size_t>(r.steps[i - 1].segment)];
+            const openrider::sdk::NetworkSegment &b = net.segments[static_cast<size_t>(r.steps[i].segment)];
             const int exit = r.steps[i - 1].forward ? a.to : a.from;
             const int entry = r.steps[i].forward ? b.from : b.to;
             ATF_REQUIRE_EQ(exit, entry);
@@ -122,12 +122,12 @@ void RequireConnected(const core::SegmentNetwork &net)
 }
 
 // The segment whose mean track passes nearest the metric point (x, y).
-const core::NetworkSegment *SegmentAt(const core::SegmentNetwork &net, double x, double y)
+const openrider::sdk::NetworkSegment *SegmentAt(const openrider::sdk::SegmentNetwork &net, double x, double y)
 {
-    const core::NetworkSegment *best = nullptr;
+    const openrider::sdk::NetworkSegment *best = nullptr;
     double bd = 1e18;
     // Distance to the polyline (a straight segment may keep only its ends).
-    for (const core::NetworkSegment &s : net.segments)
+    for (const openrider::sdk::NetworkSegment &s : net.segments)
         for (size_t i = 1; i < s.lat.size(); ++i) {
             const double ax = (s.lon[i - 1] - kLon0) * kKx, ay = (s.lat[i - 1] - kLat0) * kKy;
             const double bx = (s.lon[i] - kLon0) * kKx, by = (s.lat[i] - kLat0) * kKy;
@@ -150,13 +150,13 @@ ATF_TEST_CASE_BODY(network_two_routes)
 {
     const auto net = heatmap::BuildNetwork(TwoTracks(), heatmap::SegmentParams{});
     int shared = 0, own = 0;
-    for (const core::NetworkSegment &s : net.segments)
+    for (const openrider::sdk::NetworkSegment &s : net.segments)
         (s.Shared() ? shared : own) += 1;
     ATF_REQUIRE_EQ(shared, 1);
     ATF_REQUIRE_EQ(own, 4);              // two own parts per route
     ATF_REQUIRE_EQ(net.nodes.size(), 6u);  // 2 junctions + 4 route ends
     ATF_REQUIRE_EQ(net.routes.size(), 2u);
-    for (const core::NetworkRoute &r : net.routes)
+    for (const openrider::sdk::NetworkRoute &r : net.routes)
         ATF_REQUIRE_EQ(r.steps.size(), 3u);  // own, shared, own
     RequireConnected(net);
 }
@@ -168,12 +168,12 @@ ATF_TEST_CASE_BODY(network_cut_where_a_route_joins)
     auto tracks = TwoTracks();
     tracks.push_back(Track("c", {{500, 500}, {500, 0}, {1000, 0}, {1300, 400}}, 0.0, 13));
     const auto net = heatmap::BuildNetwork(tracks, heatmap::SegmentParams{});
-    const core::NetworkSegment *west = SegmentAt(net, 250, 0);
-    const core::NetworkSegment *east = SegmentAt(net, 750, 0);
+    const openrider::sdk::NetworkSegment *west = SegmentAt(net, 250, 0);
+    const openrider::sdk::NetworkSegment *east = SegmentAt(net, 750, 0);
     ATF_REQUIRE(west && east && west != east);  // cut near x = 500
     ATF_REQUIRE_EQ(west->route_ids.size(), 2u);  // a, b
     ATF_REQUIRE_EQ(east->route_ids.size(), 3u);  // a, b, c
-    const core::NetworkSegment *exit = SegmentAt(net, 1150, 200);
+    const openrider::sdk::NetworkSegment *exit = SegmentAt(net, 1150, 200);
     ATF_REQUIRE(exit && exit->Shared());         // a and c leave together
     ATF_REQUIRE_EQ(exit->route_ids.size(), 2u);
     RequireConnected(net);
@@ -191,12 +191,12 @@ ATF_TEST_CASE_BODY(network_resolution_follows_trace_width)
         heatmap::SegmentParams params;
         params.trace_width_m = width;
         const auto net = heatmap::BuildNetwork(tracks, params);
-        for (const core::NetworkSegment &s : net.segments)
+        for (const openrider::sdk::NetworkSegment &s : net.segments)
             ATF_REQUIRE(s.length_m >= width * 0.9);  // simplification may shorten a little
         RequireConnected(net);
         // c and d join 20 m apart: one cut, not two, at 50 m.
         if (width == 50.0) {
-            const core::NetworkSegment *east = SegmentAt(net, 750, 0);
+            const openrider::sdk::NetworkSegment *east = SegmentAt(net, 750, 0);
             ATF_REQUIRE(east && east->route_ids.size() == 4u);
         }
     }
@@ -209,16 +209,16 @@ ATF_TEST_CASE_BODY(turn_around_alone_is_one_segment_both_ways)
     // 400 m and leaves northwards. The stretch a does alone, out and back,
     // is one segment ending at the turn-around, travelled forward then
     // backward -- not a loop of its own track.
-    std::vector<core::OverviewTrack> tracks = {
+    std::vector<openrider::sdk::OverviewTrack> tracks = {
         Track("a", {{0, 0}, {1000, 0}, {0, 0}}, 0.0, 7),
         Track("b", {{0, 0}, {400, 0}, {400, 600}}, 0.0, 11)};
     const auto net = heatmap::BuildNetwork(tracks, heatmap::SegmentParams{});
     RequireConnected(net);
-    const core::NetworkSegment *spur = SegmentAt(net, 750, 0);
+    const openrider::sdk::NetworkSegment *spur = SegmentAt(net, 750, 0);
     ATF_REQUIRE(spur);
     ATF_REQUIRE(spur->from != spur->to);  // not a loop
     ATF_REQUIRE_EQ(spur->route_ids.size(), 1u);
-    const core::NetworkRoute &a = net.routes[0];
+    const openrider::sdk::NetworkRoute &a = net.routes[0];
     size_t uses = 0;
     for (size_t i = 0; i < a.steps.size(); ++i)
         if (a.steps[i].segment == spur->id) {

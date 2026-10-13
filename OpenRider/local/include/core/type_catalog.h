@@ -5,7 +5,8 @@
 #pragma once
 
 #include "core/activity_type.h"
-#include "core/result.h"
+
+#include <openrider/sdk/result.h>
 
 #include <map>
 #include <string>
@@ -26,13 +27,13 @@ class TypeCatalog {
 public:
     /// Loads activity_types.json: labels per FIT sport/sub_sport[+tag].
     /// @param json_text the file's content
-    Status LoadLabels(const std::string &json_text);
+    openrider::sdk::Status LoadLabels(const std::string &json_text);
 
     /// Loads a source's correspondence table, `<source>.json`:
     /// { "<source type key>": {"sport":..,"sub_sport":..,"tag":..} }.
     /// @param source source name, e.g. "garmin_connect"
     /// @param json_text the file's content
-    Status LoadSource(const std::string &source, const std::string &json_text);
+    openrider::sdk::Status LoadSource(const std::string &source, const std::string &json_text);
 
     /// Type of an outing: the source's mapping of `source_type` wins when
     /// known; otherwise the device's FIT sport/sub_sport.

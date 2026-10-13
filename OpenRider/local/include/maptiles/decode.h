@@ -4,7 +4,7 @@
 /// (module-level utilities).
 #pragma once
 
-#include "core/result.h"
+#include <openrider/sdk/result.h>
 
 #include <string>
 #include <vector>
@@ -20,6 +20,6 @@ struct Image {
 
 /// Decodes a tile file (PNG, JPEG or TIFF) to RGBA.
 /// @param bytes the file's content
-core::Result<Image> DecodeTile(const std::string &bytes);
+openrider::sdk::Result<Image> DecodeTile(const std::string &bytes);
 
 } // namespace maptiles

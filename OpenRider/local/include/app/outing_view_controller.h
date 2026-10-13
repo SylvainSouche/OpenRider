@@ -6,7 +6,7 @@
 #include "app/app_model.h"
 #include "app/intents.h"
 
-#include "core/series.h"
+#include <openrider/sdk/series.h>
 
 #include <string>
 #include <vector>
@@ -15,8 +15,8 @@ namespace app {
 
 /// What the outing view keeps of its presentation.
 struct OutingViewModel {
-    core::XAxis xaxis = core::XAxis::Time;                        ///< shared by every graph
-    std::vector<core::SeriesSpec> graphs = {core::SeriesSpec{}};  ///< stacked graphs; starts with one
+    openrider::sdk::XAxis xaxis = openrider::sdk::XAxis::Time;                        ///< shared by every graph
+    std::vector<openrider::sdk::SeriesSpec> graphs = {openrider::sdk::SeriesSpec{}};  ///< stacked graphs; starts with one
     int hover_index = -1;          ///< point under the mouse in a graph, -1 = none
     double hover_x = 0.0;          ///< its x value (cursor line)
     bool stats_computed = false;   ///< statistics source when no filter is on: computed, not Garmin's
