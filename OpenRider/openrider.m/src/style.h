@@ -24,6 +24,10 @@ std::string FormatNumber(double value, const char *format);
 /// ImGui colour of a 0xRRGGBB colour with `alpha` (0-255).
 ImU32 ColourU32(unsigned int rgb, int alpha);
 
+/// Colour of the `index`-th compared passage (a palette of ten, repeated),
+/// the same on the map and in the graphs.
+ImVec4 RunColour(size_t index);
+
 /// A draggable separator of `length` pixels, placed at the cursor.
 /// @param id ImGui identifier
 /// @param vertical a vertical bar resizing horizontally

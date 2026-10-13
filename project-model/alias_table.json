@@ -35,6 +35,12 @@
     "status": "rejected",
     "type": "ai"
   },
+  "ai-comparison-axes": {
+    "active": true,
+    "id": "0f87-6ace-35a8-bf1a",
+    "status": "proposed",
+    "type": "ai"
+  },
   "ai-config-json": {
     "active": true,
     "id": "0f87-6acd-0462-bcd6",
@@ -827,6 +833,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-matching-plugin": {
+    "active": true,
+    "id": "0f87-6ace-2f7b-7129",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-moving-time-from-raw": {
     "active": true,
     "id": "0f87-6acd-d8c6-0017",
@@ -1001,9 +1013,21 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-same-routes-one-segment": {
+    "active": true,
+    "id": "0f87-6ace-3222-5c1e",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-screen-simplify": {
     "active": true,
     "id": "0f87-6acd-5e67-b080",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-segment-comparison": {
+    "active": true,
+    "id": "0f87-6ace-35a8-e3bd",
     "status": "recorded",
     "type": "dec"
   },
@@ -1733,15 +1757,33 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-same-routes-merge": {
+    "active": true,
+    "id": "0f87-6ace-3222-ba6b",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-screen-simplify": {
     "active": true,
     "id": "0f87-6acd-5e67-4b57",
     "status": "verified",
     "type": "impl"
   },
+  "impl-segment-comparison": {
+    "active": true,
+    "id": "0f87-6ace-35a8-5c96",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-segments": {
     "active": true,
     "id": "0f87-6acd-6028-c636",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-segments-matching": {
+    "active": true,
+    "id": "0f87-6ace-2f7b-f4d7",
     "status": "verified",
     "type": "impl"
   },
@@ -3257,6 +3299,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "segment-comparison-panel": {
+    "active": true,
+    "id": "0f87-6ace-35a8-b8d3",
+    "status": "confirmed",
+    "type": "req"
+  },
   "segment-kinds": {
     "active": true,
     "id": "0f87-6acc-e576-b2f1",
@@ -3294,9 +3342,15 @@
     "type": "req"
   },
   "segments-no-cut-without-junction": {
-    "active": true,
+    "active": false,
     "id": "0f87-6ace-13b5-3521",
-    "status": "confirmed",
+    "status": "superseded",
+    "type": "req"
+  },
+  "segments-one-segment-without-branching": {
+    "active": true,
+    "id": "0f87-6ace-3222-cc20",
+    "status": "proposed",
     "type": "req"
   },
   "segments-overview-display": {

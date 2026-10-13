@@ -5,7 +5,7 @@ namespace app {
 namespace {
 
 // Controllers owning intent kinds.
-enum class Owner { App, Main, List, Map, Outing };
+enum class Owner { App, Main, List, Map, Outing, Comparison };
 
 // The controller owning intents of `kind`.
 Owner OwnerOf(IntentKind kind)
@@ -19,6 +19,7 @@ Owner OwnerOf(IntentKind kind)
     case IntentKind::MapZoom:
     case IntentKind::MapMouse:
     case IntentKind::MapClick:
+    case IntentKind::MapDoubleClick:
     case IntentKind::SelectLayer:
     case IntentKind::SetTrackStyle:
     case IntentKind::SetTrackColour:
@@ -31,6 +32,13 @@ Owner OwnerOf(IntentKind kind)
     case IntentKind::GraphHoverEnd:
     case IntentKind::SetStatsComputed:
         return Owner::Outing;
+    case IntentKind::ToggleComparedRun:
+    case IntentKind::ShowAllComparedRuns:
+    case IntentKind::SetComparisonXAxis:
+    case IntentKind::AddComparisonGraph:
+    case IntentKind::RemoveComparisonGraph:
+    case IntentKind::SetComparisonGraphSpec:
+        return Owner::Comparison;
     case IntentKind::ResizeList:
     case IntentKind::ResizeMap:
     case IntentKind::ShowAbout:
@@ -55,6 +63,7 @@ void Dispatch(Controllers &controllers, Intents &intents)
             case Owner::List: controllers.list.Handle(intent); break;
             case Owner::Map: controllers.map.Handle(intent, controllers.model, intents); break;
             case Owner::Outing: controllers.outing.Handle(intent, controllers.model); break;
+            case Owner::Comparison: controllers.comparison.Handle(intent); break;
             }
         }
     }
@@ -65,6 +74,7 @@ void Step(Controllers &controllers, Intents &intents)
     Dispatch(controllers, intents);  // what the views reported, so the ticks see it
     controllers.app.Tick(intents);
     controllers.outing.Tick(controllers.model);
+    controllers.comparison.Tick(controllers.model);
     controllers.map.Tick(controllers.model, intents);
     Dispatch(controllers, intents);  // what the ticks emitted
 }

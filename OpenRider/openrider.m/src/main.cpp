@@ -127,7 +127,8 @@ int main()
         app::ListViewController list_vc;
         app::MapViewController map_vc;
         app::OutingViewController outing_vc;
-        app::Controllers controllers{model, app_ctl, main_vc, list_vc, map_vc, outing_vc};
+        app::ComparisonViewController comparison_vc;
+        app::Controllers controllers{model, app_ctl, main_vc, list_vc, map_vc, outing_vc, comparison_vc};
         app::Intents intents;
         const or_input_vtable *input = nullptr;
         void *input_handle = nullptr;
@@ -141,7 +142,8 @@ int main()
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
-            const ui::ViewModels view_models{main_vc.ViewModel(), list_vc.ViewModel(), map_vc.ViewModel(), outing_vc.ViewModel()};
+            const ui::ViewModels view_models{main_vc.ViewModel(), list_vc.ViewModel(), map_vc.ViewModel(),
+                                             outing_vc.ViewModel(), comparison_vc.ViewModel()};
             ui::DrawMainView(model, view_models, textures, intents);
             ImGui::Render();
 

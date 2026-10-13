@@ -38,7 +38,7 @@ Two Bmake It frameworks:
 | `libmaptiles` | Map tiles: Web Mercator, polite fetching, disk cache, decoding, coverage |
 | `libapp` | MVC without GUI: `AppModel` + `AppController`, view models with their view controllers, intents and dispatcher |
 | `openrider` | Views (Dear ImGui), read-only: draw from the model and view models, report intents |
-| `input_garmindb`, `tiles_xyz`, `filter_jitter`, `segments_heatmap` | Plugins, loaded at run time from `plugins/<kind>/` |
+| `input_garmindb`, `tiles_xyz`, `filter_jitter`, `segments_heatmap`, `segments_matching` | Plugins, loaded at run time from `plugins/<kind>/` |
 
 Strict MVC: views receive `const` models and push intents; the dispatcher
 routes each intent to the one controller owning it; only `AppController`

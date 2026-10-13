@@ -1,13 +1,23 @@
 #include "app/app_controller.h"
 
 #include "core/log.h"
+#include "core/segment_passages.h"
 #include "core/outing_selection.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <map>
 
 namespace app {
+
+namespace {
+
+constexpr double kPassageDistanceM = 30.0;  // a point this close to the segment's line is on it
+constexpr double kPassageCoverage = 0.8;    // a passage covers this much of the segment at least
+
+} // namespace
 
 AppController::~AppController() { Shutdown(); }
 
@@ -51,6 +61,61 @@ void AppController::AddSegmentMethod(const or_segments_vtable *method)
     model_.segment_methods.push_back(state);
     if (model_.segment_method < 0)
         model_.segment_method = 0;
+}
+
+// @impl 0f87-6ace-35a8-5c96
+void AppController::OpenComparison(int group, int segment)
+{
+    if (!input_ || group < 0 || group >= static_cast<int>(model_.segment_groups.size()))
+        return;
+    const core::SegmentNetwork &network = model_.segment_groups[static_cast<size_t>(group)].network;
+    if (segment < 0 || segment >= static_cast<int>(network.segments.size()))
+        return;
+    SegmentComparison &comparison = model_.comparison;
+    comparison = SegmentComparison{true, comparison.generation + 1, model_.segment_groups[static_cast<size_t>(group)].sport,
+                                   network.segments[static_cast<size_t>(segment)], {}};
+    // Every passage of each outing along the segment, from its recorded
+    // points (loaded now: a few dozen outings at most).
+    for (const std::string &id : comparison.segment.route_ids) {
+        size_t outing = model_.outings.size();
+        for (size_t i = 0; i < model_.outings.size(); ++i)
+            if (id == model_.outings[i].raw.id)
+                outing = i;
+        if (outing == model_.outings.size())
+            continue;
+        std::vector<or_point> points;
+        char error[256] = "";
+        auto append_point = [](void *user, const or_point *point) -> int {
+            static_cast<std::vector<or_point> *>(user)->push_back(*point);
+            return 0;
+        };
+        if (input_->load_points(handle_, id.c_str(), append_point, &points, error, sizeof error) != 0)
+            continue;
+        int pass = 0;
+        for (core::SegmentPassage &passage : core::FindPassages(points, comparison.segment, kPassageDistanceM, kPassageCoverage)) {
+            ComparedRun run;
+            run.outing = outing;
+            run.pass = ++pass;
+            run.forward = passage.forward;
+            run.points.assign(points.begin() + static_cast<long>(passage.first),
+                              points.begin() + static_cast<long>(passage.last) + 1);
+            // Time and distance from the entry into the segment.
+            const double t0 = run.points.front().t_s, d0 = run.points.front().dist_m;
+            for (or_point &point : run.points) {
+                point.t_s -= t0;
+                if (!std::isnan(d0))
+                    point.dist_m -= d0;
+            }
+            run.duration_s = run.points.back().t_s;
+            run.along_m = std::move(passage.along_m);
+            comparison.runs.push_back(std::move(run));
+        }
+    }
+    std::stable_sort(comparison.runs.begin(), comparison.runs.end(), [&](const ComparedRun &a, const ComparedRun &b) {
+        const int order = std::strcmp(model_.outings[a.outing].raw.start_local, model_.outings[b.outing].raw.start_local);
+        return order != 0 ? order > 0 : a.pass < b.pass;
+    });
+    core::LogLine("comparing segment %d: %zu passages", segment, comparison.runs.size());
 }
 
 void AppController::Start()
@@ -231,6 +296,8 @@ void AppController::Handle(const Intent &intent, Intents &out)
     (void)out;
     switch (intent.kind) {
     case IntentKind::SelectOuting:
+        if (intent.i >= 0)
+            model_.comparison.open = false;  // the panel shows the outing
         Select(intent.i);
         break;
     case IntentKind::SetTypeFilter:
@@ -250,6 +317,13 @@ void AppController::Handle(const Intent &intent, Intents &out)
     case IntentKind::SetShowSegments:
         model_.show_segments = intent.i != 0;
         UpdateSegments();
+        break;
+    case IntentKind::OpenSegmentComparison:
+        OpenComparison(intent.i, intent.j);
+        break;
+    case IntentKind::CloseSegmentComparison:
+        model_.comparison.open = false;
+        model_.comparison.runs.clear();
         break;
     case IntentKind::SelectSegmentMethod:
         if (intent.i >= 0 && intent.i < static_cast<int>(model_.segment_methods.size())) {

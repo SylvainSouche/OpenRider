@@ -86,7 +86,8 @@ struct Fixture {
     app::ListViewController list;
     app::MapViewController map;
     app::OutingViewController outing;
-    app::Controllers c{model, app, main, list, map, outing};
+    app::ComparisonViewController comparison;
+    app::Controllers c{model, app, main, list, map, outing, comparison};
     app::Intents intents;
 
     Fixture()
@@ -221,8 +222,41 @@ ATF_TEST_CASE_BODY(segments_follow_the_overview)
     ATF_REQUIRE(f.model.segment_groups.empty());
 }
 
+// Double-clicking a segment compares the outings along it: one passage
+// per running outing (the fake segment follows the shared line), newest
+// first, all shown; the panel's own intents change only its view model.
+ATF_TEST_CASE_WITHOUT_HEAD(segment_comparison);
+ATF_TEST_CASE_BODY(segment_comparison)
+{
+    Fixture f;
+    f.Send(app::IntentKind::SetShowSegments, 1);
+    for (int i = 0; i < 500 && (f.model.segments_building || f.model.segment_groups.empty()); ++i) {
+        app::Step(f.c, f.intents);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    f.Send(app::IntentKind::OpenSegmentComparison, 0, 0);
+    app::Step(f.c, f.intents);
+    ATF_REQUIRE(f.model.comparison.open);
+    ATF_REQUIRE_EQ(f.model.comparison.runs.size(), 2u);
+    ATF_REQUIRE_EQ(f.model.outings[f.model.comparison.runs[0].outing].raw.id, std::string("id1"));  // newest first
+    ATF_REQUIRE_EQ(f.model.comparison.runs[0].points.front().t_s, 0.0);  // time from the entry
+    ATF_REQUIRE(f.model.comparison.runs[0].duration_s > 80.0);
+    ATF_REQUIRE_EQ(f.comparison.ViewModel().shown.size(), 2u);
+    ATF_REQUIRE(f.comparison.ViewModel().shown[1]);
+
+    f.Send(app::IntentKind::ToggleComparedRun, 1);
+    ATF_REQUIRE(!f.comparison.ViewModel().shown[1]);
+    f.Send(app::IntentKind::AddComparisonGraph);
+    ATF_REQUIRE_EQ(f.comparison.ViewModel().graphs.size(), 2u);
+    ATF_REQUIRE_EQ(f.outing.ViewModel().graphs.size(), 1u);  // the outing panel's own graphs are untouched
+
+    f.Send(app::IntentKind::CloseSegmentComparison);
+    ATF_REQUIRE(!f.model.comparison.open);
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, segment_comparison);
     ATF_ADD_TEST_CASE(tcs, segments_follow_the_overview);
     ATF_ADD_TEST_CASE(tcs, scan_and_overview_fill_the_model);
     ATF_ADD_TEST_CASE(tcs, selecting_loads_points_and_stats);

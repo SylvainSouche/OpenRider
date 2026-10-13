@@ -48,7 +48,7 @@ struct MapTile {
 };
 
 /// What the map shows: every outing, or the selected one.
-enum class MapMode { Overview, Outing };
+enum class MapMode { Overview, Outing, Comparison };
 
 /// What the map view keeps of its presentation.
 struct MapViewModel {
@@ -58,6 +58,7 @@ struct MapViewModel {
     MapMode mode = MapMode::Overview;  ///< follows the model's selection
     MapCamera overview;                ///< camera of the overview
     MapCamera outing;                  ///< camera of the selected outing
+    MapCamera comparison;              ///< camera of the segment comparison
     float width = 0.0f;                ///< viewport width, pixels
     float height = 0.0f;               ///< viewport height, pixels
 
@@ -71,9 +72,13 @@ struct MapViewModel {
     int hovered_group = -1;                   ///< overview with segments: AppModel::segment_groups index, -1 = none
     int hovered_segment = -1;                 ///< its segment id under the mouse, -1 = none
     std::string fitted_outing;                ///< outing the outing camera was fitted to
+    unsigned fitted_comparison = 0;           ///< comparison generation the comparison camera was fitted to
 
     /// The camera of the current mode.
-    const MapCamera &Camera() const { return mode == MapMode::Overview ? overview : outing; }
+    const MapCamera &Camera() const
+    {
+        return mode == MapMode::Overview ? overview : mode == MapMode::Outing ? outing : comparison;
+    }
 
     /// The current layer, or null.
     const MapLayerInfo *Layer() const
@@ -142,6 +147,9 @@ public:
 private:
     /// Fits the outing camera to the selected outing's points.
     void FitOuting(const AppModel &model);
+
+    /// Fits the comparison camera to the compared segment and its passages.
+    void FitComparison(const AppModel &model);
 
     /// Fits the overview camera to every track.
     void FitOverview(const AppModel &model);

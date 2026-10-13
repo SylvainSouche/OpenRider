@@ -212,6 +212,28 @@ void MapViewController::FitOuting(const AppModel &model)
     view_model_.fitted_outing = model.points_id;
 }
 
+void MapViewController::FitComparison(const AppModel &model)
+{
+    double west = 180, east = -180, south = 90, north = -90;
+    auto extend = [&](double lon, double lat) {
+        if (std::isnan(lon) || std::isnan(lat))
+            return;
+        west = std::min(west, lon);
+        east = std::max(east, lon);
+        south = std::min(south, lat);
+        north = std::max(north, lat);
+    };
+    for (size_t i = 0; i < model.comparison.segment.lat.size(); ++i)
+        extend(model.comparison.segment.lon[i], model.comparison.segment.lat[i]);
+    for (const ComparedRun &run : model.comparison.runs)
+        for (const or_point &point : run.points)
+            extend(point.lon, point.lat);
+    if (west <= east && view_model_.Layer())
+        FitCamera(view_model_.comparison, *view_model_.Layer(), west, south, east, north, view_model_.width,
+                  view_model_.height);
+    view_model_.fitted_comparison = model.comparison.generation;
+}
+
 void MapViewController::FitOverview(const AppModel &model)
 {
     double west = 180, east = -180, south = 90, north = -90;
@@ -281,11 +303,15 @@ void MapViewController::PublishVisible(const AppModel &model, Intents &out)
 void MapViewController::Tick(const AppModel &model, Intents &out)
 {
     ++frame_;
-    view_model_.mode = model.selected >= 0 ? MapMode::Outing : MapMode::Overview;
+    view_model_.mode = model.comparison.open ? MapMode::Comparison
+                       : model.selected >= 0  ? MapMode::Outing
+                                              : MapMode::Overview;
     if (!fetcher_ || view_model_.width <= 0.0f)
         return;
     if (view_model_.mode == MapMode::Outing && model.points_id != view_model_.fitted_outing && !model.points.empty())
         FitOuting(model);
+    if (view_model_.mode == MapMode::Comparison && model.comparison.generation != view_model_.fitted_comparison)
+        FitComparison(model);
     if (view_model_.mode == MapMode::Overview && !view_model_.overview.fitted && !model.tracks_loading &&
         !model.tracks.empty())
         FitOverview(model);
@@ -402,7 +428,9 @@ void MapViewController::UpdateSegmentHover(const AppModel &model, double mouse_x
 
 void MapViewController::Handle(const Intent &intent, const AppModel &model, Intents &out)
 {
-    MapCamera &camera = view_model_.mode == MapMode::Overview ? view_model_.overview : view_model_.outing;
+    MapCamera &camera = view_model_.mode == MapMode::Overview ? view_model_.overview
+                        : view_model_.mode == MapMode::Outing ? view_model_.outing
+                                                              : view_model_.comparison;
     const MapLayerInfo *layer = view_model_.Layer();
     switch (intent.kind) {
     case IntentKind::MapViewport:
@@ -448,6 +476,12 @@ void MapViewController::Handle(const Intent &intent, const AppModel &model, Inte
             for (size_t i = 0; i < model.outings.size(); ++i)
                 if (model.outings[i].raw.id == view_model_.hovered_track)
                     out.Push(IntentKind::SelectOuting, static_cast<int>(i));
+        break;
+    case IntentKind::MapDoubleClick:
+        // Overview with segments: double-clicking a segment compares the
+        // outings along it.
+        if (view_model_.mode == MapMode::Overview && model.show_segments && view_model_.hovered_segment >= 0)
+            out.Push(IntentKind::OpenSegmentComparison, view_model_.hovered_group, view_model_.hovered_segment);
         break;
     case IntentKind::SelectLayer: {
         const std::string error = Select(intent.i);

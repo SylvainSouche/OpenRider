@@ -42,6 +42,25 @@ struct SegmentMethod {
     std::vector<double> values;                  ///< one per declared parameter
 };
 
+/// One passage of an outing along the compared segment.
+struct ComparedRun {
+    size_t outing = 0;             ///< index into AppModel::outings
+    int pass = 1;                  ///< 1, 2... when the outing travels the segment several times
+    bool forward = true;           ///< travelled in the segment's direction
+    std::vector<or_point> points;  ///< its points along the segment; time and distance from the entry
+    std::vector<double> along_m;   ///< position along the segment of each point
+    double duration_s = 0.0;       ///< time from entry to exit
+};
+
+/// The segment being compared, and every passage of the outings along it.
+struct SegmentComparison {
+    bool open = false;               ///< the comparison panel is shown
+    unsigned generation = 0;         ///< changes with every comparison opened
+    std::string sport;               ///< activity group of the segment
+    core::NetworkSegment segment;    ///< a copy: networks are rebuilt
+    std::vector<ComparedRun> runs;   ///< newest outing first
+};
+
 /// The application model. Only AppController changes it; view controllers
 /// and views read it.
 struct AppModel {
@@ -73,6 +92,8 @@ struct AppModel {
     std::vector<core::SegmentGroup> segment_groups;  ///< last networks built
     bool segments_building = false;                 ///< a build is running
     /// @}
+
+    SegmentComparison comparison;  ///< the segment comparison panel's content
 
     OutingQuery query;  ///< which outings are listed
     int selected = -1;  ///< index into outings, -1 = none

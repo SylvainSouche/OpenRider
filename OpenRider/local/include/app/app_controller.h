@@ -61,6 +61,10 @@ private:
     /// Selects outing `index` (-1 = none) and loads its points.
     void Select(int index);
 
+    /// Opens the comparison of segment `segment` of group `group`: every
+    /// passage of its outings along it, their points loaded.
+    void OpenComparison(int group, int segment);
+
     /// Re-applies the enabled track filters and recomputes the statistics.
     void ApplyFilters();
 

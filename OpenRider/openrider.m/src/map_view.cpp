@@ -187,6 +187,31 @@ void DrawSegmentNetworks(const app::AppModel &model, const app::MapViewModel &vi
                              IM_COL32(40, 40, 40, 255), text);
 }
 
+// Comparison: the segment, wide and pale, and each shown passage in its
+// colour on top.
+void DrawComparedPassages(const app::AppModel &model, const app::ComparisonViewModel &view_model, const Frame &frame)
+{
+    const core::NetworkSegment &segment = model.comparison.segment;
+    std::vector<ImVec2> line;
+    for (size_t i = 0; i < segment.lat.size(); ++i)
+        line.push_back(frame.At(segment.lon[i], segment.lat[i]));
+    if (line.size() > 1)
+        frame.draw_list->AddPolyline(line.data(), static_cast<int>(line.size()), IM_COL32(40, 90, 200, 90), ImDrawFlags_None,
+                                     10.0f);
+    for (size_t r = 0; r < model.comparison.runs.size(); ++r) {
+        if (r >= view_model.shown.size() || !view_model.shown[r])
+            continue;
+        std::vector<ImVec2> passage;
+        for (const or_point &point : model.comparison.runs[r].points)
+            if (!std::isnan(point.lat) && !std::isnan(point.lon))
+                passage.push_back(frame.At(point.lon, point.lat));
+        passage = Simplified(passage);
+        if (passage.size() > 1)
+            frame.draw_list->AddPolyline(passage.data(), static_cast<int>(passage.size()),
+                                         ImGui::ColorConvertFloat4ToU32(RunColour(r)), ImDrawFlags_None, 2.0f);
+    }
+}
+
 // Outing: one colour, or coloured per segment by the chosen series, with a
 // legend; the point hovered in the graphs marked.
 // @impl 0f87-6acd-32ed-0d05
@@ -293,6 +318,8 @@ void DrawMapView(const app::AppModel &model, const ViewModels &view_models, Text
     const ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
     if (ImGui::IsItemDeactivated() && drag.x == 0.0f && drag.y == 0.0f)
         out.Push(app::IntentKind::MapClick);
+    if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+        out.Push(app::IntentKind::MapDoubleClick);
 
     frame.draw_list = ImGui::GetWindowDrawList();
     frame.draw_list->PushClipRect(frame.origin, frame.end, true);
@@ -303,6 +330,8 @@ void DrawMapView(const app::AppModel &model, const ViewModels &view_models, Text
     DrawTiles(view_model, textures, frame);
     if (view_model.mode == app::MapMode::Overview)
         model.show_segments ? DrawSegmentNetworks(model, view_model, frame) : DrawOverviewTracks(model, view_model, frame);
+    else if (view_model.mode == app::MapMode::Comparison)
+        DrawComparedPassages(model, view_models.comparison, frame);
     else
         DrawOutingTrack(model, view_models, frame);
     // Attribution, always visible while the layer is shown.
