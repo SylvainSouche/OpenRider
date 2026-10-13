@@ -113,6 +113,12 @@
     "status": "accepted",
     "type": "ai"
   },
+  "ai-network-reference-tuning": {
+    "active": true,
+    "id": "0f87-6ace-1013-3096",
+    "status": "proposed",
+    "type": "ai"
+  },
   "ai-network-split-entries": {
     "active": true,
     "id": "0f87-6acd-c829-2a05",
@@ -153,6 +159,12 @@
     "active": true,
     "id": "0f87-6acc-e47b-e36b",
     "status": "accepted",
+    "type": "ai"
+  },
+  "ai-resolution-follows-width": {
+    "active": true,
+    "id": "0f87-6acd-ddbe-2e43",
+    "status": "proposed",
     "type": "ai"
   },
   "ai-road-running-now": {
@@ -635,6 +647,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-cut-at-turnarounds": {
+    "active": true,
+    "id": "0f87-6ace-1013-722f",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-delay-per-service": {
     "active": true,
     "id": "0f87-6acc-ecd4-3e20",
@@ -812,6 +830,12 @@
   "dec-network-in-overview": {
     "active": true,
     "id": "0f87-6acd-d9d9-c97c",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-no-cut-without-junction": {
+    "active": true,
+    "id": "0f87-6ace-13b5-4f88",
     "status": "recorded",
     "type": "dec"
   },
@@ -1613,6 +1637,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-merge-through-nodes": {
+    "active": true,
+    "id": "0f87-6ace-13b5-2444",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-motion": {
     "active": true,
     "id": "0f87-6acd-33a9-4f41",
@@ -1784,6 +1814,12 @@
   "impl-track-style": {
     "active": true,
     "id": "0f87-6acd-32ed-0d05",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-turnarounds": {
+    "active": true,
+    "id": "0f87-6ace-1013-e03e",
     "status": "verified",
     "type": "impl"
   },
@@ -2417,9 +2453,21 @@
     "status": "recorded",
     "type": "obs"
   },
+  "obs-runfromhome-reference": {
+    "active": true,
+    "id": "0f87-6ace-1013-0521",
+    "status": "recorded",
+    "type": "obs"
+  },
   "obs-segments-first-run": {
     "active": true,
     "id": "0f87-6acd-60ee-8bd1",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-short-segments-wide-trace": {
+    "active": true,
+    "id": "0f87-6acd-ddbe-1efd",
     "status": "recorded",
     "type": "obs"
   },
@@ -3197,6 +3245,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "segments-cut-at-turnarounds": {
+    "active": true,
+    "id": "0f87-6ace-1013-8329",
+    "status": "confirmed",
+    "type": "req"
+  },
   "segments-heatmap": {
     "active": true,
     "id": "0f87-6acd-5f99-67ff",
@@ -3212,6 +3266,12 @@
   "segments-mean-track": {
     "active": true,
     "id": "0f87-6acd-5f99-6725",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "segments-no-cut-without-junction": {
+    "active": true,
+    "id": "0f87-6ace-13b5-3521",
     "status": "confirmed",
     "type": "req"
   },

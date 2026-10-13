@@ -9,12 +9,15 @@
 ///     adding 1 to the cells it covers and 0.5 to a one-cell rim around them,
 ///     once per cell (the higher value when both; a track lingering somewhere
 ///     does not make a corridor); tracks add up. Wider traces merge routes
-///     that run close together;
+///     that run close together. Each track counts once per pass: its
+///     turn-arounds (out-and-backs) split it into passes, so a stretch done
+///     out and back forms a corridor even when no other outing follows it;
 ///  3. corridor = cells with density >= `min_density` reached by at least
 ///     `min_tracks` distinct tracks;
 ///  4. corridor thinned to a one-cell skeleton, traced junction to junction
 ///     into segments; short dead-end spurs pruned;
-///  5. track points snapped to the nearest segment within tolerance: runs on
+///  5. track points snapped to the nearest segment within tolerance (25 m at
+///     least: GPS drift on a shared path): runs on
 ///     a segment are its common parts, the rest is its own;
 ///  6. mean track of a segment: offsets of the matched points from the
 ///     skeleton, averaged per track and then across tracks, along the
@@ -109,7 +112,14 @@ struct NetworkRoute {
 /// nodes. Shared segments are cut where routes enter or leave them (entry
 /// points close together merged), and turn-arounds, so that each route
 /// covers whole segments; the parts a route does alone are single-route
-/// segments. Each segment lists its routes; each route is an ordered chain
+/// segments. A route turning around mid-segment cuts it there. Route
+/// starts and ends join the node already within max(50 m, trace width)
+/// (outings from home share one node); short single-route loops (GPS
+/// wandering) are dropped; segments meeting at a node that is no junction,
+/// turn-around or route end are joined. Nothing finer than the trace width
+/// is resolved: entry points
+/// within that width are one cut, and a segment shorter than it is
+/// contracted into one node. Each segment lists its routes; each route is an ordered chain
 /// of connected segments with its direction of travel on each.
 struct SegmentNetwork {
     std::vector<NetworkNode> nodes;        ///< junctions

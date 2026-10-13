@@ -179,8 +179,60 @@ ATF_TEST_CASE_BODY(network_cut_where_a_route_joins)
     RequireConnected(net);
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(network_resolution_follows_trace_width);
+ATF_TEST_CASE_BODY(network_resolution_follows_trace_width)
+{
+    // A wide trace merges the junctions: no segment is shorter than it, and
+    // the routes stay chains of connected segments.
+    auto tracks = TwoTracks();
+    tracks.push_back(Track("c", {{500, 500}, {500, 0}, {1000, 0}, {1300, 400}}, 0.0, 13));
+    tracks.push_back(Track("d", {{520, -500}, {520, 0}, {1000, 0}, {1300, -400}}, 0.0, 17));
+    for (double width : {20.0, 50.0}) {
+        core::SegmentParams params;
+        params.trace_width_m = width;
+        const auto net = core::BuildNetwork(tracks, params);
+        for (const core::NetworkSegment &s : net.segments)
+            ATF_REQUIRE(s.length_m >= width * 0.9);  // simplification may shorten a little
+        RequireConnected(net);
+        // c and d join 20 m apart: one cut, not two, at 50 m.
+        if (width == 50.0) {
+            const core::NetworkSegment *east = SegmentAt(net, 750, 0);
+            ATF_REQUIRE(east && east->route_ids.size() == 4u);
+        }
+    }
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(turn_around_alone_is_one_segment_both_ways);
+ATF_TEST_CASE_BODY(turn_around_alone_is_one_segment_both_ways)
+{
+    // a goes out to x = 1000 and comes back the same way; b shares the first
+    // 400 m and leaves northwards. The stretch a does alone, out and back,
+    // is one segment ending at the turn-around, travelled forward then
+    // backward -- not a loop of its own track.
+    std::vector<core::OverviewTrack> tracks = {
+        Track("a", {{0, 0}, {1000, 0}, {0, 0}}, 0.0, 7),
+        Track("b", {{0, 0}, {400, 0}, {400, 600}}, 0.0, 11)};
+    const auto net = core::BuildNetwork(tracks, core::SegmentParams{});
+    RequireConnected(net);
+    const core::NetworkSegment *spur = SegmentAt(net, 750, 0);
+    ATF_REQUIRE(spur);
+    ATF_REQUIRE(spur->from != spur->to);  // not a loop
+    ATF_REQUIRE_EQ(spur->route_ids.size(), 1u);
+    const core::NetworkRoute &a = net.routes[0];
+    size_t uses = 0;
+    for (size_t i = 0; i < a.steps.size(); ++i)
+        if (a.steps[i].segment == spur->id) {
+            ++uses;
+            if (i + 1 < a.steps.size() && a.steps[i + 1].segment == spur->id)
+                ATF_REQUIRE(a.steps[i].forward != a.steps[i + 1].forward);  // out, then back
+        }
+    ATF_REQUIRE_EQ(uses, 2u);
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, turn_around_alone_is_one_segment_both_ways);
+    ATF_ADD_TEST_CASE(tcs, network_resolution_follows_trace_width);
     ATF_ADD_TEST_CASE(tcs, thinning_gives_one_pixel_line);
     ATF_ADD_TEST_CASE(tcs, shared_stretch_is_one_common_segment);
     ATF_ADD_TEST_CASE(tcs, tracks_mapped_own_common_own);
