@@ -1,0 +1,49 @@
+# Build and test OpenRider on macOS with the same toolchain as development:
+# MacPorts (bmake, clang-22, ATF/Kyua, pkg-config, GLFW, curl, libtiff) and
+# Bmake It, checked out next to the sources in a hidden directory so that
+# the workspace does not take it for a framework.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      MAKESYSPATH: ${{ github.workspace }}/.bmake-it/mk:/opt/local/share/mk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bmake It
+        uses: actions/checkout@v4
+        with:
+          repository: SylvainSouche/bmake-it
+          path: .bmake-it
+
+      - name: MacPorts
+        uses: melusina-org/setup-macports@v1
+
+      - name: Ports
+        run: |
+          sudo port -N install bmake clang-22 atf kyua pkgconfig glfw curl tiff
+          sudo port select --set clang mp-clang-22
+
+      - name: Build
+        run: bmake
+
+      - name: Test
+        run: bmake test
+
+      - name: Test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            build/*/runs/*/test-results.xml
+            */build/*/runs/*/test-results.xml
+          if-no-files-found: ignore
