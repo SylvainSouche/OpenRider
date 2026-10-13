@@ -2,6 +2,7 @@
 // plugin ABI (openrider/segments.h).
 
 #include <openrider/plugin.h>
+#include <openrider/sdk/route_ranges.h>
 #include <openrider/sdk/segment_exchange.h>
 #include <openrider/segments.h>
 
@@ -34,17 +35,18 @@ int MatchingBuild(const or_segment_track *tracks, size_t count, const double *va
     params.tolerance_m = values[Tolerance];
     params.min_new_m = values[MinNew];
     params.max_angle_deg = values[MaxAngle];
-    const openrider::sdk::SegmentNetwork network =
+    openrider::sdk::SegmentNetwork network =
         matching::BuildNetwork(input, params, [&] { return cancel && cancel(user) != 0; });
+    openrider::sdk::AssignStepRanges(network, input);
     *out = openrider::sdk::ExportNetwork(network, input);
     return 0;
 }
 
 void MatchingFree(or_segment_network *network) { openrider::sdk::FreeExportedNetwork(network); }
 
-const or_segments_vtable kVtable = {"matching", "Matching the tracks", ParamCount, kParams, MatchingBuild,
+const or_segments_vtable kVtable = {sizeof(or_segments_vtable), "matching", "Matching the tracks", ParamCount, kParams, MatchingBuild,
                                     MatchingFree};
-const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_SEGMENTS, "matching", "0.1", &kVtable};
+const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_SEGMENTS, OR_PLUGIN_THREAD_SAFE, "matching", "0.1", &kVtable};
 
 } // namespace
 

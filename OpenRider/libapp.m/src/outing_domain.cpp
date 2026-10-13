@@ -3,6 +3,7 @@
 #include "app/reports.h"
 
 #include "core/log.h"
+#include "core/plugin_thread.h"
 
 namespace app {
 
@@ -85,8 +86,12 @@ void OutingDomain::ApplyFilters()
             continue;
         std::vector<unsigned char> keep(model_.points.size(), 1);
         char error[256] = "";
-        if (filter.vtable->apply_track(model_.points.data(), model_.points.size(), filter.values.data(), keep.data(),
-                                       error, sizeof error) != 0) {
+        int rc = 0;
+        core::CallPlugin(filter.vtable, [&] {
+            rc = filter.vtable->apply_track(model_.points.data(), model_.points.size(), filter.values.data(),
+                                            keep.data(), error, sizeof error);
+        });
+        if (rc != 0) {
             ReportError(model_, std::string("Filter ") + filter.vtable->label + " failed: " + error);
             continue;
         }

@@ -34,6 +34,8 @@ struct NetworkSegment {
 struct RouteStep {
     int segment = -1;     ///< segment id
     bool forward = true;  ///< travelled from `from` to `to`
+    size_t first = 0;     ///< first point of the route's track on this step (the previous step's last)
+    size_t last = 0;      ///< last point on this step, inclusive (the next step's first)
 };
 
 /// A route as a chain of segments.

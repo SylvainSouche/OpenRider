@@ -30,7 +30,15 @@ struct SegmentPassage {
     std::vector<double> along_m;   ///< position along the segment of each point first..last
 };
 
-/// The passages of `points` along `segment`: stretches of points within
+/// The passage of `points` first..last (inclusive) along `segment`, in
+/// direction `forward`: a route step's range (RouteStep::first, last),
+/// mapped to the outing's points. Each point's position along the
+/// segment's line; a point without position keeps the previous one's.
+SegmentPassage PassageAlong(const std::vector<or_point> &points, size_t first, size_t last, bool forward,
+                            const NetworkSegment &segment);
+
+/// The passages of `points` along `segment` found from geometry alone, for
+/// a network without step ranges: stretches of points within
 /// `max_distance_m` of its line (short excursions beyond bridged) that
 /// cover at least `min_coverage` (0-1) of its length in one direction. A
 /// stretch going along and back is two passages; so is an outing passing

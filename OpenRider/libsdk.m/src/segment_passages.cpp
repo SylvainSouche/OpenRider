@@ -27,6 +27,28 @@ LinePosition PositionOnLine(const XY &q, const std::vector<XY> &line)
     return best;
 }
 
+SegmentPassage PassageAlong(const std::vector<or_point> &points, size_t first, size_t last, bool forward,
+                            const NetworkSegment &segment)
+{
+    SegmentPassage passage;
+    passage.first = first;
+    passage.last = last;
+    passage.forward = forward;
+    if (segment.lat.empty() || first > last || last >= points.size())
+        return passage;
+    const LocalProjection projection(segment.lon[segment.lon.size() / 2], segment.lat[segment.lat.size() / 2]);
+    std::vector<XY> line;
+    for (size_t i = 0; i < segment.lat.size(); ++i)
+        line.push_back(projection.Forward(segment.lon[i], segment.lat[i]));
+    double previous = forward ? 0.0 : Length(line);
+    for (size_t i = first; i <= last; ++i) {
+        if (!std::isnan(points[i].lat) && !std::isnan(points[i].lon))
+            previous = PositionOnLine(projection.Forward(points[i].lon, points[i].lat), line).along_m;
+        passage.along_m.push_back(previous);
+    }
+    return passage;
+}
+
 std::vector<SegmentPassage> FindPassages(const std::vector<or_point> &points, const NetworkSegment &segment,
                                          double max_distance_m, double min_coverage)
 {

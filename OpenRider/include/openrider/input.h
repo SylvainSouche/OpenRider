@@ -72,12 +72,14 @@ typedef int (*or_point_cb)(void *user, const struct or_point *point);
  * non-zero with a message written to err (errlen bytes, always
  * NUL-terminated). */
 struct or_input_vtable {
+    size_t struct_size;       /**< sizeof(struct or_input_vtable) as built */
     /** Opens the source. `config`: plugin-specific JSON text (may be NULL
      * for defaults). Returns a handle, or NULL with a message in err. */
     void *(*open)(const char *config, char *err, size_t errlen);
     /** Closes a handle returned by open(). */
     void (*close)(void *handle);
-    /** Calls `cb` for every outing, passing `user` along. */
+    /** Calls `cb` for every outing, in any order, passing `user` along.
+     * An outing's id is stable from one run to the next. */
     int (*list_outings)(void *handle, or_outing_cb cb, void *user,
                         char *err, size_t errlen);
     /** Calls `cb` for every recorded point of an outing, in time order. */

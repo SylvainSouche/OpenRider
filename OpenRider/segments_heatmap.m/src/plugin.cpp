@@ -2,6 +2,7 @@
 // behind the plugin ABI (openrider/segments.h).
 
 #include <openrider/plugin.h>
+#include <openrider/sdk/route_ranges.h>
 #include <openrider/sdk/segment_exchange.h>
 #include <openrider/segments.h>
 
@@ -32,17 +33,18 @@ int HeatmapBuild(const or_segment_track *tracks, size_t count, const double *val
     heatmap::SegmentParams params;
     params.trace_width_m = values[TraceWidth];
     params.cell_m = values[CellSize];
-    const openrider::sdk::SegmentNetwork network =
+    openrider::sdk::SegmentNetwork network =
         heatmap::BuildNetwork(input, params, [&] { return cancel && cancel(user) != 0; });
+    openrider::sdk::AssignStepRanges(network, input);
     *out = openrider::sdk::ExportNetwork(network, input);
     return 0;
 }
 
 void HeatmapFree(or_segment_network *network) { openrider::sdk::FreeExportedNetwork(network); }
 
-const or_segments_vtable kVtable = {"heatmap", "Heat map of the tracks", ParamCount, kParams, HeatmapBuild,
+const or_segments_vtable kVtable = {sizeof(or_segments_vtable), "heatmap", "Heat map of the tracks", ParamCount, kParams, HeatmapBuild,
                                     HeatmapFree};
-const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_SEGMENTS, "heatmap", "0.1", &kVtable};
+const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_SEGMENTS, OR_PLUGIN_THREAD_SAFE, "heatmap", "0.1", &kVtable};
 
 } // namespace
 

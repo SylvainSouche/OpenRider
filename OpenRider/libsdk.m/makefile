@@ -6,5 +6,5 @@
 # @impl 0f87-6ace-6e83-98f6
 LIB=openrider_sdk
 LIB_SHARED=NO
-TESTS_CXX=motion_test series_test network_cleanup_test segment_passages_test
+TESTS_CXX=motion_test series_test network_cleanup_test segment_passages_test route_ranges_test
 .include "mk.lib.mk"

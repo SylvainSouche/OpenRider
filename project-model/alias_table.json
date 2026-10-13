@@ -1619,6 +1619,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "impl-abi2-versioning": {
+    "active": true,
+    "id": "0f87-6ace-72ef-5cb5",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-c-pref": {
     "active": false,
     "id": "0f87-6acc-e6f8-94d9",
@@ -1859,6 +1865,12 @@
     "status": "asserted",
     "type": "impl"
   },
+  "impl-plugin-thread-safety": {
+    "active": true,
+    "id": "0f87-6ace-72ef-00b1",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-same-routes-merge": {
     "active": true,
     "id": "0f87-6ace-3222-ba6b",
@@ -1875,6 +1887,12 @@
     "active": true,
     "id": "0f87-6ace-35a8-5c96",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-segment-step-ranges": {
+    "active": true,
+    "id": "0f87-6ace-72ef-1201",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-segments": {

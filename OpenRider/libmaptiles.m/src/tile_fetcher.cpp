@@ -1,5 +1,7 @@
 #include "maptiles/tile_fetcher.h"
 
+#include "core/plugin_thread.h"
+
 #include <curl/curl.h>
 
 #include <algorithm>
@@ -25,11 +27,19 @@ size_t AppendBody(char *data, size_t size, size_t count, void *user)
 
 std::once_flag g_curl_init;  // libcurl is initialized once per process
 
+/// The description of `layer`, asked of its plugin.
+const or_tile_layer *LayerOf(const or_tiles_vtable *tiles_vtable, void *layer)
+{
+    const or_tile_layer *info = nullptr;
+    core::CallPlugin(tiles_vtable, [&] { info = tiles_vtable->layer(layer); });
+    return info;
+}
+
 } // namespace
 
 TileFetcher::TileFetcher(const or_tiles_vtable *tiles_vtable, void *layer, TileCache *cache,
                          std::string user_agent, int workers)
-    : tiles_vtable_(tiles_vtable), layer_(layer), layer_info_(tiles_vtable->layer(layer)),
+    : tiles_vtable_(tiles_vtable), layer_(layer), layer_info_(LayerOf(tiles_vtable, layer)),
       cache_(cache), user_agent_(std::move(user_agent)), service_(layer_info_->server_count)
 {
     std::call_once(g_curl_init, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
@@ -109,7 +119,11 @@ bool TileFetcher::FetchNetwork(void *curl, const TileKey &key, std::string &byte
     }
 
     char url[2048];
-    if (tiles_vtable_->tile_url(layer_, static_cast<size_t>(server), key.z, key.x, key.y, url, sizeof url) != 0)
+    int rc = 0;
+    core::CallPlugin(tiles_vtable_, [&] {
+        rc = tiles_vtable_->tile_url(layer_, static_cast<size_t>(server), key.z, key.x, key.y, url, sizeof url);
+    });
+    if (rc != 0)
         return false;
     CURL *handle = static_cast<CURL *>(curl);
     curl_slist *headers = nullptr;

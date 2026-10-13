@@ -128,6 +128,15 @@ ATF_TEST_CASE_BODY(plugin_abi)
     const auto result = openrider::sdk::RunSegments(plugin, tracks, values, nullptr, nullptr);
     ATF_REQUIRE(result.Ok());
     ATF_REQUIRE_EQ(result.value.routes.size(), 2u);
+    // Each route's steps cover its track, one after the other.
+    for (size_t r = 0; r < tracks.size(); ++r) {
+        const auto &steps = result.value.routes[r].steps;
+        ATF_REQUIRE(!steps.empty());
+        ATF_REQUIRE_EQ(steps.front().first, 0u);
+        ATF_REQUIRE_EQ(steps.back().last, tracks[r].lat.size() - 1);
+        for (size_t k = 1; k < steps.size(); ++k)
+            ATF_REQUIRE_EQ(steps[k].first, steps[k - 1].last);
+    }
 }
 
 ATF_INIT_TEST_CASES(tcs)

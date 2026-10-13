@@ -103,7 +103,7 @@ ATF_TEST_CASE_BODY(background_scan_resolves_types)
     core::TypeCatalog cat;
     cat.LoadSource("garmin_connect",
                     "{\"backcountry_skiing\":{\"sport\":\"alpine_skiing\",\"sub_sport\":\"backcountry\"}}");
-    or_input_vtable vt{nullptr, nullptr, FakeList, nullptr};
+    or_input_vtable vt{sizeof(or_input_vtable), nullptr, nullptr, FakeList, nullptr};
     core::Library lib;
     lib.StartScan(&vt, nullptr, &cat, "garmin_connect");
     WaitDone(lib);
@@ -119,7 +119,7 @@ ATF_TEST_CASE_WITHOUT_HEAD(background_scan_reports_error);
 ATF_TEST_CASE_BODY(background_scan_reports_error)
 {
     core::TypeCatalog cat;
-    or_input_vtable vt{nullptr, nullptr, FakeFail, nullptr};
+    or_input_vtable vt{sizeof(or_input_vtable), nullptr, nullptr, FakeFail, nullptr};
     core::Library lib;
     lib.StartScan(&vt, nullptr, &cat, "garmin_connect");
     WaitDone(lib);

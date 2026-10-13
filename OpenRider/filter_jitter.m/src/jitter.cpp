@@ -75,9 +75,9 @@ int JitterApply(const or_point *points, size_t count, const double *values, unsi
     return 0;
 }
 
-const or_filter_vtable kVtable = {OR_FILTER_TRACK, "jitter", "Jitter while not moving",
+const or_filter_vtable kVtable = {sizeof(or_filter_vtable), OR_FILTER_TRACK, "jitter", "Jitter while not moving",
                                   sizeof kParams / sizeof kParams[0], kParams, JitterApply};
-const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_FILTER, "jitter", "0.1", &kVtable};
+const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_FILTER, OR_PLUGIN_THREAD_SAFE, "jitter", "0.1", &kVtable};
 
 } // namespace
 

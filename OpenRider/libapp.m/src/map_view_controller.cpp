@@ -4,6 +4,7 @@
 
 #include "core/log.h"
 #include "core/outing_selection.h"
+#include "core/plugin_thread.h"
 #include "core/plugins.h"
 #include "maptiles/mercator.h"
 
@@ -103,10 +104,12 @@ bool MapViewController::AddLayer(const std::string &json)
     // The first protocol that opens the definition describes the layer.
     for (const or_tiles_vtable *tiles_vtable : plugins_) {
         char error[256] = "";
-        void *handle = tiles_vtable->open(info.json.c_str(), error, sizeof error);
+        void *handle = nullptr;
+        core::CallPlugin(tiles_vtable, [&] { handle = tiles_vtable->open(info.json.c_str(), error, sizeof error); });
         if (!handle)
             continue;
-        const or_tile_layer *layer = tiles_vtable->layer(handle);
+        const or_tile_layer *layer = nullptr;
+        core::CallPlugin(tiles_vtable, [&] { layer = tiles_vtable->layer(handle); });
         info.id = layer->id;
         info.name = layer->name;
         info.attribution = layer->attribution ? layer->attribution : "";
@@ -115,7 +118,7 @@ bool MapViewController::AddLayer(const std::string &json)
         info.min_zoom = layer->min_zoom;
         info.max_zoom = layer->max_zoom;
         info.tile_size = layer->tile_size;
-        tiles_vtable->close(handle);
+        core::CallPlugin(tiles_vtable, [&] { tiles_vtable->close(handle); });
         view_model_.layers.push_back(info);
         return true;
     }
@@ -127,7 +130,7 @@ void MapViewController::Shutdown()
     fetcher_.reset();  // joins the workers before the layer goes away
     cache_.reset();
     if (tiles_vtable_ && layer_)
-        tiles_vtable_->close(layer_);
+        core::CallPlugin(tiles_vtable_, [&] { tiles_vtable_->close(layer_); });
     layer_ = nullptr;
 }
 
@@ -171,7 +174,8 @@ std::string MapViewController::Select(int index)
     std::string why;
     for (const or_tiles_vtable *tiles_vtable : plugins_) {
         char error[256] = "";
-        void *handle = tiles_vtable->open(info.json.c_str(), error, sizeof error);
+        void *handle = nullptr;
+        core::CallPlugin(tiles_vtable, [&] { handle = tiles_vtable->open(info.json.c_str(), error, sizeof error); });
         if (!handle) {
             why += error;
             continue;

@@ -1,5 +1,7 @@
 #include "core/overview_loader.h"
 
+#include "core/plugin_thread.h"
+
 namespace core {
 
 OverviewLoader::~OverviewLoader() { Stop(); }
@@ -44,7 +46,9 @@ void OverviewLoader::Run(const or_input_vtable *input, void *handle, std::vector
             static_cast<std::vector<or_point> *>(user)->push_back(*p);
             return 0;
         };
-        if (input->load_points(handle, id.c_str(), cb, &pts, err, sizeof err) == 0) {
+        int rc = 0;
+        CallPlugin(input, [&] { rc = input->load_points(handle, id.c_str(), cb, &pts, err, sizeof err); });
+        if (rc == 0) {
             openrider::sdk::OverviewTrack t = openrider::sdk::ThinTrack(id, pts, openrider::sdk::kOverviewSpacingM);
             if (!t.lat.empty()) {
                 std::lock_guard<std::mutex> lock(mutex_);

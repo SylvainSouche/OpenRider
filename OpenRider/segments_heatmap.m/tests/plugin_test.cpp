@@ -63,6 +63,15 @@ ATF_TEST_CASE_BODY(two_tracks_share_a_segment)
         shared = shared || segment.Shared();
     ATF_REQUIRE(shared);
     ATF_REQUIRE_EQ(result.value.routes[0].id, "a");
+    // Each route's steps cover its track, one after the other.
+    for (size_t r = 0; r < tracks.size(); ++r) {
+        const auto &steps = result.value.routes[r].steps;
+        ATF_REQUIRE(!steps.empty());
+        ATF_REQUIRE_EQ(steps.front().first, 0u);
+        ATF_REQUIRE_EQ(steps.back().last, tracks[r].lat.size() - 1);
+        for (size_t k = 1; k < steps.size(); ++k)
+            ATF_REQUIRE_EQ(steps[k].first, steps[k - 1].last);
+    }
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(cancel_stops_early);

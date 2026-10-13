@@ -29,7 +29,13 @@ struct PluginScan {
 /// Subdirectory of a plugin kind: "input", "filters", "tiles", "workflows".
 const char *PluginKindDir(uint32_t kind);
 
-/// Why a descriptor is unacceptable for `kind`, or "" if it is fine.
+/// Size of a `kind`'s function table as of ABI 2.0: a plugin's table
+/// (its struct_size) is at least this large.
+size_t VtableMinimumSize(uint32_t kind);
+
+/// Why a descriptor is unacceptable for `kind`, or "" if it is fine: another
+/// major ABI version, a newer minor one, another kind, a missing field, or
+/// a function table smaller than VtableMinimumSize().
 std::string PluginCheck(const or_plugin_info *info, uint32_t kind);
 
 /// Loads every plugin of `kind` found under `<root>/<kind dir>/` for each of `roots`.

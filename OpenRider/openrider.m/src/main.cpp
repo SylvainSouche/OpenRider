@@ -15,6 +15,7 @@
 
 #include "core/log.h"
 #include "core/paths.h"
+#include "core/plugin_thread.h"
 #include "core/plugins.h"
 
 #include <cstdio>
@@ -72,7 +73,7 @@ void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::
         const core::LoadedPlugin &p = inputs.loaded.front();
         input = static_cast<const or_input_vtable *>(p.info->vtable);
         char err[512] = "";
-        input_handle = input->open(nullptr, err, sizeof err);
+        core::CallPlugin(input, [&] { input_handle = input->open(nullptr, err, sizeof err); });
         if (!input_handle) {
             out.PushText(app::IntentKind::ReportError, std::string("Cannot open ") + p.info->name + ": " + err);
             input = nullptr;
@@ -160,7 +161,7 @@ int main()
         app_ctl.Shutdown();
         map_vc.Shutdown();
         if (input && input_handle)
-            input->close(input_handle);
+            core::CallPlugin(input, [&] { input->close(input_handle); });
         core::LogLine("OpenRider exiting");
     }
 

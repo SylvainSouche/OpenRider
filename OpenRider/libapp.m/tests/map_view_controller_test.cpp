@@ -32,7 +32,7 @@ int FakeUrl(void *, size_t, int z, int x, int y, char *url, size_t len)
     std::snprintf(url, len, "file:///nonexistent/openrider/%d/%d/%d.png", z, x, y);
     return 0;
 }
-const or_tiles_vtable kTiles = {"fake", FakeOpen, FakeClose, FakeLayerInfo, FakeUrl};
+const or_tiles_vtable kTiles = {sizeof(or_tiles_vtable), "fake", FakeOpen, FakeClose, FakeLayerInfo, FakeUrl};
 
 openrider::sdk::OverviewTrack LineTrack(const char *id, double lon0)
 {

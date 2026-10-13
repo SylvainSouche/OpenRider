@@ -1,5 +1,7 @@
 #include "core/library.h"
 
+#include "core/plugin_thread.h"
+
 #include <algorithm>
 
 namespace core {
@@ -62,7 +64,8 @@ void Library::Run(const or_input_vtable *input, void *handle, const TypeCatalog 
         return 0;
     };
     char err[512] = "";
-    const int rc = input->list_outings(handle, cb, &ctx, err, sizeof err);
+    int rc = 0;
+    CallPlugin(input, [&] { rc = input->list_outings(handle, cb, &ctx, err, sizeof err); });
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (rc != 0)

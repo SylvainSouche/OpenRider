@@ -54,9 +54,10 @@ SegmentNetwork ImportNetwork(const or_segment_network &network, const std::vecto
     for (size_t r = 0; r < network.route_count && r < tracks.size(); ++r) {
         NetworkRoute route;
         route.id = tracks[r].id;
-        for (size_t k = 0; k < network.routes[r].step_count; ++k)
-            route.steps.push_back({static_cast<int>(network.routes[r].steps[k].segment),
-                                   network.routes[r].steps[k].forward != 0});
+        for (size_t k = 0; k < network.routes[r].step_count; ++k) {
+            const or_route_step &step = network.routes[r].steps[k];
+            route.steps.push_back({static_cast<int>(step.segment), step.forward != 0, step.first, step.last});
+        }
         out.routes.push_back(std::move(route));
     }
     return out;
@@ -114,7 +115,8 @@ or_segment_network *ExportNetwork(const SegmentNetwork &network, const std::vect
         target.step_count = route.steps.size();
         target.steps = Allocate<or_route_step>(route.steps.size());
         for (size_t k = 0; k < route.steps.size(); ++k)
-            target.steps[k] = {static_cast<uint32_t>(route.steps[k].segment), route.steps[k].forward ? 1u : 0u};
+            target.steps[k] = {static_cast<uint32_t>(route.steps[k].segment), route.steps[k].forward ? 1u : 0u,
+                               static_cast<uint32_t>(route.steps[k].first), static_cast<uint32_t>(route.steps[k].last)};
     }
     return out;
 }

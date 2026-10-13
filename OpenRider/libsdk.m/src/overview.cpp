@@ -67,12 +67,14 @@ OverviewTrack ThinTrack(const std::string &id, const std::vector<or_point> &poin
         track.lat.push_back(point.lat);
         track.lon.push_back(point.lon);
         track.noise_m.push_back(noise[i]);
+        track.source_index.push_back(i);
     }
     if (last_valid < points.size() && !track.lat.empty() &&
         (track.lat.back() != points[last_valid].lat || track.lon.back() != points[last_valid].lon)) {
         track.lat.push_back(points[last_valid].lat);
         track.lon.push_back(points[last_valid].lon);
         track.noise_m.push_back(noise[last_valid]);
+        track.source_index.push_back(last_valid);
     }
     for (size_t i = 0; i < track.lat.size(); ++i) {
         track.west = std::min(track.west, track.lon[i]);

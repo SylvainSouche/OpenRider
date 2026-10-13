@@ -12,8 +12,37 @@ namespace app {
 
 namespace {
 
+// For a network without step ranges only: passages found from geometry.
 constexpr double kPassageDistanceM = 30.0;  // a point this close to the segment's line is on it
 constexpr double kPassageCoverage = 0.8;    // a passage covers this much of the segment at least
+
+/// The passages of outing `id` (its recorded `points`) along segment
+/// `segment` of `network`: the steps of its route on that segment, their
+/// ranges mapped from the thinned track the network was built from
+/// (`tracks`) to the outing's points. Found from geometry when the network
+/// has no step ranges.
+std::vector<openrider::sdk::SegmentPassage> PassagesOf(const std::string &id, int segment,
+                                                       const openrider::sdk::SegmentNetwork &network,
+                                                       const std::vector<openrider::sdk::OverviewTrack> &tracks,
+                                                       const std::vector<or_point> &points)
+{
+    const openrider::sdk::NetworkSegment &line = network.segments[static_cast<size_t>(segment)];
+    const auto track = std::find_if(tracks.begin(), tracks.end(), [&](const auto &t) { return t.id == id; });
+    const auto route = std::find_if(network.routes.begin(), network.routes.end(), [&](const auto &r) { return r.id == id; });
+    const bool ranged = track != tracks.end() && route != network.routes.end() && !track->source_index.empty() &&
+                        std::any_of(route->steps.begin(), route->steps.end(), [](const auto &s) { return s.last > s.first; });
+    if (!ranged)
+        return openrider::sdk::FindPassages(points, line, kPassageDistanceM, kPassageCoverage);
+    std::vector<openrider::sdk::SegmentPassage> passages;
+    for (const openrider::sdk::RouteStep &step : route->steps) {
+        if (step.segment != segment || step.last >= track->source_index.size())
+            continue;
+        const size_t first = track->source_index[step.first], last = track->source_index[step.last];
+        if (first < last && last < points.size())
+            passages.push_back(openrider::sdk::PassageAlong(points, first, last, step.forward, line));
+    }
+    return passages;
+}
 
 } // namespace
 
@@ -43,8 +72,9 @@ void ComparisonDomain::Open(int group, int segment)
     SegmentComparison &comparison = model_.comparison;
     comparison = SegmentComparison{true, comparison.generation + 1, model_.segment_groups[static_cast<size_t>(group)].sport,
                                    network.segments[static_cast<size_t>(segment)], {}};
-    // Every passage of each outing along the segment, from its recorded
-    // points (loaded now: a few dozen outings at most).
+    // Every passage of each outing along the segment: its route's steps on
+    // the segment, over its recorded points (loaded now: a few dozen
+    // outings at most).
     for (const std::string &id : comparison.segment.route_ids) {
         size_t outing = model_.outings.size();
         for (size_t i = 0; i < model_.outings.size(); ++i)
@@ -56,7 +86,7 @@ void ComparisonDomain::Open(int group, int segment)
         if (!input_.LoadPoints(id, points).Ok())
             continue;
         int pass = 0;
-        for (openrider::sdk::SegmentPassage &passage : openrider::sdk::FindPassages(points, comparison.segment, kPassageDistanceM, kPassageCoverage)) {
+        for (openrider::sdk::SegmentPassage &passage : PassagesOf(id, segment, network, model_.tracks, points)) {
             ComparedRun run;
             run.outing = outing;
             run.pass = ++pass;

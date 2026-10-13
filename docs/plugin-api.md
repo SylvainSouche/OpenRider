@@ -56,17 +56,18 @@ Rules:
 
 ## 4. Versioning (L0)
 
-Today: `OR_PLUGIN_API_VERSION` (1) must equal the application's, exactly.
-Any change, even an addition, would refuse every built plugin.
+Until ABI 1, `OR_PLUGIN_API_VERSION` had to equal the application's
+exactly: any change, even an addition, refused every built plugin.
 
-Proposed for ABI 2:
+In place since ABI 2.0 (`OR_PLUGIN_API_VERSION` 2, `OR_PLUGIN_API_MINOR` 0):
 
-- `api_version` becomes **major** (refusal on mismatch) plus **minor**
-  (`api_minor`): a plugin built for minor *n* loads in an application of
-  minor >= *n*.
+- `api_version` is the **major** version (refusal on mismatch), `api_minor`
+  the **minor** one: a plugin built for minor *n* loads in an application
+  of minor >= *n*.
 - Every vtable and host table starts with a `size_t struct_size`; functions
   are only ever appended, so a newer application can tell which functions an
-  older plugin provides, and the reverse.
+  older plugin provides, and the reverse. The loader refuses a table smaller
+  than the kind's table as of 2.0 (`core::VtableMinimumSize`).
 - Each plugin kind keeps its own kind number; a kind's tables are versioned
   by `struct_size`, not by a separate number.
 - The SDK version is the OpenRider version that built it; being static, it
@@ -81,19 +82,24 @@ version string, kind-specific vtable). Kinds: input 1, filters 2, tiles 3,
 workflows 4, segments 5. Plugins are found under `plugins/<kind dir>/`, in
 the bundled directory then the user's.
 
-ABI 2 adds `api_minor`, an optional `init(const or_host *host)` called
-once after loading (see 5.2), and `flags`. The first flag,
+ABI 2.0 adds `api_minor` and `flags`. The first flag,
 `OR_PLUGIN_THREAD_SAFE`, says the plugin may be called from several threads
-at once; without it the application calls the plugin from one thread only.
-This holds for every kind (input, filters, segments...). ABI 1 plugins have
-no flags and are treated as not thread-safe until rebuilt; the in-tree
-plugins that are thread-safe (GarminDB through SQLite's serialised mode,
-the pure filters and segments plugins) declare it.
+at once; without it the application makes every call to the plugin from one
+thread of its own (`core::PluginThread`, `core::CallPlugin`: calls from
+other threads are queued to it and wait for their result). This holds for
+every kind. All in-tree plugins declare it (GarminDB through SQLite's
+serialised mode; the others hold no shared state).
 
-### 5.2 Host services (`host.h`) — planned, ABI 2
+An optional `init(const or_host *host)`, called once after loading (see
+5.2), comes in a later minor version, with the first host service a plugin
+needs.
+
+### 5.2 Host services (`host.h`) — planned, an ABI 2 minor version
 
 What only the running application can do, offered to plugins as a table of
-callbacks handed over by `init()`:
+callbacks handed over by `init()`. Each service is added (appended to the
+table, in a minor version) with the first plugin needing it; no plugin
+needs one yet.
 
 | Service | Use |
 |---|---|
@@ -118,8 +124,8 @@ missing values, read-only sources.
 Contract points to state explicitly (gaps found while writing this):
 
 - **Threading.** The application calls `list_outings` and `load_points` from
-  several threads (scan, overview loading, user actions). Decided: the
-  plugin **declares** whether it is thread-safe (§5.1, `OR_PLUGIN_THREAD_SAFE`).
+  several threads (scan, overview loading, user actions). The plugin
+  **declares** whether it is thread-safe (§5.1, `OR_PLUGIN_THREAD_SAFE`).
   - Declared thread-safe: the application may call any function from any
     thread, concurrently, on the same handle.
   - Not declared: the application makes every call to the plugin from a
@@ -155,25 +161,34 @@ A layer definition (JSON) opened by the protocol's plugin, which describes
 the layer and builds tile URLs; the application fetches, caches, decodes and
 draws. WMS and WMTS fit unchanged.
 
-### 5.6 Segments (`segments.h`) — provisional, in place
+### 5.6 Segments (`segments.h`) — stable since ABI 2.0, in place
 
 Given the tracks of a group of similar activities and the declared
 parameter values, return the network (nodes, segments with their tracks,
 each track as a chain of segments); cancellable. Two plugins: heat map,
 track matching.
 
-Decided before declaring it stable:
+Each route step carries its **point range** in its input track (`first`,
+`last`, inclusive). Consecutive steps share their cut point (a step's first
+point is the previous step's last); the first step starts at the track's
+first point, the last ends at its last point. A step may cover part of its
+segment only (a turn-around within it).
 
-- each route step carries its **point range** (`first`, `last`, inclusive)
-  in its track, from the plugin's own matching: partial passages
-  (turn-arounds within a segment) are kept, and the application no longer
-  re-finds passages geometrically with its own tolerances (`FindPassages`
-  becomes a fallback or goes);
-- input tracks stay **thinned** (overview tracks), and each carries, per
-  point, its **index in the outing's original points**
-  (`const uint32_t *source_index`), so that ranges map back to the full
-  recording;
-- the cancel callback moves to the host services (5.2).
+- Plugins fill the ranges once their network is final (after clean-up,
+  which merges, drops and splits steps), with the SDK's
+  `AssignStepRanges`: each track is cut, in order, into one stretch per
+  step of the plugin's chain, minimising the points' distance to their
+  step's segment plus each cut's distance to the node between the steps.
+  A plugin may fill them from its own matching instead.
+- Input tracks are the thinned overview tracks. The application keeps, for
+  each thinned point, its index in the outing's points
+  (`OverviewTrack::source_index`, from `ThinTrack`) and maps the ranges
+  back to the full recording itself; the plugin never needs those indices,
+  so they are not part of the ABI.
+- The comparison panel takes its passages from the ranges
+  (`PassageAlong`); `FindPassages` remains for a network without ranges.
+- The cancel callback moves to the host services (5.2) in a later minor
+  version.
 
 ### 5.7 Workflows (`workflow.h`) — planned
 
@@ -231,7 +246,7 @@ plugins' outputs were unchanged by the move (compared byte for byte).
 |---|---|---|---|
 | Geometry | `plane_geometry.h`, `local_projection.h` | local projection; plane points, distances, lengths, point along a line, distance to a line, resampling | stable |
 | Motion | `motion.h` | motion parameters; haversine; moving-average speed; percentile; still window; not-moving mask | stable |
-| Tracks | `overview.h`, `segment_passages.h` | track type (positions, per-point noise, box); thinning; GPS noise per point; position on a line; passages along a segment | provisional (passages become a fallback, 5.6) |
+| Tracks | `overview.h`, `segment_passages.h`, `route_ranges.h` | track type (positions, per-point noise, source indices, box); thinning; GPS noise per point; position on a line; a passage over a known range; passages found from geometry (fallback); route step ranges | provisional |
 | Series | `series.h` | derived series of an outing: speed, altitude, vertical speed and grade over windows, histograms per period; x axes | stable |
 | Statistics | `stats.h` | outing statistics from points (moving time from the raw points) | stable |
 | Networks | `segments.h`, `network_cleanup.h` | segment network types; clean-up (pass-through merging, short loops, duplicates) | provisional, as 5.6 |
@@ -262,9 +277,9 @@ loading, paths, the session log files, long-date formatting
 
 1. ~~Review and decide §7~~ (done).
 2. ~~Extract the SDK~~ (done: §6, `plugin_sealing.tst`, outputs identical).
-3. ABI 2: versioning, `flags` with the thread-safety flag and the
-   application's single-thread dispatch for the others, `init()`, host log
-   and progress, segment step ranges with source indices (the comparison
-   panel uses them); in-tree plugins rebuilt.
+3. ~~ABI 2.0~~ (done): major/minor versions, `struct_size` in every
+   function table, the thread-safety flag and single-thread dispatch,
+   segment step ranges used by the comparison panel. `init()` and host
+   services come in a minor version with the first plugin needing them.
 4. Header documentation updated to state each contract above (threading,
    order, identity, stability level).

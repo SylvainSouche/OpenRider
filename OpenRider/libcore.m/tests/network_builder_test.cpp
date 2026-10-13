@@ -50,7 +50,7 @@ int FakeBuild(const or_segment_track *tracks, size_t count, const double *, or_s
 void FakeFree(or_segment_network *network) { openrider::sdk::FreeExportedNetwork(network); }
 
 const or_filter_param kParams[] = {{"width", "Width", 8.0, 1.0, 50.0}};
-const or_segments_vtable kFake = {"fake", "Fake", 1, kParams, FakeBuild, FakeFree};
+const or_segments_vtable kFake = {sizeof(or_segments_vtable), "fake", "Fake", 1, kParams, FakeBuild, FakeFree};
 
 std::vector<core::SegmentGroup> Wait(core::NetworkBuilder &builder)
 {

@@ -6,6 +6,7 @@
 #include "app/dispatch.h"
 #include "app/graphs.h"
 
+#include <openrider/sdk/route_ranges.h>
 #include <openrider/sdk/segment_exchange.h>
 
 #include <chrono>
@@ -43,7 +44,7 @@ int FakePoints(void *, const char *, or_point_cb cb, void *user, char *, size_t)
     return 0;
 }
 
-const or_input_vtable kInput = {nullptr, nullptr, FakeList, FakePoints};
+const or_input_vtable kInput = {sizeof(or_input_vtable), nullptr, nullptr, FakeList, FakePoints};
 
 // Keeps every other point.
 int HalfFilter(const or_point *, size_t n, const double *, unsigned char *keep, char *, size_t)
@@ -53,7 +54,7 @@ int HalfFilter(const or_point *, size_t n, const double *, unsigned char *keep, 
     return 0;
 }
 const or_filter_param kParams[] = {{"k", "K", 1.0, 0.0, 2.0}};
-const or_filter_vtable kHalf = {OR_FILTER_TRACK, "half", "Half", 1, kParams, HalfFilter};
+const or_filter_vtable kHalf = {sizeof(or_filter_vtable), OR_FILTER_TRACK, "half", "Half", 1, kParams, HalfFilter};
 
 // Segments plugin: one shared segment along the first track, followed by
 // every track.
@@ -73,12 +74,13 @@ int FakeSegments(const or_segment_track *tracks, size_t count, const double *, o
         network.routes.push_back({track.id, {{0, true}}});
     }
     network.segments.push_back(segment);
+    openrider::sdk::AssignStepRanges(network, input);
     *out = openrider::sdk::ExportNetwork(network, input);
     return 0;
 }
 void FreeSegments(or_segment_network *network) { openrider::sdk::FreeExportedNetwork(network); }
 const or_filter_param kSegmentParams[] = {{"width", "Width", 8.0, 1.0, 50.0}};
-const or_segments_vtable kSegments = {"fake", "Fake", 1, kSegmentParams, FakeSegments, FreeSegments};
+const or_segments_vtable kSegments = {sizeof(or_segments_vtable), "fake", "Fake", 1, kSegmentParams, FakeSegments, FreeSegments};
 
 struct Fixture {
     app::AppModel model;
@@ -241,7 +243,7 @@ ATF_TEST_CASE_BODY(segment_comparison)
     ATF_REQUIRE_EQ(f.model.comparison.runs.size(), 2u);
     ATF_REQUIRE_EQ(f.model.outings[f.model.comparison.runs[0].outing].raw.id, std::string("id1"));  // newest first
     ATF_REQUIRE_EQ(f.model.comparison.runs[0].points.front().t_s, 0.0);  // time from the entry
-    ATF_REQUIRE(f.model.comparison.runs[0].duration_s > 80.0);
+    ATF_REQUIRE_EQ(f.model.comparison.runs[0].duration_s, 99.0);  // the step's range: the whole outing
     ATF_REQUIRE_EQ(f.comparison.ViewModel().shown.size(), 2u);
     ATF_REQUIRE(f.comparison.ViewModel().shown[1]);
 

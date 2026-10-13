@@ -278,9 +278,9 @@ int GdbPoints(void *handle, const char *outing_id, or_point_cb cb, void *user,
     return failed ? 1 : 0;
 }
 
-const or_input_vtable kVtable = {GdbOpen, GdbClose, GdbList, GdbPoints};
+const or_input_vtable kVtable = {sizeof(or_input_vtable), GdbOpen, GdbClose, GdbList, GdbPoints};
 
-const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_INPUT, "garmindb",
+const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_INPUT, OR_PLUGIN_THREAD_SAFE, "garmindb",
                               "0.1", &kVtable};
 
 } // namespace
