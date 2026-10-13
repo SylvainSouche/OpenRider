@@ -845,6 +845,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-modular-plugins": {
+    "active": true,
+    "id": "0f87-6ace-632e-8515",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-moving-time-from-raw": {
     "active": true,
     "id": "0f87-6acd-d8c6-0017",
@@ -1700,6 +1706,12 @@
   "impl-model-domains": {
     "active": true,
     "id": "0f87-6ace-5fd7-0165",
+    "status": "verified",
+    "type": "impl"
+  },
+  "impl-modular-plugins": {
+    "active": true,
+    "id": "0f87-6ace-632e-ac7e",
     "status": "verified",
     "type": "impl"
   },
