@@ -60,12 +60,6 @@ ATF_TEST_CASE_BODY(thinning_keeps_shape_and_ends)
     ATF_REQUIRE_EQ(t.lat.front(), pts.front().lat);
     ATF_REQUIRE_EQ(t.lat.back(), pts.back().lat);
     ATF_REQUIRE(std::fabs(t.north - pts.back().lat) < 1e-12);
-    // Each kept point names its index in the outing's points.
-    ATF_REQUIRE_EQ(t.source_index.size(), t.lat.size());
-    ATF_REQUIRE_EQ(t.source_index.front(), 0u);
-    ATF_REQUIRE_EQ(t.source_index.back(), pts.size() - 1);
-    for (size_t i = 0; i < t.lat.size(); ++i)
-        ATF_REQUIRE_EQ(t.lat[i], pts[t.source_index[i]].lat);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(partly_within_the_view);

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "app/app_model.h"
+#include "app/input_source.h"
 #include "app/model_domain.h"
 
 #include "core/network_builder.h"
@@ -17,12 +18,14 @@ namespace app {
 /// Keeps AppModel::segment_groups following the overview: while common
 /// segments are shown, the outings passing the map filter are grouped by
 /// sport and their networks built in the background with the selected
-/// method; a change of filter, tracks, method or parameter starts a new
-/// build, the previous networks staying shown until it finishes.
+/// method, from the outings' recorded points; a change of filter, outings,
+/// method or parameter starts a new build, the previous networks staying
+/// shown until it finishes.
 class SegmentsDomain : public ModelDomain {
 public:
     /// @param model the model; must outlive the domain
-    explicit SegmentsDomain(AppModel &model) : model_(model) {}
+    /// @param input the input plugin, read by the builds; must outlive the domain
+    SegmentsDomain(AppModel &model, const InputSource &input) : model_(model), input_(input) {}
 
     /// Adds a segments plugin with its default parameters; the first one
     /// added is selected.
@@ -40,6 +43,7 @@ private:
     void Update();
 
     AppModel &model_;               ///< the model this domain changes
+    const InputSource &input_;      ///< the input plugin
     core::NetworkBuilder builder_;  ///< background builds
     std::string basis_;             ///< what the networks were built from
 };

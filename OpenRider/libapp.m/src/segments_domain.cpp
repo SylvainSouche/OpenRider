@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <map>
+#include <set>
 
 namespace app {
 
@@ -62,16 +63,17 @@ void SegmentsDomain::Shutdown() { builder_.Stop(); }
 // @impl 0f87-6acd-d9d9-da69
 void SegmentsDomain::Update()
 {
-    if (!model_.show_segments || model_.tracks_loading || model_.tracks.empty() || model_.segment_method < 0) {
+    if (!model_.show_segments || model_.scanning || model_.outings.empty() || model_.segment_method < 0 ||
+        !input_.Ready()) {
         model_.segments_building = builder_.Building();
         return;
     }
-    // What the networks depend on: the map filter, the tracks loaded (their
+    // What the networks depend on: the map filter, the outings (their
     // version), the method and its parameter values (exactly: %a).
     const core::OutingFilter filter = model_.MapFilter();
     const SegmentMethod &method = model_.segment_methods[static_cast<size_t>(model_.segment_method)];
     std::string basis = filter.type_key + "|" + filter.from_date + "|" + filter.to_date + "|" +
-                        std::to_string(model_.tracks_version) + "|" + method.vtable->id;
+                        std::to_string(model_.outings_version) + "|" + method.vtable->id;
     for (double value : method.values) {
         char text[40];
         std::snprintf(text, sizeof text, "|%a", value);
@@ -79,23 +81,24 @@ void SegmentsDomain::Update()
     }
     if (basis != basis_) {
         basis_ = basis;
-        std::map<std::string, std::string> sport_of;  // outing id -> sport, for the shown outings
-        for (size_t i : core::SelectOutings(model_.outings, filter, core::SortKey::Date, true))
-            sport_of[model_.outings[i].raw.id] = model_.outings[i].type.sport;
+        // The shown outings grouped by sport, in library order.
         std::map<std::string, core::TrackGroup> groups;
-        for (const openrider::sdk::OverviewTrack &track : model_.tracks) {
-            const auto shown = sport_of.find(track.id);
-            if (shown == sport_of.end())
+        std::set<size_t> shown;
+        for (size_t i : core::SelectOutings(model_.outings, filter, core::SortKey::Date, true))
+            shown.insert(i);
+        for (size_t i = 0; i < model_.outings.size(); ++i) {
+            if (!shown.count(i))
                 continue;
-            core::TrackGroup &group = groups[shown->second];
-            group.sport = shown->second;
-            group.tracks.push_back(track);
+            const core::Outing &outing = model_.outings[i];
+            core::TrackGroup &group = groups[outing.type.sport];
+            group.sport = outing.type.sport;
+            group.ids.push_back(outing.raw.id);
         }
         std::vector<core::TrackGroup> to_build;
         for (auto &entry : groups)
-            if (entry.second.tracks.size() >= 2)  // a segment needs two routes
+            if (entry.second.ids.size() >= 2)  // a segment needs two routes
                 to_build.push_back(std::move(entry.second));
-        builder_.Start(std::move(to_build), method.vtable, method.values);
+        builder_.Start(std::move(to_build), method.vtable, method.values, input_.Vtable(), input_.Handle());
         core::LogLine("building segment networks: %s", basis.c_str());
     }
     if (builder_.Take(model_.segment_groups)) {

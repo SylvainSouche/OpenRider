@@ -36,8 +36,7 @@ public:
     size_t Total() const { return total_.load(); }
 
     /// Appends the tracks read so far to `out`.
-    /// @return how many were appended
-    size_t Take(std::vector<openrider::sdk::OverviewTrack> &out);
+    void Take(std::vector<openrider::sdk::OverviewTrack> &out);
 
     /// Interrupts a running load and waits for it; call before closing the input.
     void Stop();

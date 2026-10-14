@@ -65,15 +65,18 @@ int FakeSegments(const or_segment_track *tracks, size_t count, const double *, o
                  or_segment_network **out, char *, size_t)
 {
     ++g_segment_builds;
-    const std::vector<openrider::sdk::OverviewTrack> input = openrider::sdk::ImportTracks(tracks, count);
+    const std::vector<openrider::sdk::RecordedTrack> input = openrider::sdk::ImportTracks(tracks, count);
     openrider::sdk::SegmentNetwork network;
-    network.nodes = {{0, input[0].lon.front(), input[0].lat.front()}, {1, input[0].lon.back(), input[0].lat.back()}};
+    const std::vector<or_point> &first = input[0].points;
+    network.nodes = {{0, first.front().lon, first.front().lat}, {1, first.back().lon, first.back().lat}};
     openrider::sdk::NetworkSegment segment;
     segment.from = 0;
     segment.to = 1;
-    segment.lon = input[0].lon;
-    segment.lat = input[0].lat;
-    for (const openrider::sdk::OverviewTrack &track : input) {
+    for (const or_point &p : first) {
+        segment.lon.push_back(p.lon);
+        segment.lat.push_back(p.lat);
+    }
+    for (const openrider::sdk::RecordedTrack &track : input) {
         segment.route_ids.push_back(track.id);
         network.routes.push_back({track.id, {{0, true}}});
     }

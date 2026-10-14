@@ -44,6 +44,21 @@ openrider::sdk::OverviewTrack Track(const std::string &id, const std::vector<std
 }
 
 // Metric position of a network node.
+// The recorded points of a test line: one a second along its positions.
+openrider::sdk::RecordedTrack Recorded(const openrider::sdk::OverviewTrack &line)
+{
+    openrider::sdk::RecordedTrack track{line.id, {}};
+    for (size_t i = 0; i < line.lat.size(); ++i) {
+        or_point p{};
+        p.t_s = static_cast<double>(i);
+        p.lat = line.lat[i];
+        p.lon = line.lon[i];
+        p.alt_m = p.dist_m = p.speed_ms = p.hr = p.cadence = p.temp_c = std::nan("");
+        track.points.push_back(p);
+    }
+    return track;
+}
+
 std::pair<double, double> At(const openrider::sdk::NetworkNode &node)
 {
     return {(node.lon - kLon0) * kKx, (node.lat - kLat0) * kKy};
@@ -125,7 +140,8 @@ ATF_TEST_CASE_BODY(plugin_abi)
     std::vector<double> values;
     for (size_t p = 0; p < plugin->param_count; ++p)
         values.push_back(plugin->params[p].default_value);
-    const std::vector<openrider::sdk::OverviewTrack> tracks = {Track("a", {{0, 0}, {600, 0}}, 1), Track("b", {{0, 0}, {600, 0}}, 2)};
+    const std::vector<openrider::sdk::RecordedTrack> tracks = {Recorded(Track("a", {{0, 0}, {600, 0}}, 1)),
+                                                               Recorded(Track("b", {{0, 0}, {600, 0}}, 2))};
     const auto result = openrider::sdk::RunSegments(plugin, tracks, values, nullptr, nullptr);
     ATF_REQUIRE(result.Ok());
     ATF_REQUIRE_EQ(result.value.routes.size(), 2u);
@@ -134,7 +150,7 @@ ATF_TEST_CASE_BODY(plugin_abi)
         const auto &steps = result.value.routes[r].steps;
         ATF_REQUIRE(!steps.empty());
         ATF_REQUIRE_EQ(steps.front().first, 0u);
-        ATF_REQUIRE_EQ(steps.back().last, tracks[r].lat.size() - 1);
+        ATF_REQUIRE_EQ(steps.back().last, tracks[r].points.size() - 1);
         for (size_t k = 1; k < steps.size(); ++k)
             ATF_REQUIRE_EQ(steps[k].first, steps[k - 1].last);
     }
@@ -147,19 +163,19 @@ ATF_TEST_CASE_BODY(cancel_and_malformed_input)
     std::vector<double> values;
     for (size_t p = 0; p < plugin->param_count; ++p)
         values.push_back(plugin->params[p].default_value);
-    const std::vector<openrider::sdk::OverviewTrack> tracks = {Track("a", {{0, 0}, {600, 0}}, 1), Track("b", {{0, 0}, {600, 0}}, 2)};
+    const std::vector<openrider::sdk::RecordedTrack> tracks = {Recorded(Track("a", {{0, 0}, {600, 0}}, 1)),
+                                                               Recorded(Track("b", {{0, 0}, {600, 0}}, 2))};
     // Cancelled: no network, reported as such, not as a success.
     const auto result = openrider::sdk::RunSegments(plugin, tracks, values, [](void *) { return 1; }, nullptr);
     ATF_REQUIRE(!result.Ok());
     ATF_REQUIRE(result.error.find("cancelled") != std::string::npos);
     // Malformed tracks and parameters: refused, no network.
-    const double lon[] = {6.6, 6.6}, lat[] = {45.9, 45.901};
     or_segment_network *out = reinterpret_cast<or_segment_network *>(1);  // must be reset
     char err[128] = "";
-    or_segment_track no_coordinates{"a", 2, lon, nullptr, nullptr};
-    ATF_REQUIRE(plugin->build(&no_coordinates, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
+    or_segment_track no_points{"a", 2, nullptr};
+    ATF_REQUIRE(plugin->build(&no_points, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
     ATF_REQUIRE(out == nullptr);
-    or_segment_track good{"a", 2, lon, lat, nullptr};
+    or_segment_track good{"a", tracks[0].points.size(), tracks[0].points.data()};
     values[0] = 0.0;  // tolerance below its bound
     ATF_REQUIRE(plugin->build(&good, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
     ATF_REQUIRE(out == nullptr);

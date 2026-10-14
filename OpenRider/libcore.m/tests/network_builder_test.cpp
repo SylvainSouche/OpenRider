@@ -1,5 +1,4 @@
-// NetworkBuilder with a fake segments plugin: one shared segment along the
-// first track, followed by every track.
+// NetworkBuilder with fake input and segments plugins.
 
 #include <atf-c++.hpp>
 
@@ -8,37 +7,51 @@
 #include <openrider/sdk/segment_exchange.h>
 
 #include <chrono>
+#include <cmath>
+#include <cstdio>
+#include <string>
 #include <thread>
 
 namespace {
 
-// A straight track northwards from (45.9, 6.6), `length_m` long, points every 10 m.
-openrider::sdk::OverviewTrack Straight(const std::string &id, double length_m)
+// Input plugin: every outing a straight track northwards from (45.9, 6.6),
+// 500 m long, a point every 10 m; outing "indoor" has no position, outing
+// "missing" cannot be read.
+int FakePoints(void *, const char *id, or_point_cb cb, void *user, char *err, size_t errlen)
 {
-    openrider::sdk::OverviewTrack track;
-    track.id = id;
-    for (double d = 0.0; d <= length_m; d += 10.0) {
-        track.lat.push_back(45.9 + d / 111320.0);
-        track.lon.push_back(6.6);
+    if (std::string(id) == "missing") {
+        std::snprintf(err, errlen, "no such outing");
+        return 1;
     }
-    track.west = track.east = 6.6;
-    track.south = track.lat.front();
-    track.north = track.lat.back();
-    return track;
+    const bool indoor = std::string(id) == "indoor";
+    for (int i = 0; i <= 50; ++i) {
+        or_point p{};
+        p.t_s = i;
+        p.lat = indoor ? std::nan("") : 45.9 + i * 10.0 / 111320.0;
+        p.lon = indoor ? std::nan("") : 6.6;
+        cb(user, &p);
+    }
+    return 0;
 }
+const or_input_vtable kInput = {sizeof(or_input_vtable), nullptr, nullptr, nullptr, FakePoints};
 
+// Segments plugin: one shared segment along the first track, followed by
+// every track.
 int FakeBuild(const or_segment_track *tracks, size_t count, const double *, or_segment_cancel_cb, void *,
               or_segment_network **out, char *, size_t)
 {
-    const std::vector<openrider::sdk::OverviewTrack> input = openrider::sdk::ImportTracks(tracks, count);
+    const std::vector<openrider::sdk::RecordedTrack> input = openrider::sdk::ImportTracks(tracks, count);
     openrider::sdk::SegmentNetwork network;
-    network.nodes = {{0, input[0].lon.front(), input[0].lat.front()}, {1, input[0].lon.back(), input[0].lat.back()}};
+    const std::vector<or_point> &first = input[0].points;
+    network.nodes = {{0, first.front().lon, first.front().lat}, {1, first.back().lon, first.back().lat}};
     openrider::sdk::NetworkSegment segment;
     segment.from = 0;
     segment.to = 1;
-    segment.lon = input[0].lon;
-    segment.lat = input[0].lat;
-    for (const openrider::sdk::OverviewTrack &track : input) {
+    for (const or_point &p : first) {
+        segment.lon.push_back(p.lon);
+        segment.lat.push_back(p.lat);
+    }
+    for (const openrider::sdk::RecordedTrack &track : input) {
         segment.route_ids.push_back(track.id);
         network.routes.push_back({track.id, {{0, true}}});
     }
@@ -65,10 +78,9 @@ std::vector<core::SegmentGroup> Wait(core::NetworkBuilder &builder)
 ATF_TEST_CASE_WITHOUT_HEAD(builds_one_network_per_group);
 ATF_TEST_CASE_BODY(builds_one_network_per_group)
 {
-    std::vector<core::TrackGroup> groups = {{"running", {Straight("a", 500), Straight("b", 500)}},
-                                            {"cycling", {Straight("c", 500), Straight("d", 500)}}};
+    std::vector<core::TrackGroup> groups = {{"running", {"a", "b"}}, {"cycling", {"c", "d"}}};
     core::NetworkBuilder builder;
-    builder.Start(groups, &kFake, {8.0});
+    builder.Start(groups, &kFake, {8.0}, &kInput, nullptr);
     const std::vector<core::SegmentGroup> result = Wait(builder);
     ATF_REQUIRE_EQ(result.size(), 2u);
     ATF_REQUIRE_EQ(result[0].sport, "running");
@@ -85,8 +97,8 @@ ATF_TEST_CASE_WITHOUT_HEAD(restart_replaces_the_build);
 ATF_TEST_CASE_BODY(restart_replaces_the_build)
 {
     core::NetworkBuilder builder;
-    builder.Start({{"running", {Straight("a", 500), Straight("b", 500)}}}, &kFake, {8.0});
-    builder.Start({{"hiking", {Straight("c", 500), Straight("d", 500)}}}, &kFake, {8.0});
+    builder.Start({{"running", {"a", "b"}}}, &kFake, {8.0}, &kInput, nullptr);
+    builder.Start({{"hiking", {"c", "d"}}}, &kFake, {8.0}, &kInput, nullptr);
     const std::vector<core::SegmentGroup> result = Wait(builder);
     ATF_REQUIRE_EQ(result.size(), 1u);
     ATF_REQUIRE_EQ(result[0].sport, "hiking");
@@ -97,7 +109,7 @@ ATF_TEST_CASE_BODY(many_requests_coalesce)
 {
     core::NetworkBuilder builder;
     for (int width = 1; width <= 50; ++width)  // like a slider being dragged
-        builder.Start({{"running", {Straight("a", 500), Straight("b", 500)}}}, &kFake, {double(width)});
+        builder.Start({{"running", {"a", "b"}}}, &kFake, {double(width)}, &kInput, nullptr);
     ATF_REQUIRE_EQ(Wait(builder).size(), 1u);
     for (int i = 0; i < 1000 && builder.Building(); ++i)
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -105,10 +117,25 @@ ATF_TEST_CASE_BODY(many_requests_coalesce)
     ATF_REQUIRE(!builder.Take(again));  // only the latest request was published
 }
 
+// Outings without any position are left out, unreadable ones reported; a
+// group left with fewer than two tracks has no network.
+ATF_TEST_CASE_WITHOUT_HEAD(outings_without_positions_left_out);
+ATF_TEST_CASE_BODY(outings_without_positions_left_out)
+{
+    core::NetworkBuilder builder;
+    builder.Start({{"running", {"a", "indoor", "b"}}, {"rowing", {"c", "indoor"}}, {"hiking", {"d", "missing"}}},
+                  &kFake, {8.0}, &kInput, nullptr);
+    const std::vector<core::SegmentGroup> result = Wait(builder);
+    ATF_REQUIRE_EQ(result.size(), 1u);
+    ATF_REQUIRE_EQ(result[0].network.routes.size(), 2u);
+    ATF_REQUIRE_EQ(result[0].network.routes[1].id, "b");
+    ATF_REQUIRE(builder.Error().find("missing") != std::string::npos);
+}
+
 ATF_TEST_CASE_WITHOUT_HEAD(exchange_round_trip);
 ATF_TEST_CASE_BODY(exchange_round_trip)
 {
-    const std::vector<openrider::sdk::OverviewTrack> tracks = {Straight("a", 100), Straight("b", 100)};
+    const std::vector<openrider::sdk::RecordedTrack> tracks = {{"a", {}}, {"b", {}}};
     openrider::sdk::SegmentNetwork network;
     network.nodes = {{0, 6.6, 45.9}, {1, 6.6, 45.901}};
     openrider::sdk::NetworkSegment segment;
@@ -136,5 +163,6 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, builds_one_network_per_group);
     ATF_ADD_TEST_CASE(tcs, restart_replaces_the_build);
     ATF_ADD_TEST_CASE(tcs, many_requests_coalesce);
+    ATF_ADD_TEST_CASE(tcs, outings_without_positions_left_out);
     ATF_ADD_TEST_CASE(tcs, exchange_round_trip);
 }

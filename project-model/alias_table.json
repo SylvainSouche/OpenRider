@@ -1049,6 +1049,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-raw-recorded-data": {
+    "active": true,
+    "id": "0f87-6acf-6126-692a",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-recompute-stats": {
     "active": true,
     "id": "0f87-6acd-208a-0286",
@@ -1104,8 +1110,14 @@
     "type": "dec"
   },
   "dec-segment-step-ranges": {
-    "active": true,
+    "active": false,
     "id": "0f87-6ace-6be3-a186",
+    "status": "superseded",
+    "type": "dec"
+  },
+  "dec-segment-step-ranges-raw": {
+    "active": true,
+    "id": "0f87-6acf-6126-2988",
     "status": "recorded",
     "type": "dec"
   },
@@ -1871,6 +1883,12 @@
     "status": "asserted",
     "type": "impl"
   },
+  "impl-recorded-tracks": {
+    "active": true,
+    "id": "0f87-6acf-6371-f34e",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-same-routes-merge": {
     "active": true,
     "id": "0f87-6ace-3222-ba6b",
@@ -1890,8 +1908,14 @@
     "type": "impl"
   },
   "impl-segment-step-ranges": {
-    "active": true,
+    "active": false,
     "id": "0f87-6ace-72ef-1201",
+    "status": "superseded",
+    "type": "impl"
+  },
+  "impl-segment-step-ranges-raw": {
+    "active": true,
+    "id": "0f87-6acf-6371-f790",
     "status": "asserted",
     "type": "impl"
   },

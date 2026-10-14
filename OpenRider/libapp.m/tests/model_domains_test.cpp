@@ -20,7 +20,7 @@ ATF_TEST_CASE_BODY(each_model_intent_has_one_domain)
     app::LibraryDomain library(model, input);
     app::QueryDomain query(model);
     app::OutingDomain outing(model, input);
-    app::SegmentsDomain segments(model);
+    app::SegmentsDomain segments(model, input);
     app::ComparisonDomain comparison(model, input);
     app::SessionDomain session(model);
     const std::vector<const app::ModelDomain *> domains = {&library, &query, &outing, &segments, &comparison, &session};

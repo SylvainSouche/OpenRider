@@ -8,6 +8,10 @@
  * each other, an external map...); the application lets the user choose
  * among the plugins found and set their declared parameters.
  *
+ * Tracks are the outings' recorded points, as the input plugin delivered
+ * them: analysis works on recorded data, never on thinned tracks or lines
+ * derived from them, whose features may be artefacts of that derivation.
+ *
  * Memory: the application owns the tracks it passes; the plugin allocates
  * the network it returns and frees it in free_network().
  */
@@ -15,6 +19,7 @@
 #define OPENRIDER_SEGMENTS_H
 
 #include <openrider/filter.h>
+#include <openrider/input.h>
 
 #include <stddef.h>
 #include <stdint.h>
@@ -23,13 +28,12 @@
 extern "C" {
 #endif
 
-/** One outing's track: positions in recording order (WGS84 degrees). */
+/** One outing's track: its recorded points, in time order. A point
+ * without position has NaN latitude and longitude. */
 struct or_segment_track {
-    const char *id;         /**< outing id */
-    size_t count;           /**< number of points */
-    const double *lon;      /**< longitudes */
-    const double *lat;      /**< latitudes */
-    const float *noise_m;   /**< GPS noise (m, 1 sigma) per point; NULL if unknown */
+    const char *id;                  /**< outing id */
+    size_t count;                    /**< number of points */
+    const struct or_point *points;   /**< the recorded points */
 };
 
 /** A junction of the network. */
@@ -54,7 +58,7 @@ struct or_segment {
 struct or_route_step {
     uint32_t segment;  /**< segment index */
     uint32_t forward;  /**< 1: travelled from `from` to `to`; 0: backwards */
-    uint32_t first;    /**< first point of the track on this step (index in its input points) */
+    uint32_t first;    /**< first point of the track on this step (index in its recorded points) */
     uint32_t last;     /**< last point of the track on this step, inclusive */
 };
 
@@ -99,8 +103,8 @@ struct or_segments_vtable {
     const struct or_filter_param *params;   /**< declared parameters */
     /** Identifies the network of `count` tracks. `values` holds one value
      * per declared parameter, in order, within its declared bounds. Each
-     * track with points has both coordinate arrays, with finite WGS84
-     * positions. On success *out receives a network to release with
+     * track with points has its points array; a position is either missing
+     * (NaN) or finite WGS84. On success *out receives a network to release with
      * free_network(); on any other return *out is NULL. `cancel` (may be
      * NULL) is polled now and then with `user`; once it returns non-zero,
      * the build stops and returns OR_SEGMENTS_CANCELLED. Malformed tracks or

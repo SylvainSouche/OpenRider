@@ -115,20 +115,28 @@ std::vector<size_t> BestCuts(const std::vector<XY> &points, const std::vector<co
 
 } // namespace
 
-void AssignStepRanges(SegmentNetwork &network, const std::vector<OverviewTrack> &tracks)
+void AssignStepRanges(SegmentNetwork &network, const std::vector<RecordedTrack> &tracks)
 {
-    std::map<std::string, const OverviewTrack *> by_id;
-    for (const OverviewTrack &track : tracks)
+    std::map<std::string, const RecordedTrack *> by_id;
+    for (const RecordedTrack &track : tracks)
         by_id[track.id] = &track;
     for (NetworkRoute &route : network.routes) {
         const auto found = by_id.find(route.id);
-        if (route.steps.empty() || found == by_id.end() || found->second->lat.empty())
+        if (route.steps.empty() || found == by_id.end() || found->second->points.empty())
             continue;
-        const OverviewTrack &track = *found->second;
-        const LocalProjection projection(track.lon[track.lon.size() / 2], track.lat[track.lat.size() / 2]);
+        const std::vector<or_point> &recorded = found->second->points;
+        // The points with a position, and where they are among all.
+        std::vector<size_t> located;
+        for (size_t i = 0; i < recorded.size(); ++i)
+            if (!std::isnan(recorded[i].lat) && !std::isnan(recorded[i].lon))
+                located.push_back(i);
+        if (located.empty())
+            continue;
+        const or_point &middle = recorded[located[located.size() / 2]];
+        const LocalProjection projection(middle.lon, middle.lat);
         std::vector<XY> points;
-        for (size_t i = 0; i < track.lat.size(); ++i)
-            points.push_back(projection.Forward(track.lon[i], track.lat[i]));
+        for (size_t i : located)
+            points.push_back(projection.Forward(recorded[i].lon, recorded[i].lat));
         // Each segment of the route in the plane, once; the node a step
         // starts from.
         std::map<int, PlaneLine> planes;
@@ -145,8 +153,8 @@ void AssignStepRanges(SegmentNetwork &network, const std::vector<OverviewTrack> 
         }
         const std::vector<size_t> cuts = BestCuts(points, lines, nodes);
         for (size_t k = 0; k < route.steps.size(); ++k) {
-            route.steps[k].first = cuts[k];
-            route.steps[k].last = cuts[k + 1];
+            route.steps[k].first = k == 0 ? 0 : located[cuts[k]];
+            route.steps[k].last = k + 1 == route.steps.size() ? recorded.size() - 1 : located[cuts[k + 1]];
         }
     }
 }

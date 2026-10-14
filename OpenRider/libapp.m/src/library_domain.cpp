@@ -24,7 +24,10 @@ void LibraryDomain::Handle(const Intent &, Intents &) {}
 // @impl 0f87-6acd-ce40-0dd9
 void LibraryDomain::Tick(Intents &)
 {
+    const size_t known = model_.outings.size();
     const std::string scan_error = library_.Take(model_.outings);
+    if (model_.outings.size() != known)
+        ++model_.outings_version;
     model_.scanning = library_.Scanning();
     model_.scanned = library_.Scanned();
     model_.scan_total = library_.Total();
@@ -48,8 +51,7 @@ void LibraryDomain::Tick(Intents &)
             ids.push_back(outing.raw.id);
         overview_.Start(input_.Vtable(), input_.Handle(), ids);
     }
-    if (overview_.Take(model_.tracks) > 0)
-        ++model_.tracks_version;
+    overview_.Take(model_.tracks);
     model_.tracks_loading = overview_.Loading();
     model_.tracks_done = overview_.Done();
     model_.tracks_total = overview_.Total();
