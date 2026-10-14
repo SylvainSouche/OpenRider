@@ -92,6 +92,10 @@ void NetworkBuilder::Run()
             CallPlugin(request.plugin, [&] {
                 network = openrider::sdk::RunSegments(request.plugin, group.tracks, request.values, Superseded, this);
             });
+            if (stop_.load() || generation_.load() != generation) {
+                superseded = true;  // the plugin may have stopped at Superseded()'s request
+                break;
+            }
             if (!network.Ok()) {
                 error = network.error;
                 continue;

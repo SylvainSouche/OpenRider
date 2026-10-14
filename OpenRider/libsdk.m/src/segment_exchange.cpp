@@ -23,8 +23,13 @@ Result<SegmentNetwork> RunSegments(const or_segments_vtable *plugin, const std::
     }
     or_segment_network *built = nullptr;
     char error[256] = "";
-    if (plugin->build(input.data(), input.size(), values.data(), cancel, user, &built, error, sizeof error) != 0)
-        return Result<SegmentNetwork>::Failure(std::string(plugin->id) + ": " + error);
+    const int rc = plugin->build(input.data(), input.size(), values.data(), cancel, user, &built, error, sizeof error);
+    if (rc != 0) {
+        if (built)
+            plugin->free_network(built);  // a plugin breaking the contract: never use it
+        return Result<SegmentNetwork>::Failure(std::string(plugin->id) + ": " +
+                                               (rc == OR_SEGMENTS_CANCELLED ? "cancelled" : error));
+    }
     if (!built)
         return Result<SegmentNetwork>::Failure(std::string(plugin->id) + ": no network returned");
     SegmentNetwork network = ImportNetwork(*built, tracks);
@@ -136,6 +141,22 @@ void FreeExportedNetwork(or_segment_network *network)
     std::free(network->segments);
     std::free(network->routes);
     std::free(network);
+}
+
+std::string TracksProblem(const or_segment_track *tracks, size_t count)
+{
+    if (count > 0 && !tracks)
+        return "missing tracks";
+    for (size_t t = 0; t < count; ++t) {
+        const or_segment_track &track = tracks[t];
+        if (track.count > 0 && (!track.lon || !track.lat))
+            return "track " + std::to_string(t) + " has points but no coordinates";
+        for (size_t i = 0; i < track.count; ++i)
+            if (!std::isfinite(track.lon[i]) || !std::isfinite(track.lat[i]) || std::fabs(track.lon[i]) > 180.0 ||
+                std::fabs(track.lat[i]) > 90.0)
+                return "track " + std::to_string(t) + " has an invalid position at point " + std::to_string(i);
+    }
+    return "";
 }
 
 std::vector<OverviewTrack> ImportTracks(const or_segment_track *tracks, size_t count)

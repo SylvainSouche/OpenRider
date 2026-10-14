@@ -7,6 +7,7 @@
 #include <openrider/segments.h>
 
 #include <cmath>
+#include <string>
 #include <vector>
 
 extern "C" const or_plugin_info *openrider_plugin(void);
@@ -79,7 +80,32 @@ ATF_TEST_CASE_BODY(cancel_stops_early)
 {
     const std::vector<openrider::sdk::OverviewTrack> tracks = {Straight("a", 600, 0), Straight("b", 600, 3)};
     const auto result = openrider::sdk::RunSegments(Vt(), tracks, Defaults(), [](void *) { return 1; }, nullptr);
-    ATF_REQUIRE(result.Ok());  // stopped early: an incomplete network the caller discards
+    ATF_REQUIRE(!result.Ok());  // stopped early: no network, not a success
+    ATF_REQUIRE(result.error.find("cancelled") != std::string::npos);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(malformed_input_refused);
+ATF_TEST_CASE_BODY(malformed_input_refused)
+{
+    const double lon[] = {6.6, 6.6}, lat[] = {45.9, std::nan("")};
+    std::vector<double> values = Defaults();
+    or_segment_network *out = reinterpret_cast<or_segment_network *>(1);  // must be reset
+    char err[128] = "";
+    or_segment_track no_coordinates{"a", 2, nullptr, lat, nullptr};
+    ATF_REQUIRE(Vt()->build(&no_coordinates, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
+    ATF_REQUIRE(out == nullptr);
+    ATF_REQUIRE(std::string(err).find("no coordinates") != std::string::npos);
+    or_segment_track not_finite{"a", 2, lon, lat, nullptr};
+    ATF_REQUIRE(Vt()->build(&not_finite, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
+    ATF_REQUIRE(out == nullptr);
+    const double good_lat[] = {45.9, 45.901};
+    or_segment_track good{"a", 2, lon, good_lat, nullptr};
+    values[0] = Vt()->params[0].max_value + 1.0;
+    ATF_REQUIRE(Vt()->build(&good, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
+    ATF_REQUIRE(std::string(err).find("bounds") != std::string::npos);
+    values[0] = std::nan("");
+    ATF_REQUIRE(Vt()->build(&good, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
+    ATF_REQUIRE(out == nullptr);
 }
 
 ATF_INIT_TEST_CASES(tcs)
@@ -87,4 +113,5 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, descriptor_is_a_segments_plugin);
     ATF_ADD_TEST_CASE(tcs, two_tracks_share_a_segment);
     ATF_ADD_TEST_CASE(tcs, cancel_stops_early);
+    ATF_ADD_TEST_CASE(tcs, malformed_input_refused);
 }

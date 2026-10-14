@@ -168,6 +168,13 @@ parameter values, return the network (nodes, segments with their tracks,
 each track as a chain of segments); cancellable. Two plugins: heat map,
 track matching.
 
+`build()` returns 0 with a network, `OR_SEGMENTS_CANCELLED` when it stopped
+at the cancel callback's request, or another non-zero value with a message;
+`*out` is NULL on every return but success. It refuses malformed input:
+a track with points but no coordinates, non-finite or out-of-range
+positions, parameter values not finite or outside their declared bounds
+(SDK `TracksProblem`, `ParamsProblem`).
+
 Each route step carries its **point range** in its input track (`first`,
 `last`, inclusive). Consecutive steps share their cut point (a step's first
 point is the previous step's last); the first step starts at the track's
@@ -250,7 +257,7 @@ plugins' outputs were unchanged by the move (compared byte for byte).
 | Series | `series.h` | derived series of an outing: speed, altitude, vertical speed and grade over windows, histograms per period; x axes | stable |
 | Statistics | `stats.h` | outing statistics from points (moving time from the raw points) | stable |
 | Networks | `segments.h`, `network_cleanup.h` | segment network types; clean-up (pass-through merging, short loops, duplicates) | provisional, as 5.6 |
-| ABI glue | `segment_exchange.h` | segments kind: C <-> C++ conversions of tracks and networks, the matching `free`, running a plugin | stable for the existing kind |
+| ABI glue | `segment_exchange.h`, `params.h` | segments kind: C <-> C++ conversions of tracks and networks, the matching `free`, running a plugin, checking the tracks received; checking declared parameter values | stable for the existing kind |
 | Result type | `result.h` | `Result<T>` / `Status`, errors without exceptions | stable |
 
 Not moved yet, as they would change the plugins' results or need a design

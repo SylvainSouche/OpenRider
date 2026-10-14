@@ -10,6 +10,7 @@
 #include <openrider/sdk/segment_exchange.h>
 
 #include <cmath>
+#include <string>
 #include <vector>
 
 extern "C" const or_plugin_info *openrider_plugin(void);
@@ -139,10 +140,37 @@ ATF_TEST_CASE_BODY(plugin_abi)
     }
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(cancel_and_malformed_input);
+ATF_TEST_CASE_BODY(cancel_and_malformed_input)
+{
+    const auto *plugin = static_cast<const or_segments_vtable *>(openrider_plugin()->vtable);
+    std::vector<double> values;
+    for (size_t p = 0; p < plugin->param_count; ++p)
+        values.push_back(plugin->params[p].default_value);
+    const std::vector<openrider::sdk::OverviewTrack> tracks = {Track("a", {{0, 0}, {600, 0}}, 1), Track("b", {{0, 0}, {600, 0}}, 2)};
+    // Cancelled: no network, reported as such, not as a success.
+    const auto result = openrider::sdk::RunSegments(plugin, tracks, values, [](void *) { return 1; }, nullptr);
+    ATF_REQUIRE(!result.Ok());
+    ATF_REQUIRE(result.error.find("cancelled") != std::string::npos);
+    // Malformed tracks and parameters: refused, no network.
+    const double lon[] = {6.6, 6.6}, lat[] = {45.9, 45.901};
+    or_segment_network *out = reinterpret_cast<or_segment_network *>(1);  // must be reset
+    char err[128] = "";
+    or_segment_track no_coordinates{"a", 2, lon, nullptr, nullptr};
+    ATF_REQUIRE(plugin->build(&no_coordinates, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
+    ATF_REQUIRE(out == nullptr);
+    or_segment_track good{"a", 2, lon, lat, nullptr};
+    values[0] = 0.0;  // tolerance below its bound
+    ATF_REQUIRE(plugin->build(&good, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
+    ATF_REQUIRE(out == nullptr);
+    ATF_REQUIRE(std::string(err).find("tolerance_m") != std::string::npos);
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
     ATF_ADD_TEST_CASE(tcs, shared_stretch_and_junctions);
     ATF_ADD_TEST_CASE(tcs, close_parallel_legs_stay_apart);
     ATF_ADD_TEST_CASE(tcs, out_and_back_alone_is_one_segment_both_ways);
     ATF_ADD_TEST_CASE(tcs, plugin_abi);
+    ATF_ADD_TEST_CASE(tcs, cancel_and_malformed_input);
 }

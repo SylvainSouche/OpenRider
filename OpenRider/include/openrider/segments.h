@@ -78,9 +78,14 @@ struct or_segment_network {
     struct or_segment_route *routes;    /**< each track's chain */
 };
 
-/** Polled during a build: non-zero asks the plugin to stop early (the
- * result is then discarded). */
+/** Polled during a build: non-zero asks the plugin to stop early; the
+ * build then returns OR_SEGMENTS_CANCELLED. */
 typedef int (*or_segment_cancel_cb)(void *user);
+
+/** What build() returns when it stopped at the cancel callback's request:
+ * no network (*out is NULL), err possibly empty. Distinct from a failure,
+ * and from a successful build of an empty network. */
+#define OR_SEGMENTS_CANCELLED 2
 
 /* @impl 0f87-6ace-2ba9-bc80 */
 /** Description and functions of a segments plugin. Functions return 0 on
@@ -93,9 +98,13 @@ struct or_segments_vtable {
     size_t param_count;                     /**< number of entries in params */
     const struct or_filter_param *params;   /**< declared parameters */
     /** Identifies the network of `count` tracks. `values` holds one value
-     * per declared parameter, in order. On success *out receives a network
-     * to release with free_network(). `cancel` (may be NULL) is polled now
-     * and then with `user`. */
+     * per declared parameter, in order, within its declared bounds. Each
+     * track with points has both coordinate arrays, with finite WGS84
+     * positions. On success *out receives a network to release with
+     * free_network(); on any other return *out is NULL. `cancel` (may be
+     * NULL) is polled now and then with `user`; once it returns non-zero,
+     * the build stops and returns OR_SEGMENTS_CANCELLED. Malformed tracks or
+     * parameter values are refused (non-zero, message in err). */
     int (*build)(const struct or_segment_track *tracks, size_t count, const double *values,
                  or_segment_cancel_cb cancel, void *user, struct or_segment_network **out,
                  char *err, size_t errlen);
