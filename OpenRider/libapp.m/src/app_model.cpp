@@ -19,6 +19,15 @@ core::OutingFilter AppModel::MapFilter() const
     return filter;
 }
 
+std::vector<core::TrackFilter> AppModel::EnabledFilters() const
+{
+    std::vector<core::TrackFilter> enabled;
+    for (const FilterState &filter : filters)
+        if (filter.enabled)
+            enabled.push_back({filter.vtable, filter.values});
+    return enabled;
+}
+
 core::OutingFilter AppModel::ListFilter() const
 {
     core::OutingFilter filter = MapFilter();

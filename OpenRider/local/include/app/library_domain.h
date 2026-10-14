@@ -15,7 +15,8 @@
 namespace app {
 
 /// Reads every outing of the input (Library), then every track for the
-/// overview (OverviewLoader), moving them into the model as they come.
+/// overview (OverviewLoader, through the enabled track filters), moving them
+/// into the model as they come.
 class LibraryDomain : public ModelDomain {
 public:
     /// @param model the model; must outlive the domain
@@ -26,13 +27,17 @@ public:
     /// catalog through the `source` correspondence table.
     void Start(const std::string &source);
 
-    /// Handles no intent: the library only follows its background work.
+    /// ReloadOverview: the overview tracks loaded again, with the filters
+    /// now enabled.
     bool Handles(IntentKind kind) const override;
     void Handle(const Intent &intent, Intents &out) override;
     void Tick(Intents &out) override;
     void Shutdown() override;
 
 private:
+    /// (Re)starts loading every outing's overview track.
+    void LoadOverview();
+
     AppModel &model_;                ///< the model this domain changes
     const InputSource &input_;       ///< where outings come from
     core::Library library_;          ///< outing scan

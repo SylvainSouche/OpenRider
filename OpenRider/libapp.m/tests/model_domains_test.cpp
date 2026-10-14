@@ -36,7 +36,8 @@ ATF_TEST_CASE_BODY(each_model_intent_has_one_domain)
         app::IntentKind::SetDateTo,           app::IntentKind::SetOnlyVisible,        app::IntentKind::SetVisibleIds,
         app::IntentKind::SetShowSegments,     app::IntentKind::SelectSegmentMethod,   app::IntentKind::SetSegmentParam,
         app::IntentKind::OpenSegmentComparison, app::IntentKind::CloseSegmentComparison, app::IntentKind::ToggleFilter,
-        app::IntentKind::SetFilterParam,      app::IntentKind::ResetFilterParams,     app::IntentKind::DismissError,
+        app::IntentKind::SetFilterParam,      app::IntentKind::ResetFilterParams,     app::IntentKind::ReloadOverview,
+        app::IntentKind::DismissError,
         app::IntentKind::ReportError,         app::IntentKind::Quit};
     int model_count = 0;
     for (app::IntentKind kind : model_kinds) {

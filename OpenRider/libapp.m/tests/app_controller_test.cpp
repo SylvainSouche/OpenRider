@@ -166,6 +166,20 @@ ATF_TEST_CASE_BODY(filters_are_non_destructive)
     ATF_REQUIRE_EQ(f.model.filters[0].values[0], 1.0);
 }
 
+// Toggling a filter loads the overview tracks again, through the filter.
+ATF_TEST_CASE_WITHOUT_HEAD(filters_reload_the_overview);
+ATF_TEST_CASE_BODY(filters_reload_the_overview)
+{
+    Fixture f;
+    f.Send(app::IntentKind::ToggleFilter, 0, 1);
+    ATF_REQUIRE(f.model.tracks.size() < 3u);  // cleared, reloading
+    for (int i = 0; i < 500 && (f.model.tracks_loading || f.model.tracks.size() < 3); ++i) {
+        app::Step(f.c, f.intents);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    ATF_REQUIRE_EQ(f.model.tracks.size(), 3u);
+}
+
 ATF_TEST_CASE_WITHOUT_HEAD(query_drives_list_and_map_filters);
 ATF_TEST_CASE_BODY(query_drives_list_and_map_filters)
 {
@@ -304,6 +318,7 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, scan_and_overview_fill_the_model);
     ATF_ADD_TEST_CASE(tcs, selecting_loads_points_and_stats);
     ATF_ADD_TEST_CASE(tcs, filters_are_non_destructive);
+    ATF_ADD_TEST_CASE(tcs, filters_reload_the_overview);
     ATF_ADD_TEST_CASE(tcs, query_drives_list_and_map_filters);
     ATF_ADD_TEST_CASE(tcs, errors_queue_and_quit);
 }

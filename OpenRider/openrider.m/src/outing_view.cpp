@@ -304,6 +304,12 @@ void DrawOverviewView(const app::AppModel &model, const ViewModels &view_models,
         ImGui::SameLine();
         ImGui::TextDisabled("computing...");
     }
+    // The same track filters as for an outing, applied to every track shown.
+    DrawFilterRow(model, out);
+    if (!model.filters.empty() && model.tracks_loading) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("loading tracks...");
+    }
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     DrawMapView(model, view_models, textures, avail.x, avail.y, out);
     DrawSegmentTooltip(model, view_models.map);

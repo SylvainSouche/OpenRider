@@ -6,6 +6,7 @@
 #include "core/library.h"
 #include "core/network_builder.h"
 #include "core/outing_selection.h"
+#include "core/track_filters.h"
 #include "core/type_catalog.h"
 
 #include <openrider/filter.h>
@@ -33,7 +34,7 @@ struct OutingQuery {
 /// A filter plugin and its settings.
 struct FilterState {
     const or_filter_vtable *vtable = nullptr;  ///< the filter plugin
-    bool enabled = false;                      ///< applied to the selected outing
+    bool enabled = false;                      ///< applied to the outings' points (selected outing, overview tracks)
     std::vector<double> values;  ///< one per declared parameter
 };
 
@@ -123,6 +124,9 @@ struct AppModel {
 
     /// Filter of the overview map: type and dates only.
     core::OutingFilter MapFilter() const;
+
+    /// The enabled track filters, in order, with their values.
+    std::vector<core::TrackFilter> EnabledFilters() const;
 
     /// The selected outing, or null.
     const core::Outing *SelectedOuting() const;

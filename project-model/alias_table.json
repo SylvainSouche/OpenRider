@@ -947,6 +947,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-overview-filters": {
+    "active": true,
+    "id": "0f87-6acf-70c8-5c54",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-overzoom": {
     "active": true,
     "id": "0f87-6acd-5daf-d584",
@@ -1869,6 +1875,12 @@
     "active": true,
     "id": "0f87-6acd-6195-c32d",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-overview-filters": {
+    "active": true,
+    "id": "0f87-6acf-70c8-05c3",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-overzoom": {

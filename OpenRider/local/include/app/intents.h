@@ -31,6 +31,7 @@ enum class IntentKind {
     ToggleFilter,        ///< i: filter index, j: 0/1
     SetFilterParam,      ///< i: filter index, j: parameter index, x: value
     ResetFilterParams,   ///< i: filter index
+    ReloadOverview,      ///< the overview tracks again (filters changed)
     DismissError,        ///< drops the error shown
     ReportError,         ///< text
     Quit,                ///< ends the application
