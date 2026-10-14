@@ -70,7 +70,11 @@ double StillWindowS(const std::vector<or_point> &points, const MotionParams &par
     return p10 > 0.0 ? params.ref_distance_m / p10 : kNaN;
 }
 
-std::vector<bool> NotMovingMask(const std::vector<or_point> &points, const MotionParams &params)
+namespace {
+
+// The fallback rule: positions spanning less than still_fraction *
+// ref_distance within the window around each point.
+std::vector<bool> PositionalMask(const std::vector<or_point> &points, const MotionParams &params)
 {
     std::vector<bool> still(points.size(), false);
     const double window = StillWindowS(points, params);
@@ -118,6 +122,18 @@ std::vector<bool> NotMovingMask(const std::vector<or_point> &points, const Motio
                 out[k] = true;
     }
     return out;
+}
+
+} // namespace
+
+std::vector<bool> NotMovingMask(const std::vector<or_point> &points, const MotionParams &params)
+{
+    const bool all_speeds = std::none_of(points.begin(), points.end(), [](const or_point &p) { return std::isnan(p.speed_ms); });
+    const std::vector<bool> positional = all_speeds ? std::vector<bool>() : PositionalMask(points, params);
+    std::vector<bool> still(points.size(), false);
+    for (size_t i = 0; i < points.size(); ++i)
+        still[i] = std::isnan(points[i].speed_ms) ? positional[i] : points[i].speed_ms <= params.still_speed_ms;
+    return still;
 }
 
 } // namespace openrider::sdk

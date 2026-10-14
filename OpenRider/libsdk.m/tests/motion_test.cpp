@@ -9,7 +9,7 @@ namespace {
 
 // Walk north at 1.5 m/s for 20 min, stand still 7 min with +/-2 m GPS
 // jitter, walk on 20 min. One sample every 2 s. ~1 m of latitude = 9e-6 deg.
-std::vector<or_point> WalkWithPause()
+std::vector<or_point> WalkWithPause(double jitter = 2.0)
 {
     std::vector<or_point> pts;
     double lat = 45.9, t = 0.0, alt = 1000.0;
@@ -28,7 +28,7 @@ std::vector<or_point> WalkWithPause()
     for (int i = 0; i < 600; ++i)
         push(3.0, 0.0);
     for (int i = 0; i < 210; ++i)
-        push(0.0, (i % 2 ? 2.0 : -2.0));
+        push(0.0, (i % 2 ? jitter : -jitter));
     for (int i = 0; i < 600; ++i)
         push(3.0, 0.0);
     return pts;
@@ -85,6 +85,39 @@ ATF_TEST_CASE_BODY(stats_moving_time_excludes_pause)
     ATF_REQUIRE(std::fabs(openrider::sdk::ComputeStats(walk, openrider::sdk::MotionParams{}).max_speed_ms - 1.5) < 0.01);
 }
 
+// The recorded speed decides: a stop whose positions wander by +/-8 m (more
+// than the positional rule tolerates) is still not moving, and the moving
+// time is the time of the points recorded above 0.3 m/s.
+ATF_TEST_CASE_WITHOUT_HEAD(recorded_speed_decides);
+ATF_TEST_CASE_BODY(recorded_speed_decides)
+{
+    const auto pts = WalkWithPause(8.0);
+    const auto still = openrider::sdk::NotMovingMask(pts, openrider::sdk::MotionParams{});
+    for (size_t i = 0; i < pts.size(); ++i)
+        ATF_REQUIRE_EQ(still[i], i >= 600 && i < 810);
+    const auto st = openrider::sdk::ComputeStats(pts, openrider::sdk::MotionParams{});
+    ATF_REQUIRE(std::fabs(st.moving_s - 1199.0 * 2.0) < 1e-6);  // every walking point but the first
+}
+
+// Without recorded speed, the positional rule finds the pause.
+ATF_TEST_CASE_WITHOUT_HEAD(without_speed_falls_back_on_positions);
+ATF_TEST_CASE_BODY(without_speed_falls_back_on_positions)
+{
+    auto pts = WalkWithPause();
+    for (or_point &p : pts)
+        p.speed_ms = std::numeric_limits<double>::quiet_NaN();
+    const auto still = openrider::sdk::NotMovingMask(pts, openrider::sdk::MotionParams{});
+    int in_pause = 0, in_walk = 0;
+    for (size_t i = 0; i < pts.size(); ++i) {
+        if (i >= 620 && i < 790)
+            in_pause += still[i];
+        if (i < 580 || i >= 830)
+            in_walk += still[i];
+    }
+    ATF_REQUIRE(in_pause > 160);
+    ATF_REQUIRE_EQ(in_walk, 0);
+}
+
 ATF_TEST_CASE_WITHOUT_HEAD(ascent_with_hysteresis);
 ATF_TEST_CASE_BODY(ascent_with_hysteresis)
 {
@@ -110,5 +143,7 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, window_scales_with_activity);
     ATF_ADD_TEST_CASE(tcs, pause_is_not_moving);
     ATF_ADD_TEST_CASE(tcs, stats_moving_time_excludes_pause);
+    ATF_ADD_TEST_CASE(tcs, recorded_speed_decides);
+    ATF_ADD_TEST_CASE(tcs, without_speed_falls_back_on_positions);
     ATF_ADD_TEST_CASE(tcs, ascent_with_hysteresis);
 }

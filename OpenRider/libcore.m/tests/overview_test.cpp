@@ -25,6 +25,7 @@ std::vector<or_point> LineKm()
         p.t_s = i;
         p.lat = 45.9 + i * 9e-6;
         p.lon = 6.6;
+        p.speed_ms = 1.0;  // 1 m a second
         pts.push_back(p);
     }
     return pts;

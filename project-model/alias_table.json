@@ -197,6 +197,12 @@
     "status": "accepted",
     "type": "ai"
   },
+  "ai-recorded-speed-still": {
+    "active": true,
+    "id": "0f87-6acf-678b-cf0f",
+    "status": "accepted",
+    "type": "ai"
+  },
   "ai-resolution-follows-width": {
     "active": true,
     "id": "0f87-6acd-ddbe-2e43",
@@ -1058,6 +1064,12 @@
   "dec-recompute-stats": {
     "active": true,
     "id": "0f87-6acd-208a-0286",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-recorded-speed-still": {
+    "active": true,
+    "id": "0f87-6acf-6974-5a76",
     "status": "recorded",
     "type": "dec"
   },
@@ -2468,6 +2480,12 @@
   "obs-fox-eval": {
     "active": true,
     "id": "0f87-6acc-e68a-dc9a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-garmin-moving-threshold": {
+    "active": true,
+    "id": "0f87-6acf-678b-4d00",
     "status": "recorded",
     "type": "obs"
   },
