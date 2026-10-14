@@ -57,12 +57,12 @@ struct Item {
 /// Nodes are provisional ids merged by union-find (`parent`, Find()).
 struct Assembly {
     /// The assembly of `tracks`, from their `analysis`.
-    Assembly(const std::vector<OverviewTrack> &tracks, const SegmentParams &params, Analysis analysis)
+    Assembly(const std::vector<RecordedTrack> &tracks, const SegmentParams &params, Analysis analysis)
         : tracks(tracks), params(params), analysis(std::move(analysis))
     {
     }
 
-    const std::vector<OverviewTrack> &tracks;  ///< input tracks
+    const std::vector<RecordedTrack> &tracks;  ///< input tracks
     const SegmentParams &params;               ///< parameters
     Analysis analysis;                         ///< heat map, lines, matches, pieces
     double cut_resolution_m = 0.0;             ///< entry points closer than this are one cut

@@ -9,7 +9,7 @@ namespace heatmap {
 
 void FindTraversals(Assembly &assembly)
 {
-    const std::vector<OverviewTrack> &tracks = assembly.tracks;
+    const std::vector<RecordedTrack> &tracks = assembly.tracks;
     const Analysis &analysis = assembly.analysis;
     const std::vector<std::vector<XY>> &lines = assembly.analysis.lines;
     const int margin = assembly.margin;

@@ -10,7 +10,7 @@
 namespace heatmap {
 
 // @impl 0f87-6acd-c829-c24f
-SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const SegmentParams &params,
+SegmentNetwork BuildNetwork(const std::vector<RecordedTrack> &tracks, const SegmentParams &params,
                             const std::function<bool()> &cancelled)
 {
     if (tracks.empty())

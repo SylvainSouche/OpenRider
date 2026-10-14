@@ -163,13 +163,29 @@ draws. WMS and WMTS fit unchanged.
 
 ### 5.6 Segments (`segments.h`) — stable since ABI 2.0, in place
 
-Given the tracks of a group of similar activities and the declared
+Given the recorded points of a group of similar activities and the declared
 parameter values, return the network (nodes, segments with their tracks,
 each track as a chain of segments); cancellable. Two plugins: heat map,
 track matching.
 
-Each route step carries its **point range** in its input track (`first`,
-`last`, inclusive). Consecutive steps share their cut point (a step's first
+`build()` returns 0 with a network, `OR_SEGMENTS_CANCELLED` when it stopped
+at the cancel callback's request, or another non-zero value with a message;
+`*out` is NULL on every return but success. It refuses malformed input:
+a track with points but no coordinates, non-finite or out-of-range
+positions, parameter values not finite or outside their declared bounds
+(SDK `TracksProblem`, `ParamsProblem`).
+
+**Tracks are recorded data.** Each track is an outing's recorded points as
+the input plugin delivered them (time, position, altitude, recorded speed,
+heart rate...; a point without position has NaN coordinates). Analysis
+works on recorded data, never on thinned tracks or on lines derived from
+them, whose features may be artefacts of that derivation; thinned tracks are
+for display only. The application loads the points in the network
+builder's thread, through the input plugin, and keeps them while their
+outings are asked for; outings without any position are left out.
+
+Each route step carries its **point range** in its track's recorded
+points (`first`, `last`, inclusive). Consecutive steps share their cut point (a step's first
 point is the previous step's last); the first step starts at the track's
 first point, the last ends at its last point. A step may cover part of its
 segment only (a turn-around within it).
@@ -180,13 +196,14 @@ segment only (a turn-around within it).
   step of the plugin's chain, minimising the points' distance to their
   step's segment plus each cut's distance to the node between the steps.
   A plugin may fill them from its own matching instead.
-- Input tracks are the thinned overview tracks. The application keeps, for
-  each thinned point, its index in the outing's points
-  (`OverviewTrack::source_index`, from `ThinTrack`) and maps the ranges
-  back to the full recording itself; the plugin never needs those indices,
-  so they are not part of the ABI.
-- The comparison panel takes its passages from the ranges
-  (`PassageAlong`); `FindPassages` remains for a network without ranges.
+- The comparison panel takes its passages from the ranges, on the same
+  recorded points (`PassageAlong`); `FindPassages` remains for a network
+  without ranges.
+- Both in-tree methods work on the recorded points themselves: each
+  track's moving points (SDK not-moving rule) with their own velocities
+  (SDK `PlaneTrack`, `PointVelocities`). Matching scores points by their
+  distance across a segment's line and the path walked; the heat map has
+  each point paint the stretch of way it stands for, along its velocity.
 - The cancel callback moves to the host services (5.2) in a later minor
   version.
 
@@ -245,12 +262,12 @@ plugins' outputs were unchanged by the move (compared byte for byte).
 | Domain | Headers | Content | Stability |
 |---|---|---|---|
 | Geometry | `plane_geometry.h`, `local_projection.h` | local projection; plane points, distances, lengths, point along a line, distance to a line, resampling | stable |
-| Motion | `motion.h` | motion parameters; haversine; moving-average speed; percentile; still window; not-moving mask | stable |
-| Tracks | `overview.h`, `segment_passages.h`, `route_ranges.h` | track type (positions, per-point noise, source indices, box); thinning; GPS noise per point; position on a line; a passage over a known range; passages found from geometry (fallback); route step ranges | provisional |
+| Motion | `motion.h`, `velocity.h` | motion parameters; haversine; moving-average speed; percentile; not-moving mask (recorded speed <= 0.3 m/s, positional rule as fallback); velocity of each recorded point | stable |
+| Tracks | `recorded_track.h`, `plane_track.h`, `overview.h`, `segment_passages.h`, `route_ranges.h` | recorded track (an outing's recorded points, what analysis works on); its moving points in the plane with velocities and path; thinned track for display (positions, per-point noise, box); thinning; GPS noise per point; position on a line; a passage over a known range; passages found from geometry (fallback); route step ranges | provisional |
 | Series | `series.h` | derived series of an outing: speed, altitude, vertical speed and grade over windows, histograms per period; x axes | stable |
 | Statistics | `stats.h` | outing statistics from points (moving time from the raw points) | stable |
 | Networks | `segments.h`, `network_cleanup.h` | segment network types; clean-up (pass-through merging, short loops, duplicates) | provisional, as 5.6 |
-| ABI glue | `segment_exchange.h` | segments kind: C <-> C++ conversions of tracks and networks, the matching `free`, running a plugin | stable for the existing kind |
+| ABI glue | `segment_exchange.h`, `params.h` | segments kind: C <-> C++ conversions of tracks and networks, the matching `free`, running a plugin, checking the tracks received; checking declared parameter values | stable for the existing kind |
 | Result type | `result.h` | `Result<T>` / `Status`, errors without exceptions | stable |
 
 Not moved yet, as they would change the plugins' results or need a design

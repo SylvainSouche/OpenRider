@@ -3,7 +3,7 @@
 #include "app/reports.h"
 
 #include "core/log.h"
-#include "core/plugin_thread.h"
+#include "core/track_filters.h"
 
 namespace app {
 
@@ -35,6 +35,7 @@ void OutingDomain::Handle(const Intent &intent, Intents &out)
         if (intent.i >= 0 && intent.i < filter_count) {
             model_.filters[static_cast<size_t>(intent.i)].enabled = intent.j != 0;
             ApplyFilters();
+            out.Push(IntentKind::ReloadOverview);
         }
         break;
     case IntentKind::SetFilterParam:
@@ -42,8 +43,10 @@ void OutingDomain::Handle(const Intent &intent, Intents &out)
             FilterState &filter = model_.filters[static_cast<size_t>(intent.i)];
             if (intent.j >= 0 && intent.j < static_cast<int>(filter.values.size())) {
                 filter.values[static_cast<size_t>(intent.j)] = intent.x;
-                if (filter.enabled)
+                if (filter.enabled) {
                     ApplyFilters();
+                    out.Push(IntentKind::ReloadOverview);
+                }
             }
         }
         break;
@@ -52,8 +55,10 @@ void OutingDomain::Handle(const Intent &intent, Intents &out)
             FilterState &filter = model_.filters[static_cast<size_t>(intent.i)];
             for (size_t k = 0; k < filter.values.size(); ++k)
                 filter.values[k] = filter.vtable->params[k].default_value;
-            if (filter.enabled)
+            if (filter.enabled) {
                 ApplyFilters();
+                out.Push(IntentKind::ReloadOverview);
+            }
         }
         break;
     default:
@@ -80,28 +85,11 @@ void OutingDomain::Select(int index)
 void OutingDomain::ApplyFilters()
 {
     model_.points = model_.raw_points;
-    // Each filter marks the points to keep; the next filter sees only those.
-    for (const FilterState &filter : model_.filters) {
-        if (!filter.enabled || filter.vtable->kind != OR_FILTER_TRACK || model_.points.empty())
-            continue;
-        std::vector<unsigned char> keep(model_.points.size(), 1);
-        char error[256] = "";
-        int rc = 0;
-        core::CallPlugin(filter.vtable, [&] {
-            rc = filter.vtable->apply_track(model_.points.data(), model_.points.size(), filter.values.data(),
-                                            keep.data(), error, sizeof error);
-        });
-        if (rc != 0) {
-            ReportError(model_, std::string("Filter ") + filter.vtable->label + " failed: " + error);
-            continue;
-        }
-        std::vector<or_point> kept;
-        for (size_t i = 0; i < model_.points.size(); ++i)
-            if (keep[i])
-                kept.push_back(model_.points[i]);
-        core::LogLine("filter %s kept %zu of %zu points", filter.vtable->id, kept.size(), model_.points.size());
-        model_.points.swap(kept);
-    }
+    const std::string errors = core::FilterPoints(model_.points, model_.EnabledFilters());
+    if (!errors.empty())
+        ReportError(model_, "Filter failed: " + errors);
+    if (model_.points.size() != model_.raw_points.size())
+        core::LogLine("filters kept %zu of %zu points", model_.points.size(), model_.raw_points.size());
     // Moving time from the raw points (dec-moving-time-from-raw).
     model_.computed = openrider::sdk::ComputeStats(model_.points, openrider::sdk::MotionParams{}, &model_.raw_points);
 }

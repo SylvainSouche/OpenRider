@@ -197,6 +197,12 @@
     "status": "accepted",
     "type": "ai"
   },
+  "ai-recorded-speed-still": {
+    "active": true,
+    "id": "0f87-6acf-678b-cf0f",
+    "status": "accepted",
+    "type": "ai"
+  },
   "ai-resolution-follows-width": {
     "active": true,
     "id": "0f87-6acd-ddbe-2e43",
@@ -941,6 +947,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-overview-filters": {
+    "active": true,
+    "id": "0f87-6acf-70c8-5c54",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-overzoom": {
     "active": true,
     "id": "0f87-6acd-5daf-d584",
@@ -1049,9 +1061,21 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-raw-recorded-data": {
+    "active": true,
+    "id": "0f87-6acf-6126-692a",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-recompute-stats": {
     "active": true,
     "id": "0f87-6acd-208a-0286",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-recorded-speed-still": {
+    "active": true,
+    "id": "0f87-6acf-6974-5a76",
     "status": "recorded",
     "type": "dec"
   },
@@ -1104,8 +1128,14 @@
     "type": "dec"
   },
   "dec-segment-step-ranges": {
-    "active": true,
+    "active": false,
     "id": "0f87-6ace-6be3-a186",
+    "status": "superseded",
+    "type": "dec"
+  },
+  "dec-segment-step-ranges-raw": {
+    "active": true,
+    "id": "0f87-6acf-6126-2988",
     "status": "recorded",
     "type": "dec"
   },
@@ -1704,9 +1734,15 @@
     "type": "impl"
   },
   "impl-heatmap-blur": {
-    "active": true,
+    "active": false,
     "id": "0f87-6acd-60a9-7bf6",
-    "status": "verified",
+    "status": "superseded",
+    "type": "impl"
+  },
+  "impl-heatmap-recorded": {
+    "active": true,
+    "id": "0f87-6acf-6d54-643d",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-histogram": {
@@ -1841,10 +1877,22 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-overview-filters": {
+    "active": true,
+    "id": "0f87-6acf-70c8-05c3",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-overzoom": {
     "active": true,
     "id": "0f87-6acd-5daf-1652",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-plane-track": {
+    "active": true,
+    "id": "0f87-6acf-6d54-b5b0",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-plugin-abi": {
@@ -1871,6 +1919,18 @@
     "status": "asserted",
     "type": "impl"
   },
+  "impl-point-velocities": {
+    "active": true,
+    "id": "0f87-6acf-6ab9-9a82",
+    "status": "asserted",
+    "type": "impl"
+  },
+  "impl-recorded-tracks": {
+    "active": true,
+    "id": "0f87-6acf-6371-f34e",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-same-routes-merge": {
     "active": true,
     "id": "0f87-6ace-3222-ba6b",
@@ -1890,8 +1950,14 @@
     "type": "impl"
   },
   "impl-segment-step-ranges": {
-    "active": true,
+    "active": false,
     "id": "0f87-6ace-72ef-1201",
+    "status": "superseded",
+    "type": "impl"
+  },
+  "impl-segment-step-ranges-raw": {
+    "active": true,
+    "id": "0f87-6acf-6371-f790",
     "status": "asserted",
     "type": "impl"
   },
@@ -1902,9 +1968,15 @@
     "type": "impl"
   },
   "impl-segments-matching": {
-    "active": true,
+    "active": false,
     "id": "0f87-6ace-2f7b-f4d7",
-    "status": "verified",
+    "status": "superseded",
+    "type": "impl"
+  },
+  "impl-segments-matching-recorded": {
+    "active": true,
+    "id": "0f87-6acf-6ab9-65de",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-segments-plugins": {
@@ -2381,6 +2453,12 @@
     "status": "recorded",
     "type": "obs"
   },
+  "obs-cadence-unreliable": {
+    "active": true,
+    "id": "0f87-6acf-855f-58f9",
+    "status": "recorded",
+    "type": "obs"
+  },
   "obs-clang22-float-h": {
     "active": false,
     "id": "0f87-6acd-2689-e92a",
@@ -2444,6 +2522,12 @@
   "obs-fox-eval": {
     "active": true,
     "id": "0f87-6acc-e68a-dc9a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-garmin-moving-threshold": {
+    "active": true,
+    "id": "0f87-6acf-678b-4d00",
     "status": "recorded",
     "type": "obs"
   },

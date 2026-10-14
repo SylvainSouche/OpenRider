@@ -8,23 +8,26 @@
 
 namespace openrider::sdk {
 
-Result<SegmentNetwork> RunSegments(const or_segments_vtable *plugin, const std::vector<OverviewTrack> &tracks,
+Result<SegmentNetwork> RunSegments(const or_segments_vtable *plugin, const std::vector<RecordedTrack> &tracks,
                                    const std::vector<double> &values, or_segment_cancel_cb cancel, void *user)
 {
     std::vector<or_segment_track> input;
-    for (const OverviewTrack &track : tracks) {
+    for (const RecordedTrack &track : tracks) {
         or_segment_track entry{};
         entry.id = track.id.c_str();
-        entry.count = track.lat.size();
-        entry.lon = track.lon.data();
-        entry.lat = track.lat.data();
-        entry.noise_m = track.noise_m.size() == track.lat.size() ? track.noise_m.data() : nullptr;
+        entry.count = track.points.size();
+        entry.points = track.points.data();
         input.push_back(entry);
     }
     or_segment_network *built = nullptr;
     char error[256] = "";
-    if (plugin->build(input.data(), input.size(), values.data(), cancel, user, &built, error, sizeof error) != 0)
-        return Result<SegmentNetwork>::Failure(std::string(plugin->id) + ": " + error);
+    const int rc = plugin->build(input.data(), input.size(), values.data(), cancel, user, &built, error, sizeof error);
+    if (rc != 0) {
+        if (built)
+            plugin->free_network(built);  // a plugin breaking the contract: never use it
+        return Result<SegmentNetwork>::Failure(std::string(plugin->id) + ": " +
+                                               (rc == OR_SEGMENTS_CANCELLED ? "cancelled" : error));
+    }
     if (!built)
         return Result<SegmentNetwork>::Failure(std::string(plugin->id) + ": no network returned");
     SegmentNetwork network = ImportNetwork(*built, tracks);
@@ -32,7 +35,7 @@ Result<SegmentNetwork> RunSegments(const or_segments_vtable *plugin, const std::
     return Result<SegmentNetwork>::Success(std::move(network));
 }
 
-SegmentNetwork ImportNetwork(const or_segment_network &network, const std::vector<OverviewTrack> &tracks)
+SegmentNetwork ImportNetwork(const or_segment_network &network, const std::vector<RecordedTrack> &tracks)
 {
     SegmentNetwork out;
     for (size_t n = 0; n < network.node_count; ++n)
@@ -73,7 +76,7 @@ T *Allocate(size_t count)
 
 } // namespace
 
-or_segment_network *ExportNetwork(const SegmentNetwork &network, const std::vector<OverviewTrack> &tracks)
+or_segment_network *ExportNetwork(const SegmentNetwork &network, const std::vector<RecordedTrack> &tracks)
 {
     std::map<std::string, uint32_t> index_of;
     for (size_t t = 0; t < tracks.size(); ++t)
@@ -138,24 +141,32 @@ void FreeExportedNetwork(or_segment_network *network)
     std::free(network);
 }
 
-std::vector<OverviewTrack> ImportTracks(const or_segment_track *tracks, size_t count)
+std::string TracksProblem(const or_segment_track *tracks, size_t count)
 {
-    std::vector<OverviewTrack> out;
+    if (count > 0 && !tracks)
+        return "missing tracks";
     for (size_t t = 0; t < count; ++t) {
-        OverviewTrack track;
-        track.id = tracks[t].id ? tracks[t].id : "";
-        track.lon.assign(tracks[t].lon, tracks[t].lon + tracks[t].count);
-        track.lat.assign(tracks[t].lat, tracks[t].lat + tracks[t].count);
-        if (tracks[t].noise_m)
-            track.noise_m.assign(tracks[t].noise_m, tracks[t].noise_m + tracks[t].count);
-        track.west = track.south = 1e9;
-        track.east = track.north = -1e9;
-        for (size_t i = 0; i < track.lat.size(); ++i) {
-            track.west = std::min(track.west, track.lon[i]);
-            track.east = std::max(track.east, track.lon[i]);
-            track.south = std::min(track.south, track.lat[i]);
-            track.north = std::max(track.north, track.lat[i]);
+        const or_segment_track &track = tracks[t];
+        if (track.count > 0 && !track.points)
+            return "track " + std::to_string(t) + " has points but no points array";
+        for (size_t i = 0; i < track.count; ++i) {
+            const double lat = track.points[i].lat, lon = track.points[i].lon;
+            if (std::isnan(lat) && std::isnan(lon))
+                continue;  // no position
+            if (!std::isfinite(lon) || !std::isfinite(lat) || std::fabs(lon) > 180.0 || std::fabs(lat) > 90.0)
+                return "track " + std::to_string(t) + " has an invalid position at point " + std::to_string(i);
         }
+    }
+    return "";
+}
+
+std::vector<RecordedTrack> ImportTracks(const or_segment_track *tracks, size_t count)
+{
+    std::vector<RecordedTrack> out;
+    for (size_t t = 0; t < count; ++t) {
+        RecordedTrack track;
+        track.id = tracks[t].id ? tracks[t].id : "";
+        track.points.assign(tracks[t].points, tracks[t].points + tracks[t].count);
         out.push_back(std::move(track));
     }
     return out;

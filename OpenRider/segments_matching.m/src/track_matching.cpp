@@ -1,10 +1,9 @@
 #include "matching/track_matching.h"
 
-#include "matching/track_geometry.h"
-
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <utility>
 
 namespace matching {
 
@@ -17,43 +16,53 @@ constexpr double kPi = 3.14159265358979323846;
 using openrider::sdk::Dist;
 using openrider::sdk::XY;
 
-std::vector<State> MatchTrack(const Network &network, const std::vector<XY> &line, const MatchParams &params)
+std::vector<State> MatchTrack(const Network &network, const openrider::sdk::PlaneTrack &track, const MatchParams &params)
 {
-    const std::vector<XY> headings = Headings(line);
+    const std::vector<XY> &line = track.points;
     const double min_cos = std::cos(params.max_angle_deg * kPi / 180.0);
     std::vector<std::vector<State>> candidates(line.size());
     for (size_t i = 0; i < line.size(); ++i) {
-        std::map<int, State> nearest;  // per edge
-        const XY &heading = headings[i];
+        std::map<int, std::pair<double, State>> nearest;  // per edge: distance to the station, state
+        const XY &heading = track.velocities[i];
         const double heading_length = std::hypot(heading.x, heading.y);
-        network.Near(line[i], params.tolerance_m, [&](int e, int s) {
+        // A station half a spacing farther may still have the line beside
+        // the point within the tolerance.
+        network.Near(line[i], params.tolerance_m + params.station_m, [&](int e, int s) {
             const XY tangent = network.Tangent(e, s);
             const double tangent_length = std::hypot(tangent.x, tangent.y);
-            if (heading_length <= 0.0 || tangent_length <= 0.0)
+            if (!(heading_length > 0.0) || tangent_length <= 0.0)
                 return;
             const double cosine = (heading.x * tangent.x + heading.y * tangent.y) / (heading_length * tangent_length);
             if (std::fabs(cosine) < min_cos)
                 return;  // moving across the segment, not along it
-            const double distance = Dist(line[i], network.edges[static_cast<size_t>(e)].stations[static_cast<size_t>(s)]);
+            // The station beside the point; scored by the distance across
+            // the line there.
+            const double to_station = Dist(line[i], network.edges[static_cast<size_t>(e)].stations[static_cast<size_t>(s)]);
+            const auto found = nearest.find(e);
+            if (found != nearest.end() && found->second.first <= to_station)
+                return;
+            const double distance = network.DistanceAcross(e, s, line[i]);
             const double emission = (distance / params.tolerance_m) * (distance / params.tolerance_m);
-            auto found = nearest.find(e);
-            if (found == nearest.end() || emission < found->second.emission)
-                nearest[e] = State{e, s, cosine > 0.0 ? 1 : -1, emission};
+            nearest[e] = {to_station, State{e, s, cosine > 0.0 ? 1 : -1, emission}};
         });
         candidates[i].push_back(State{});  // off the network
         for (const auto &entry : nearest)
-            candidates[i].push_back(entry.second);
+            if (entry.second.second.emission <= 1.0)  // within the tolerance across the line
+                candidates[i].push_back(entry.second.second);
     }
-    auto transition = [&](const State &a, const State &b) {
+    // `expected`: stations walked since the previous point.
+    auto transition = [&](const State &a, const State &b, double expected) {
         if (a.edge < 0 && b.edge < 0)
             return 0.0;
         if (a.edge < 0 || b.edge < 0)
             return kSwitchCost;
         if (a.edge == b.edge) {
             const int advance = (b.station - a.station) * a.direction;
-            if (b.direction == a.direction)
-                return advance >= -1 && advance <= 4 ? 0.5 * (advance - 1) * (advance - 1) : kInfinity;
-            return std::abs(b.station - a.station) <= 2 ? kTurnCost : kInfinity;
+            if (b.direction == a.direction) {
+                const double off = advance - expected, spread = std::max(1.0, expected);
+                return advance >= -1 && advance <= 2.0 * expected + 3.0 ? 0.5 * off * off / spread : kInfinity;
+            }
+            return std::abs(b.station - a.station) <= 2 + static_cast<int>(expected) ? kTurnCost : kInfinity;
         }
         // From the end of a's segment (in its direction of travel) to the
         // start of b's, through their common node.
@@ -78,8 +87,9 @@ std::vector<State> MatchTrack(const Network &network, const std::vector<XY> &lin
                 continue;
             }
             for (size_t a = 0; a < candidates[i - 1].size(); ++a) {
-                const double total =
-                    cost[i - 1][a] + transition(candidates[i - 1][a], candidates[i][b]) + candidates[i][b].emission;
+                const double expected = (track.along[i] - track.along[i - 1]) / params.station_m;
+                const double total = cost[i - 1][a] + transition(candidates[i - 1][a], candidates[i][b], expected) +
+                                     candidates[i][b].emission;
                 if (total < cost[i][b]) {
                     cost[i][b] = total;
                     from[i][b] = static_cast<int>(a);

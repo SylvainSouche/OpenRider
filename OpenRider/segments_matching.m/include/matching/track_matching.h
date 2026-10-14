@@ -6,6 +6,7 @@
 #include "matching/costs.h"
 #include "matching/matching.h"
 #include "matching/network.h"
+#include <openrider/sdk/plane_track.h>
 
 #include <vector>
 
@@ -20,14 +21,15 @@ struct State {
     double emission = kOffCost;    ///< cost of the point being there
 };
 
-/// The cheapest sequence of states for the points of `line`. Candidates of
-/// each point are the nearest station of every segment within
-/// `params.tolerance_m` whose direction agrees with the point's (within
-/// `params.max_angle_deg`), plus "off the network". Transitions favour
-/// advancing about one station along the same segment, or passing from the
-/// end of a segment to the start of the next through their common node;
-/// turning back on a segment costs kTurnCost, entering or leaving the
-/// network kSwitchCost.
-std::vector<State> MatchTrack(const Network &network, const std::vector<openrider::sdk::XY> &line, const MatchParams &params);
+/// The cheapest sequence of states for the points of `track`. Candidates of
+/// each point are, on every segment whose line passes within
+/// `params.tolerance_m` of it (distance across the line, beside the point)
+/// with a direction agreeing with the point's velocity (within
+/// `params.max_angle_deg`), its nearest station; plus "off the network".
+/// Transitions favour advancing along the same segment by the path walked
+/// since the previous point, or passing from the end of a segment to the
+/// start of the next through their common node; turning back on a segment
+/// costs kTurnCost, entering or leaving the network kSwitchCost.
+std::vector<State> MatchTrack(const Network &network, const openrider::sdk::PlaneTrack &track, const MatchParams &params);
 
 } // namespace matching

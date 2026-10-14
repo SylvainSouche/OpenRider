@@ -14,17 +14,21 @@ void OverviewLoader::Stop()
     loading_ = false;
 }
 
-void OverviewLoader::Start(const or_input_vtable *input, void *handle, std::vector<std::string> ids)
+void OverviewLoader::Start(const or_input_vtable *input, void *handle, std::vector<std::string> ids,
+                           std::vector<TrackFilter> filters)
 {
-    if (loading_.load())
-        return;
+    stop_ = true;  // a load still running ends at its next outing
     if (worker_.joinable())
         worker_.join();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        pending_.clear();  // tracks of the replaced load
+    }
     stop_ = false;  // a previous Stop() must not end this load at once
     done_ = 0;
     total_ = ids.size();
     loading_ = true;
-    worker_ = std::thread(&OverviewLoader::Run, this, input, handle, std::move(ids));
+    worker_ = std::thread(&OverviewLoader::Run, this, input, handle, std::move(ids), std::move(filters));
 }
 
 void OverviewLoader::Take(std::vector<openrider::sdk::OverviewTrack> &out)
@@ -35,7 +39,8 @@ void OverviewLoader::Take(std::vector<openrider::sdk::OverviewTrack> &out)
     pending_.clear();
 }
 
-void OverviewLoader::Run(const or_input_vtable *input, void *handle, std::vector<std::string> ids)
+void OverviewLoader::Run(const or_input_vtable *input, void *handle, std::vector<std::string> ids,
+                         std::vector<TrackFilter> filters)
 {
     for (const std::string &id : ids) {
         if (stop_.load())
@@ -49,6 +54,7 @@ void OverviewLoader::Run(const or_input_vtable *input, void *handle, std::vector
         int rc = 0;
         CallPlugin(input, [&] { rc = input->load_points(handle, id.c_str(), cb, &pts, err, sizeof err); });
         if (rc == 0) {
+            FilterPoints(pts, filters);  // a failing filter leaves the points as they are
             openrider::sdk::OverviewTrack t = openrider::sdk::ThinTrack(id, pts, openrider::sdk::kOverviewSpacingM);
             if (!t.lat.empty()) {
                 std::lock_guard<std::mutex> lock(mutex_);

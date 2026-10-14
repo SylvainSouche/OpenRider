@@ -6,12 +6,17 @@
 /// vectorized into a graph of segments; each track is then mapped onto the
 /// segments, and each common segment gets a mean track.
 ///
-/// Method (map inference from GPS traces, kernel-density style):
+/// Method (map inference from GPS traces, kernel-density style), on each
+/// track's moving recorded points (the SDK's not-moving rule), each with its
+/// own velocity -- never on thinned or resampled lines:
 ///  1. local metric projection; sparse grid of `cell_m` cells;
-///  2. blurred heat map: each track is drawn as a line `trace_width_m` wide,
-///     adding 1 to the cells it covers and 0.5 to a one-cell rim around them,
-///     once per cell (the higher value when both; a track lingering somewhere
-///     does not make a corridor); tracks add up. Wider traces merge routes
+///  2. blurred heat map: each recorded point paints the stretch of way it
+///     stands for -- half the path to the point before and to the point
+///     after, along its own velocity -- `trace_width_m` wide, adding 1 to the
+///     cells it covers and 0.5 to a one-cell rim around them, once per cell
+///     (the higher value when both; a track lingering somewhere does not
+///     make a corridor); a gap of more than 2 x kMaxPaintHalfM between two
+///     recorded points is not painted; tracks add up. Wider traces merge routes
 ///     that run close together. Each track counts once per pass: its
 ///     turn-arounds (out-and-backs) split it into passes, so a stretch done
 ///     out and back forms a corridor even when no other outing follows it;
@@ -20,7 +25,8 @@
 ///  4. corridor thinned to a one-cell skeleton, traced junction to junction
 ///     into segments; short dead-end spurs pruned;
 ///  5. track points snapped to the nearest segment within tolerance (25 m at
-///     least: GPS drift on a shared path): runs on
+///     least: GPS drift on a shared path) along which their velocity runs:
+///     runs on
 ///     a segment are its common parts, the rest is its own;
 ///  6. mean track of a segment: offsets of the matched points from the
 ///     skeleton, averaged per track and then across tracks, along the
@@ -28,7 +34,7 @@
 /// Callers group tracks of similar activities before calling.
 #pragma once
 
-#include <openrider/sdk/overview.h>
+#include <openrider/sdk/recorded_track.h>
 #include <openrider/sdk/segments.h>
 
 #include <functional>
@@ -40,9 +46,13 @@ namespace heatmap {
 using openrider::sdk::NetworkNode;
 using openrider::sdk::NetworkRoute;
 using openrider::sdk::NetworkSegment;
-using openrider::sdk::OverviewTrack;
+using openrider::sdk::RecordedTrack;
 using openrider::sdk::RouteStep;
 using openrider::sdk::SegmentNetwork;
+
+/// A recorded point paints at most this far (m) of the way on each side: a
+/// longer gap between two recorded points is no data, not a line.
+inline constexpr double kMaxPaintHalfM = 25.0;
 
 /// Parameters of segment inference.
 struct SegmentParams {
@@ -86,13 +96,13 @@ struct SegmentResult {
 };
 
 /// Infers the common segments of `tracks` (see the file description).
-SegmentResult FindSegments(const std::vector<OverviewTrack> &tracks, const SegmentParams &params);
+SegmentResult FindSegments(const std::vector<RecordedTrack> &tracks, const SegmentParams &params);
 
 /// Builds the segment network of `tracks`.
 ///
 /// `cancelled`, when given, is polled between the costly steps; once it
 /// returns true the result is incomplete and must be discarded.
-SegmentNetwork BuildNetwork(const std::vector<OverviewTrack> &tracks, const SegmentParams &params,
+SegmentNetwork BuildNetwork(const std::vector<RecordedTrack> &tracks, const SegmentParams &params,
                             const std::function<bool()> &cancelled = {});
 
 /// Zhang-Suen thinning of a binary image (row-major, 1 = set), in place.

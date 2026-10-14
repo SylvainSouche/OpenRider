@@ -2,6 +2,7 @@
 
 #include <atf-c++.hpp>
 
+#include <openrider/sdk/overview.h>
 #include <openrider/sdk/route_ranges.h>
 
 #include <cmath>
@@ -30,6 +31,21 @@ openrider::sdk::OverviewTrack Track(const std::string &id, const std::vector<std
     }
     track.lon.push_back(Lon(corners.back().first));
     track.lat.push_back(Lat(corners.back().second));
+    return track;
+}
+
+// The recorded points of a test line: one a second along its positions.
+openrider::sdk::RecordedTrack Recorded(const openrider::sdk::OverviewTrack &line)
+{
+    openrider::sdk::RecordedTrack track{line.id, {}};
+    for (size_t i = 0; i < line.lat.size(); ++i) {
+        or_point p{};
+        p.t_s = static_cast<double>(i);
+        p.lat = line.lat[i];
+        p.lon = line.lon[i];
+        p.alt_m = p.dist_m = p.speed_ms = p.hr = p.cadence = p.temp_c = std::nan("");
+        track.points.push_back(p);
+    }
     return track;
 }
 
@@ -67,7 +83,7 @@ ATF_TEST_CASE_BODY(corner_cuts_the_track_at_the_node)
     network.nodes = {{0, Lon(0), Lat(0)}, {1, Lon(500), Lat(0)}, {2, Lon(500), Lat(300)}};
     network.segments = {Segment(0, 0, 1, {0, 0}, {500, 0}), Segment(1, 1, 2, {500, 0}, {500, 300})};
     network.routes = {{"a", {{0, true}, {1, true}}}};
-    openrider::sdk::AssignStepRanges(network, {track});
+    openrider::sdk::AssignStepRanges(network, {Recorded(track)});
     const auto &steps = network.routes[0].steps;
     ATF_REQUIRE_EQ(steps[0].first, 0u);
     ATF_REQUIRE_EQ(steps[1].last, track.lat.size() - 1);
@@ -86,7 +102,7 @@ ATF_TEST_CASE_BODY(out_and_back_cut_at_the_turn)
     network.nodes = {{0, Lon(0), Lat(0)}, {1, Lon(400), Lat(0)}};
     network.segments = {Segment(0, 0, 1, {0, 0}, {400, 0})};
     network.routes = {{"a", {{0, true}, {0, false}}}};
-    openrider::sdk::AssignStepRanges(network, {track});
+    openrider::sdk::AssignStepRanges(network, {Recorded(track)});
     const auto &steps = network.routes[0].steps;
     const size_t turn = Nearest(track, 400, 3);
     ATF_REQUIRE(steps[0].last + 1 >= turn && steps[0].last <= turn + 1);
@@ -102,7 +118,7 @@ ATF_TEST_CASE_BODY(fewer_points_than_steps)
     network.nodes = {{0, Lon(0), Lat(0)}, {1, Lon(5), Lat(0)}};
     network.segments = {Segment(0, 0, 1, {0, 0}, {5, 0})};
     network.routes = {{"a", {{0, true}, {0, false}, {0, true}}}};
-    openrider::sdk::AssignStepRanges(network, {track});
+    openrider::sdk::AssignStepRanges(network, {Recorded(track)});
     const auto &steps = network.routes[0].steps;
     ATF_REQUIRE_EQ(steps[0].first, 0u);
     ATF_REQUIRE_EQ(steps[2].last, 1u);

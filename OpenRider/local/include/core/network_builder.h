@@ -3,11 +3,13 @@
 /// activities.
 #pragma once
 
-#include <openrider/sdk/overview.h>
+#include <openrider/input.h>
+#include <openrider/sdk/recorded_track.h>
 #include <openrider/sdk/segments.h>
 #include <openrider/segments.h>
 
 #include <atomic>
+#include <map>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -15,10 +17,10 @@
 
 namespace core {
 
-/// Tracks of similar activities, analysed together.
+/// Outings of similar activities, analysed together.
 struct TrackGroup {
-    std::string sport;                  ///< FIT sport shared by the tracks
-    std::vector<openrider::sdk::OverviewTrack> tracks;  ///< the group's tracks
+    std::string sport;             ///< FIT sport shared by the outings
+    std::vector<std::string> ids;  ///< the group's outings
 };
 
 /// The segment network of one group.
@@ -28,7 +30,9 @@ struct SegmentGroup {
 };
 
 /// Builds the segment network of each group with a segments plugin on a
-/// worker thread. A new
+/// worker thread, from the outings' recorded points (loaded by the worker
+/// through the input plugin, and kept for the next build while their outings
+/// are still asked for; outings without any position are left out). A new
 /// Start() never waits: it supersedes the running build, which is dropped
 /// between two groups, and the worker goes on with the latest request only
 /// (requests made while sliding a parameter coalesce). The owner polls Take().
@@ -38,10 +42,14 @@ public:
     ~NetworkBuilder();
 
     /// Requests the networks of `groups`, superseding any earlier request.
-    /// @param groups tracks grouped by similar activity, one network each
+    /// @param groups outings grouped by similar activity, one network each
+    ///        (a group with fewer than two outings with a position has none)
     /// @param plugin the segments plugin to use; must outlive the builder
     /// @param values one value per parameter the plugin declares
-    void Start(std::vector<TrackGroup> groups, const or_segments_vtable *plugin, std::vector<double> values);
+    /// @param input the input plugin reading the outings' points, and
+    /// @param handle its open handle; both must outlive the builder
+    void Start(std::vector<TrackGroup> groups, const or_segments_vtable *plugin, std::vector<double> values,
+               const or_input_vtable *input, void *handle);
 
     /// A build is running or waiting.
     bool Building() const { return building_.load(); }
@@ -67,7 +75,13 @@ private:
         std::vector<TrackGroup> groups;               ///< groups to build
         const or_segments_vtable *plugin = nullptr;   ///< segments plugin
         std::vector<double> values;                   ///< its parameter values
+        const or_input_vtable *input = nullptr;       ///< input plugin
+        void *handle = nullptr;                       ///< its handle
     };
+
+    /// The recorded points of outing `id`, from the cache or loaded now.
+    /// @return false if they cannot be read
+    bool Points(const Request &request, const std::string &id, const std::vector<or_point> *&points);
 
     /// Plugin cancel callback: the build in progress was superseded.
     static int Superseded(void *self);
@@ -84,6 +98,7 @@ private:
     bool result_ready_ = false;          ///< result_ not yet taken
     std::string error_;                  ///< error of the last finished build
     unsigned building_generation_ = 0;   ///< generation of the build in progress
+    std::map<std::string, std::vector<or_point>> points_;  ///< recorded points by outing; worker only
 };
 
 } // namespace core

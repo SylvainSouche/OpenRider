@@ -17,7 +17,6 @@ struct OverviewTrack {
     std::vector<double> lon;       ///< thinned positions, longitudes
     std::vector<double> lat;       ///< thinned positions, latitudes
     std::vector<float> noise_m;    ///< GPS noise (m, 1 sigma) around each kept point; empty if unknown
-    std::vector<size_t> source_index;  ///< index of each kept point in the outing's points; empty if unknown
     double west = 0;               ///< bounding box, degrees
     double south = 0;              ///< bounding box, degrees
     double east = 0;               ///< bounding box, degrees

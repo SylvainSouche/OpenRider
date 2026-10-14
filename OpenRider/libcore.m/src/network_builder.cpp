@@ -4,6 +4,10 @@
 
 #include <openrider/sdk/segment_exchange.h>
 
+#include <algorithm>
+#include <cmath>
+#include <set>
+
 namespace core {
 
 NetworkBuilder::~NetworkBuilder() { Stop(); }
@@ -22,10 +26,10 @@ void NetworkBuilder::Stop()
 
 // @impl 0f87-6acd-dc0b-a958
 void NetworkBuilder::Start(std::vector<TrackGroup> groups, const or_segments_vtable *plugin,
-                           std::vector<double> values)
+                           std::vector<double> values, const or_input_vtable *input, void *handle)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    request_ = Request{std::move(groups), plugin, std::move(values)};
+    request_ = Request{std::move(groups), plugin, std::move(values), input, handle};
     pending_ = true;
     result_ready_ = false;  // an older result is superseded
     ++generation_;          // the running build drops out at its next group
@@ -63,6 +67,29 @@ bool NetworkBuilder::Take(std::vector<SegmentGroup> &out)
     return true;
 }
 
+bool NetworkBuilder::Points(const Request &request, const std::string &id, const std::vector<or_point> *&points)
+{
+    auto found = points_.find(id);
+    if (found == points_.end()) {
+        std::vector<or_point> loaded;
+        char error[256] = "";
+        auto append = [](void *user, const or_point *point) -> int {
+            static_cast<std::vector<or_point> *>(user)->push_back(*point);
+            return 0;
+        };
+        int rc = 1;
+        if (request.input && request.input->load_points)
+            CallPlugin(request.input, [&] {
+                rc = request.input->load_points(request.handle, id.c_str(), append, &loaded, error, sizeof error);
+            });
+        if (rc != 0)
+            return false;
+        found = points_.emplace(id, std::move(loaded)).first;
+    }
+    points = &found->second;
+    return true;
+}
+
 void NetworkBuilder::Run()
 {
     for (;;) {
@@ -80,6 +107,12 @@ void NetworkBuilder::Run()
             generation = generation_.load();
         }
         building_generation_ = generation;
+        // Only the points of the outings asked for now stay cached.
+        std::set<std::string> wanted;
+        for (const TrackGroup &group : request.groups)
+            wanted.insert(group.ids.begin(), group.ids.end());
+        for (auto entry = points_.begin(); entry != points_.end();)
+            entry = wanted.count(entry->first) ? std::next(entry) : points_.erase(entry);
         std::vector<SegmentGroup> built;
         std::string error;
         bool superseded = false;
@@ -88,10 +121,30 @@ void NetworkBuilder::Run()
                 superseded = true;
                 break;
             }
+            // The group's recorded tracks: outings with at least one position.
+            std::vector<openrider::sdk::RecordedTrack> tracks;
+            for (const std::string &id : group.ids) {
+                if (stop_.load() || generation_.load() != generation)
+                    break;
+                const std::vector<or_point> *points = nullptr;
+                if (!Points(request, id, points)) {
+                    error = "cannot read the points of outing " + id;
+                    continue;
+                }
+                if (std::any_of(points->begin(), points->end(),
+                                [](const or_point &p) { return !std::isnan(p.lat) && !std::isnan(p.lon); }))
+                    tracks.push_back({id, *points});
+            }
+            if (tracks.size() < 2)
+                continue;  // a segment needs two routes
             openrider::sdk::Result<openrider::sdk::SegmentNetwork> network;
             CallPlugin(request.plugin, [&] {
-                network = openrider::sdk::RunSegments(request.plugin, group.tracks, request.values, Superseded, this);
+                network = openrider::sdk::RunSegments(request.plugin, tracks, request.values, Superseded, this);
             });
+            if (stop_.load() || generation_.load() != generation) {
+                superseded = true;  // the plugin may have stopped at Superseded()'s request
+                break;
+            }
             if (!network.Ok()) {
                 error = network.error;
                 continue;

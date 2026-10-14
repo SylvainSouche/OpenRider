@@ -5,7 +5,7 @@
 namespace app {
 
 AppController::AppController(AppModel &model)
-    : model_(model), library_(model, input_), query_(model), outing_(model, input_), segments_(model),
+    : model_(model), library_(model, input_), query_(model), outing_(model, input_), segments_(model, input_),
       comparison_(model, input_), session_(model),
       // Tick order: outings and tracks first, then what depends on them.
       domains_{&library_, &query_, &outing_, &segments_, &comparison_, &session_}

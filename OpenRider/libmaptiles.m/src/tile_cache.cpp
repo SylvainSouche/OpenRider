@@ -3,11 +3,13 @@
 #include "core/paths.h"
 #include "maptiles/cache_eviction.h"
 
+#include <atomic>
 #include <cstdio>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <unordered_map>
 #include <vector>
 
 namespace maptiles {
@@ -80,8 +82,8 @@ openrider::sdk::Status TileCache::Put(const std::string &layer, int z, int x, in
         return openrider::sdk::Status::Failure("cannot create cache directory " + dir);
     // Atomic: write a temporary file, then rename it into place. The name is
     // unique per process and per call, so concurrent writers never collide.
-    const std::string temporary = path + ".tmp" + std::to_string(getpid()) + "-" +
-                                  std::to_string(reinterpret_cast<uintptr_t>(&bytes));
+    static std::atomic<uint64_t> writes{0};
+    const std::string temporary = path + ".tmp" + std::to_string(getpid()) + "-" + std::to_string(++writes);
     FILE *file = std::fopen(temporary.c_str(), "wb");
     if (!file)
         return openrider::sdk::Status::Failure("cannot write " + temporary);
@@ -96,6 +98,7 @@ openrider::sdk::Status TileCache::Put(const std::string &layer, int z, int x, in
     {
         std::lock_guard<std::mutex> lock(mutex_);
         total_ += bytes.size();
+        written_ += bytes.size();
         over_maximum = !total_known_ || total_ > max_bytes_;
     }
     if (over_maximum)
@@ -105,19 +108,29 @@ openrider::sdk::Status TileCache::Put(const std::string &layer, int z, int x, in
 
 void TileCache::Evict()
 {
+    std::unique_lock<std::mutex> evicting(evict_mutex_, std::try_to_lock);
+    if (!evicting.owns_lock())
+        return;  // another thread is evicting
+    uint64_t written_before = 0;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        written_before = written_;
+    }
+    // The scan runs outside mutex_, so that writers are not held up; the
+    // tiles they write meanwhile are added back to the total below.
     std::vector<CacheEntry> entries;
     ScanTiles(root_, entries);
+    std::unordered_map<std::string, uint64_t> size_of;
     uint64_t total = 0;
-    for (const CacheEntry &entry : entries)
+    for (const CacheEntry &entry : entries) {
+        size_of[entry.path] = entry.size;
         total += entry.size;
-    for (const std::string &victim : LruVictims(entries, max_bytes_)) {
-        for (const CacheEntry &entry : entries)
-            if (entry.path == victim)
-                total -= entry.size;
-        std::remove(victim.c_str());
     }
+    for (const std::string &victim : LruVictims(entries, max_bytes_))
+        if (std::remove(victim.c_str()) == 0)
+            total -= size_of[victim];
     std::lock_guard<std::mutex> lock(mutex_);
-    total_ = total;
+    total_ = total + (written_ - written_before);
     total_known_ = true;
 }
 

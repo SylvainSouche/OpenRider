@@ -2,6 +2,8 @@
 /// Background loading of every outing's track for the overview map.
 #pragma once
 
+#include "core/track_filters.h"
+
 #include <openrider/input.h>
 #include <openrider/sdk/overview.h>
 
@@ -20,11 +22,15 @@ public:
     /// Stops a running load.
     ~OverviewLoader();
 
-    /// Starts loading the tracks of `ids`.
+    /// Starts loading the tracks of `ids`, replacing a load still running
+    /// (its tracks not yet taken are dropped).
     /// @param input the input plugin's vtable
     /// @param handle the plugin's open handle; must stay open until Stop()
     /// @param ids outings to load, in loading order
-    void Start(const or_input_vtable *input, void *handle, std::vector<std::string> ids);
+    /// @param filters track filters applied to each outing's points before
+    ///        thinning (the user's choice, as for the selected outing)
+    void Start(const or_input_vtable *input, void *handle, std::vector<std::string> ids,
+               std::vector<TrackFilter> filters = {});
 
     /// A load is running.
     bool Loading() const { return loading_.load(); }
@@ -43,7 +49,7 @@ public:
 
 private:
     /// The load, run on the worker thread.
-    void Run(const or_input_vtable *input, void *handle, std::vector<std::string> ids);
+    void Run(const or_input_vtable *input, void *handle, std::vector<std::string> ids, std::vector<TrackFilter> filters);
 
     std::thread worker_;                ///< runs Run()
     std::atomic<bool> loading_{false};  ///< a load is running

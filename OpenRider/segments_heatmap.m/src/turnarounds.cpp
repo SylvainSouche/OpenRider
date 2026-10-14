@@ -10,11 +10,9 @@ namespace heatmap {
 // `close` of itself while the point stands out from both by more than
 // `spike` -- an out-and-back. One index per turn: the farthest point.
 // @impl 0f87-6ace-1013-e03e
-std::vector<size_t> TurnArounds(const std::vector<XY> &line, double arm, double close, double spike)
+std::vector<size_t> TurnArounds(const std::vector<XY> &line, const std::vector<double> &along, double arm, double close,
+                                double spike)
 {
-    std::vector<double> along(line.size(), 0.0);
-    for (size_t i = 1; i < line.size(); ++i)
-        along[i] = along[i - 1] + Dist(line[i - 1], line[i]);
     std::vector<size_t> turns;
     double turn_height = 0.0;  // of the last turn found, while still in its spike
     size_t spike_end = 0;
@@ -45,6 +43,24 @@ std::vector<size_t> TurnArounds(const std::vector<XY> &line, double arm, double 
     return turns;
 }
 
+namespace {
+
+// The point `offset` metres of path from point `from` (the nearest one
+// that far, or the track's end).
+size_t PathFrom(const std::vector<double> &along, size_t from, double offset)
+{
+    size_t i = from;
+    if (offset < 0.0)
+        while (i > 0 && along[from] - along[i] < -offset)
+            --i;
+    else
+        while (i + 1 < along.size() && along[i] - along[from] < offset)
+            ++i;
+    return i;
+}
+
+} // namespace
+
 // A hairpin bend looks like a turn-around on a single track: the track
 // doubles back with its two legs close together. What tells them apart is
 // the other tracks: at a turn-around on a path, tracks passing the spot
@@ -53,7 +69,8 @@ std::vector<size_t> TurnArounds(const std::vector<XY> &line, double arm, double 
 // nearly all of them double back, the place is a bend and its turns go.
 // (A dead end everyone turns round at is lost as a turn, but it ends its
 // line and is a node anyway.)
-void DropHairpins(const std::vector<std::vector<XY>> &xy, double arm, std::vector<std::vector<size_t>> &turns)
+void DropHairpins(const std::vector<std::vector<XY>> &xy, const std::vector<std::vector<double>> &along, double arm,
+                  std::vector<std::vector<size_t>> &turns)
 {
     const double radius = 40.0;  // turns this close are one place
     struct Place {
@@ -79,7 +96,8 @@ void DropHairpins(const std::vector<std::vector<XY>> &xy, double arm, std::vecto
     std::vector<XY> bends;
     for (const Place &place : places) {
         int passing = 0, doubling = 0;
-        for (const std::vector<XY> &line : xy) {
+        for (size_t t = 0; t < xy.size(); ++t) {
+            const std::vector<XY> &line = xy[t];
             // The track's point nearest the place, if it passes there.
             size_t nearest = line.size();
             double best = radius;
@@ -93,7 +111,7 @@ void DropHairpins(const std::vector<std::vector<XY>> &xy, double arm, std::vecto
             ++passing;
             // Doubling back: the track `arm` before and after is much
             // closer than the 2 x arm of a straight passage.
-            if (Dist(AlongFrom(line, nearest, -arm), AlongFrom(line, nearest, arm)) < arm)
+            if (Dist(line[PathFrom(along[t], nearest, -arm)], line[PathFrom(along[t], nearest, arm)]) < arm)
                 ++doubling;
         }
         if (passing >= 3 && doubling >= 0.8 * passing)

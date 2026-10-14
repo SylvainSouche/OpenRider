@@ -5,7 +5,7 @@
 /// C++ on top of the SDK.
 #pragma once
 
-#include <openrider/sdk/overview.h>
+#include <openrider/sdk/recorded_track.h>
 #include <openrider/sdk/result.h>
 #include <openrider/sdk/segments.h>
 #include <openrider/segments.h>
@@ -21,22 +21,28 @@ namespace openrider::sdk {
 /// @param cancel polled by the plugin; non-zero stops it (may be null)
 /// @param user passed to `cancel`
 /// @return the network (route ids from the tracks' ids), or the plugin's error
-Result<SegmentNetwork> RunSegments(const or_segments_vtable *plugin, const std::vector<OverviewTrack> &tracks,
+///         ("<id>: cancelled" when it stopped at `cancel`'s request)
+Result<SegmentNetwork> RunSegments(const or_segments_vtable *plugin, const std::vector<RecordedTrack> &tracks,
                                    const std::vector<double> &values, or_segment_cancel_cb cancel, void *user);
 
 /// The network a plugin returned, as SDK types; routes named after
 /// `tracks` (the plugin's input, in order).
-SegmentNetwork ImportNetwork(const or_segment_network &network, const std::vector<OverviewTrack> &tracks);
+SegmentNetwork ImportNetwork(const or_segment_network &network, const std::vector<RecordedTrack> &tracks);
 
 /// `network` in the plugin ABI's form, allocated with malloc; route ids
 /// become indices into `tracks`. Release with FreeExportedNetwork().
-or_segment_network *ExportNetwork(const SegmentNetwork &network, const std::vector<OverviewTrack> &tracks);
+or_segment_network *ExportNetwork(const SegmentNetwork &network, const std::vector<RecordedTrack> &tracks);
 
 /// Releases a network made by ExportNetwork().
 void FreeExportedNetwork(or_segment_network *network);
 
-/// The plugin ABI's tracks as SDK tracks: positions and noise copied, bounding
-/// boxes computed.
-std::vector<OverviewTrack> ImportTracks(const or_segment_track *tracks, size_t count);
+/// Why the plugin ABI's `tracks` (`count` of them) are malformed, or "" if
+/// they are fine: missing, a track with points but no points array, a
+/// position neither missing (NaN) nor finite within WGS84 bounds. For
+/// plugins to check before ImportTracks().
+std::string TracksProblem(const or_segment_track *tracks, size_t count);
+
+/// The plugin ABI's tracks as SDK tracks: their recorded points copied.
+std::vector<RecordedTrack> ImportTracks(const or_segment_track *tracks, size_t count);
 
 } // namespace openrider::sdk

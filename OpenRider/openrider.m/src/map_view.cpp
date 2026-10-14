@@ -65,7 +65,7 @@ struct Frame {
 void DrawTiles(const app::MapViewModel &view_model, TextureMirror &textures, const Frame &frame)
 {
     const app::MapLayerInfo *layer = view_model.Layer();
-    const int tile_zoom = std::min(frame.zoom, layer->max_zoom);
+    const int tile_zoom = std::clamp(std::min(frame.zoom, layer->max_zoom), 0, app::kMaxTileZoom);
     const double tile_px = layer->tile_size * std::pow(2.0, frame.zoom - tile_zoom);  // enlarged past the last level
     const int tiles_across = 1 << tile_zoom;
     const double width = frame.end.x - frame.origin.x, height = frame.end.y - frame.origin.y;

@@ -3,6 +3,7 @@
 #include "matching/insertion.h"
 #include "matching/network.h"
 #include "matching/output.h"
+#include <openrider/sdk/plane_track.h>
 #include "matching/routes.h"
 #include "matching/track_geometry.h"
 
@@ -10,61 +11,47 @@
 #include <openrider/sdk/network_cleanup.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace matching {
 
 namespace {
 
-using openrider::sdk::XY;
-
 // Projection around the tracks' centre.
-openrider::sdk::LocalProjection CentredProjection(const std::vector<openrider::sdk::OverviewTrack> &tracks)
+openrider::sdk::LocalProjection CentredProjection(const std::vector<openrider::sdk::RecordedTrack> &tracks)
 {
     double west = 1e9, east = -1e9, south = 1e9, north = -1e9;
-    for (const openrider::sdk::OverviewTrack &track : tracks)
-        for (size_t i = 0; i < track.lat.size(); ++i) {
-            west = std::min(west, track.lon[i]);
-            east = std::max(east, track.lon[i]);
-            south = std::min(south, track.lat[i]);
-            north = std::max(north, track.lat[i]);
+    for (const openrider::sdk::RecordedTrack &track : tracks)
+        for (const or_point &point : track.points) {
+            if (std::isnan(point.lat) || std::isnan(point.lon))
+                continue;
+            west = std::min(west, point.lon);
+            east = std::max(east, point.lon);
+            south = std::min(south, point.lat);
+            north = std::max(north, point.lat);
         }
     return openrider::sdk::LocalProjection((west + east) / 2.0, (south + north) / 2.0);
-}
-
-// Each track in the plane, resampled every station_m.
-std::vector<std::vector<XY>> ProjectTracks(const std::vector<openrider::sdk::OverviewTrack> &tracks,
-                                           const openrider::sdk::LocalProjection &projection, const MatchParams &params)
-{
-    std::vector<std::vector<XY>> lines;
-    for (const openrider::sdk::OverviewTrack &track : tracks) {
-        std::vector<XY> line;
-        for (size_t i = 0; i < track.lat.size(); ++i)
-            line.push_back(projection.Forward(track.lon[i], track.lat[i]));
-        lines.push_back(line.size() >= 2 ? Stations(line, params.station_m) : line);
-    }
-    return lines;
 }
 
 // Inserts every track, pass after pass: a track is split at its
 // turn-arounds so that a stretch done out and back matches itself.
 // @return false when cancelled
-bool InsertTracks(Network &network, const std::vector<std::vector<XY>> &lines, const MatchParams &params, double arm,
+bool InsertTracks(Network &network, const std::vector<openrider::sdk::PlaneTrack> &tracks, const MatchParams &params, double arm,
                   const std::function<bool()> &cancelled)
 {
-    for (size_t t = 0; t < lines.size(); ++t) {
+    for (size_t t = 0; t < tracks.size(); ++t) {
         if (cancelled && cancelled())
             return false;
-        const std::vector<XY> &line = lines[t];
-        if (line.size() < 2)
+        const openrider::sdk::PlaneTrack &track = tracks[t];
+        if (track.size() < 2)
             continue;
         size_t start = 0;
-        std::vector<size_t> cuts = TurnArounds(line, params.station_m, arm, std::max(25.0, params.tolerance_m), 40.0);
-        cuts.push_back(line.size() - 1);
+        std::vector<size_t> cuts = TurnArounds(track, arm, std::max(25.0, params.tolerance_m), 40.0);
+        cuts.push_back(track.size() - 1);
         for (size_t cut : cuts) {
             if (cut <= start)
                 continue;
-            const std::vector<XY> pass(line.begin() + static_cast<long>(start), line.begin() + static_cast<long>(cut) + 1);
-            InsertPass(network, pass, static_cast<int>(t), params);
+            InsertPass(network, track.Slice(start, cut), static_cast<int>(t), params);
             start = cut;
         }
     }
@@ -73,14 +60,16 @@ bool InsertTracks(Network &network, const std::vector<std::vector<XY>> &lines, c
 
 } // namespace
 
-// @impl 0f87-6ace-2f7b-f4d7
-openrider::sdk::SegmentNetwork BuildNetwork(const std::vector<openrider::sdk::OverviewTrack> &tracks, const MatchParams &params,
+// @impl 0f87-6acf-6ab9-65de
+openrider::sdk::SegmentNetwork BuildNetwork(const std::vector<openrider::sdk::RecordedTrack> &tracks, const MatchParams &params,
                                   const std::function<bool()> &cancelled)
 {
     if (tracks.empty())
         return {};
     const openrider::sdk::LocalProjection projection = CentredProjection(tracks);
-    const std::vector<std::vector<XY>> lines = ProjectTracks(tracks, projection, params);
+    std::vector<openrider::sdk::PlaneTrack> lines;
+    for (const openrider::sdk::RecordedTrack &track : tracks)
+        lines.push_back(openrider::sdk::ToPlane(track, projection));
 
     // 1-3. The network grown pass after pass.
     Network network(std::max(10.0, params.tolerance_m));

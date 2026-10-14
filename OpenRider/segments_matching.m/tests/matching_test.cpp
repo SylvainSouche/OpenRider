@@ -7,9 +7,11 @@
 
 #include "matching/matching.h"
 
+#include <openrider/sdk/overview.h>
 #include <openrider/sdk/segment_exchange.h>
 
 #include <cmath>
+#include <string>
 #include <vector>
 
 extern "C" const or_plugin_info *openrider_plugin(void);
@@ -42,7 +44,34 @@ openrider::sdk::OverviewTrack Track(const std::string &id, const std::vector<std
     return track;
 }
 
+// The recorded points of a test line: one a second along its positions
+// (10 m apart), recorded at 10 m/s.
+openrider::sdk::RecordedTrack Recorded(const openrider::sdk::OverviewTrack &line)
+{
+    openrider::sdk::RecordedTrack track{line.id, {}};
+    for (size_t i = 0; i < line.lat.size(); ++i) {
+        or_point p{};
+        p.t_s = static_cast<double>(i);
+        p.lat = line.lat[i];
+        p.lon = line.lon[i];
+        p.speed_ms = 10.0;
+        p.alt_m = p.dist_m = p.hr = p.cadence = p.temp_c = std::nan("");
+        track.points.push_back(p);
+    }
+    return track;
+}
+
+// Recorded() of each line.
+std::vector<openrider::sdk::RecordedTrack> Recorded(const std::vector<openrider::sdk::OverviewTrack> &lines)
+{
+    std::vector<openrider::sdk::RecordedTrack> tracks;
+    for (const openrider::sdk::OverviewTrack &line : lines)
+        tracks.push_back(Recorded(line));
+    return tracks;
+}
+
 // Metric position of a network node.
+
 std::pair<double, double> At(const openrider::sdk::NetworkNode &node)
 {
     return {(node.lon - kLon0) * kKx, (node.lat - kLat0) * kKy};
@@ -67,7 +96,7 @@ ATF_TEST_CASE_BODY(shared_stretch_and_junctions)
     const std::vector<openrider::sdk::OverviewTrack> tracks = {
         Track("a", {{-300, 400}, {0, 0}, {1000, 0}, {1300, 400}}, 7),
         Track("b", {{-300, -400}, {0, 0}, {1000, 0}, {1300, -400}}, 11)};
-    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(tracks, matching::MatchParams{});
+    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(Recorded(tracks), matching::MatchParams{});
     RequireConnected(net);
     int shared = 0;
     for (const openrider::sdk::NetworkSegment &segment : net.segments)
@@ -91,7 +120,7 @@ ATF_TEST_CASE_BODY(close_parallel_legs_stay_apart)
     // not be merged into one.
     const std::vector<std::pair<double, double>> zigzag = {{0, -300}, {0, 300}, {25, 320}, {25, -300}};
     const std::vector<openrider::sdk::OverviewTrack> tracks = {Track("a", zigzag, 3), Track("b", zigzag, 5)};
-    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(tracks, matching::MatchParams{});
+    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(Recorded(tracks), matching::MatchParams{});
     RequireConnected(net);
     double shared_length = 0.0;
     for (const openrider::sdk::NetworkSegment &segment : net.segments)
@@ -104,7 +133,7 @@ ATF_TEST_CASE_WITHOUT_HEAD(out_and_back_alone_is_one_segment_both_ways);
 ATF_TEST_CASE_BODY(out_and_back_alone_is_one_segment_both_ways)
 {
     const std::vector<openrider::sdk::OverviewTrack> tracks = {Track("a", {{0, 0}, {800, 0}, {0, 0}}, 9)};
-    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(tracks, matching::MatchParams{});
+    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(Recorded(tracks), matching::MatchParams{});
     RequireConnected(net);
     double total = 0.0;
     for (const openrider::sdk::NetworkSegment &segment : net.segments)
@@ -124,7 +153,8 @@ ATF_TEST_CASE_BODY(plugin_abi)
     std::vector<double> values;
     for (size_t p = 0; p < plugin->param_count; ++p)
         values.push_back(plugin->params[p].default_value);
-    const std::vector<openrider::sdk::OverviewTrack> tracks = {Track("a", {{0, 0}, {600, 0}}, 1), Track("b", {{0, 0}, {600, 0}}, 2)};
+    const std::vector<openrider::sdk::RecordedTrack> tracks = {Recorded(Track("a", {{0, 0}, {600, 0}}, 1)),
+                                                               Recorded(Track("b", {{0, 0}, {600, 0}}, 2))};
     const auto result = openrider::sdk::RunSegments(plugin, tracks, values, nullptr, nullptr);
     ATF_REQUIRE(result.Ok());
     ATF_REQUIRE_EQ(result.value.routes.size(), 2u);
@@ -133,10 +163,36 @@ ATF_TEST_CASE_BODY(plugin_abi)
         const auto &steps = result.value.routes[r].steps;
         ATF_REQUIRE(!steps.empty());
         ATF_REQUIRE_EQ(steps.front().first, 0u);
-        ATF_REQUIRE_EQ(steps.back().last, tracks[r].lat.size() - 1);
+        ATF_REQUIRE_EQ(steps.back().last, tracks[r].points.size() - 1);
         for (size_t k = 1; k < steps.size(); ++k)
             ATF_REQUIRE_EQ(steps[k].first, steps[k - 1].last);
     }
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(cancel_and_malformed_input);
+ATF_TEST_CASE_BODY(cancel_and_malformed_input)
+{
+    const auto *plugin = static_cast<const or_segments_vtable *>(openrider_plugin()->vtable);
+    std::vector<double> values;
+    for (size_t p = 0; p < plugin->param_count; ++p)
+        values.push_back(plugin->params[p].default_value);
+    const std::vector<openrider::sdk::RecordedTrack> tracks = {Recorded(Track("a", {{0, 0}, {600, 0}}, 1)),
+                                                               Recorded(Track("b", {{0, 0}, {600, 0}}, 2))};
+    // Cancelled: no network, reported as such, not as a success.
+    const auto result = openrider::sdk::RunSegments(plugin, tracks, values, [](void *) { return 1; }, nullptr);
+    ATF_REQUIRE(!result.Ok());
+    ATF_REQUIRE(result.error.find("cancelled") != std::string::npos);
+    // Malformed tracks and parameters: refused, no network.
+    or_segment_network *out = reinterpret_cast<or_segment_network *>(1);  // must be reset
+    char err[128] = "";
+    or_segment_track no_points{"a", 2, nullptr};
+    ATF_REQUIRE(plugin->build(&no_points, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
+    ATF_REQUIRE(out == nullptr);
+    or_segment_track good{"a", tracks[0].points.size(), tracks[0].points.data()};
+    values[0] = 0.0;  // tolerance below its bound
+    ATF_REQUIRE(plugin->build(&good, 1, values.data(), nullptr, nullptr, &out, err, sizeof err) != 0);
+    ATF_REQUIRE(out == nullptr);
+    ATF_REQUIRE(std::string(err).find("tolerance_m") != std::string::npos);
 }
 
 ATF_INIT_TEST_CASES(tcs)
@@ -145,4 +201,5 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, close_parallel_legs_stay_apart);
     ATF_ADD_TEST_CASE(tcs, out_and_back_alone_is_one_segment_both_ways);
     ATF_ADD_TEST_CASE(tcs, plugin_abi);
+    ATF_ADD_TEST_CASE(tcs, cancel_and_malformed_input);
 }

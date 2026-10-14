@@ -25,6 +25,7 @@ std::vector<or_point> LineKm()
         p.t_s = i;
         p.lat = 45.9 + i * 9e-6;
         p.lon = 6.6;
+        p.speed_ms = 1.0;  // 1 m a second
         pts.push_back(p);
     }
     return pts;
@@ -38,6 +39,15 @@ int FakePoints(void *, const char *, or_point_cb cb, void *user, char *, size_t)
     return 0;
 }
 const or_input_vtable kInput = {sizeof(or_input_vtable), nullptr, nullptr, nullptr, FakePoints};
+
+// A track filter keeping the first half of the points (the first 500 m).
+int FirstHalf(const or_point *, size_t count, const double *, unsigned char *keep, char *, size_t)
+{
+    for (size_t i = 0; i < count; ++i)
+        keep[i] = i < count / 2;
+    return 0;
+}
+const or_filter_vtable kFirstHalf = {sizeof(or_filter_vtable), OR_FILTER_TRACK, "half", "First half", 0, nullptr, FirstHalf};
 
 // Waits for a load to end, then takes its tracks.
 std::vector<openrider::sdk::OverviewTrack> Finish(core::OverviewLoader &loader)
@@ -60,12 +70,6 @@ ATF_TEST_CASE_BODY(thinning_keeps_shape_and_ends)
     ATF_REQUIRE_EQ(t.lat.front(), pts.front().lat);
     ATF_REQUIRE_EQ(t.lat.back(), pts.back().lat);
     ATF_REQUIRE(std::fabs(t.north - pts.back().lat) < 1e-12);
-    // Each kept point names its index in the outing's points.
-    ATF_REQUIRE_EQ(t.source_index.size(), t.lat.size());
-    ATF_REQUIRE_EQ(t.source_index.front(), 0u);
-    ATF_REQUIRE_EQ(t.source_index.back(), pts.size() - 1);
-    for (size_t i = 0; i < t.lat.size(); ++i)
-        ATF_REQUIRE_EQ(t.lat[i], pts[t.source_index[i]].lat);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(partly_within_the_view);
@@ -110,8 +114,22 @@ ATF_TEST_CASE_BODY(loader_restarts_after_stop)
     ATF_REQUIRE_EQ(Finish(loader).size(), 3u);  // a previous Stop() does not end the new load
 }
 
+// The enabled track filters apply to the overview tracks; a new load
+// replaces one still running.
+ATF_TEST_CASE_WITHOUT_HEAD(loader_applies_track_filters);
+ATF_TEST_CASE_BODY(loader_applies_track_filters)
+{
+    core::OverviewLoader loader;
+    loader.Start(&kInput, nullptr, {"a", "b", "c"});
+    loader.Start(&kInput, nullptr, {"a"}, {{&kFirstHalf, {}}});
+    const auto tracks = Finish(loader);
+    ATF_REQUIRE_EQ(tracks.size(), 1u);
+    ATF_REQUIRE(tracks[0].north < 45.9 + 600 * 9e-6);  // the line ends near 500 m, not 1000 m
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, loader_applies_track_filters);
     ATF_ADD_TEST_CASE(tcs, loader_restarts_after_stop);
     ATF_ADD_TEST_CASE(tcs, thinning_keeps_shape_and_ends);
     ATF_ADD_TEST_CASE(tcs, partly_within_the_view);

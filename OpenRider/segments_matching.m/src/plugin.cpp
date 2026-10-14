@@ -2,6 +2,7 @@
 // plugin ABI (openrider/segments.h).
 
 #include <openrider/plugin.h>
+#include <openrider/sdk/params.h>
 #include <openrider/sdk/route_ranges.h>
 #include <openrider/sdk/segment_exchange.h>
 #include <openrider/segments.h>
@@ -9,6 +10,7 @@
 #include "matching/matching.h"
 
 #include <cstdio>
+#include <string>
 
 namespace {
 
@@ -25,20 +27,28 @@ const or_filter_param kParams[ParamCount] = {
 int MatchingBuild(const or_segment_track *tracks, size_t count, const double *values, or_segment_cancel_cb cancel,
                   void *user, or_segment_network **out, char *err, size_t errlen)
 {
-    if (!out || (count > 0 && !tracks) || !values) {
+    if (out)
+        *out = nullptr;
+    std::string problem = !out ? "missing output" : openrider::sdk::TracksProblem(tracks, count);
+    if (problem.empty())
+        problem = openrider::sdk::ParamsProblem(kParams, ParamCount, values);
+    if (!problem.empty()) {
         if (err && errlen)
-            std::snprintf(err, errlen, "matching: missing arguments");
+            std::snprintf(err, errlen, "matching: %s", problem.c_str());
         return 1;
     }
-    const std::vector<openrider::sdk::OverviewTrack> input = openrider::sdk::ImportTracks(tracks, count);
+    const std::vector<openrider::sdk::RecordedTrack> recorded = openrider::sdk::ImportTracks(tracks, count);
     matching::MatchParams params;
     params.tolerance_m = values[Tolerance];
     params.min_new_m = values[MinNew];
     params.max_angle_deg = values[MaxAngle];
+    bool stopped = false;
     openrider::sdk::SegmentNetwork network =
-        matching::BuildNetwork(input, params, [&] { return cancel && cancel(user) != 0; });
-    openrider::sdk::AssignStepRanges(network, input);
-    *out = openrider::sdk::ExportNetwork(network, input);
+        matching::BuildNetwork(recorded, params, [&] { return stopped = stopped || (cancel && cancel(user) != 0); });
+    if (stopped)
+        return OR_SEGMENTS_CANCELLED;  // the network is incomplete
+    openrider::sdk::AssignStepRanges(network, recorded);
+    *out = openrider::sdk::ExportNetwork(network, recorded);
     return 0;
 }
 

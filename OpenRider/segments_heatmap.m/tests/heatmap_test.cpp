@@ -11,14 +11,13 @@ constexpr double kLat0 = 45.9, kLon0 = 6.6;
 constexpr double kKx = 111320.0 * 0.69591;  // cos(45.9 deg)
 constexpr double kKy = 110540.0;
 
-// A track from metric points (x east, y north), one point every 10 m.
-openrider::sdk::OverviewTrack Track(const std::string &id, const std::vector<std::pair<double, double>> &corners,
-                          double offset, unsigned seed)
+// A track's recorded points from metric corners (x east, y north), one
+// point every 10 m, one a second (recorded at 10 m/s).
+openrider::sdk::RecordedTrack Track(const std::string &id, const std::vector<std::pair<double, double>> &corners,
+                                    double offset, unsigned seed)
 {
-    openrider::sdk::OverviewTrack t;
+    openrider::sdk::RecordedTrack t;
     t.id = id;
-    t.west = t.south = 1e9;
-    t.east = t.north = -1e9;
     for (size_t c = 1; c < corners.size(); ++c) {
         const double x0 = corners[c - 1].first, y0 = corners[c - 1].second;
         const double x1 = corners[c].first, y1 = corners[c].second;
@@ -27,22 +26,21 @@ openrider::sdk::OverviewTrack Track(const std::string &id, const std::vector<std
             seed = seed * 1103515245u + 12345u;
             const double noise = ((seed >> 16) % 400) / 100.0 - 2.0;  // +/- 2 m
             const double x = x0 + (x1 - x0) * i / n, y = y0 + (y1 - y0) * i / n + offset + noise;
-            t.lat.push_back(kLat0 + y / kKy);
-            t.lon.push_back(kLon0 + x / kKx);
+            or_point p{};
+            p.t_s = static_cast<double>(t.points.size());
+            p.lat = kLat0 + y / kKy;
+            p.lon = kLon0 + x / kKx;
+            p.speed_ms = 10.0;
+            p.alt_m = p.dist_m = p.hr = p.cadence = p.temp_c = std::nan("");
+            t.points.push_back(p);
         }
-    }
-    for (size_t i = 0; i < t.lat.size(); ++i) {
-        t.west = std::min(t.west, t.lon[i]);
-        t.east = std::max(t.east, t.lon[i]);
-        t.south = std::min(t.south, t.lat[i]);
-        t.north = std::max(t.north, t.lat[i]);
     }
     return t;
 }
 
 // Two outings sharing y = 0 from x = 0 to x = 1000 m, arriving and leaving
 // from different places, one 3 m north of the path and one 3 m south.
-std::vector<openrider::sdk::OverviewTrack> TwoTracks()
+std::vector<openrider::sdk::RecordedTrack> TwoTracks()
 {
     return {Track("a", {{-300, 400}, {0, 0}, {1000, 0}, {1300, 400}}, 3.0, 7),
             Track("b", {{-300, -400}, {0, 0}, {1000, 0}, {1300, -400}}, -3.0, 11)};
@@ -209,7 +207,7 @@ ATF_TEST_CASE_BODY(turn_around_alone_is_one_segment_both_ways)
     // 400 m and leaves northwards. The stretch a does alone, out and back,
     // is one segment ending at the turn-around, travelled forward then
     // backward -- not a loop of its own track.
-    std::vector<openrider::sdk::OverviewTrack> tracks = {
+    std::vector<openrider::sdk::RecordedTrack> tracks = {
         Track("a", {{0, 0}, {1000, 0}, {0, 0}}, 0.0, 7),
         Track("b", {{0, 0}, {400, 0}, {400, 600}}, 0.0, 11)};
     const auto net = heatmap::BuildNetwork(tracks, heatmap::SegmentParams{});

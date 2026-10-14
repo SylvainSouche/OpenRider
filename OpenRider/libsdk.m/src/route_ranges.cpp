@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <string>
+#include <unordered_map>
 
 namespace openrider::sdk {
 
@@ -18,48 +20,56 @@ namespace {
 /// around there.
 constexpr double kNodeWeight = 2.0;
 
-/// Beyond this distance (m) from a segment's bounding box, a point's
-/// distance to the segment is taken as its distance to the box: such a
-/// point is not on that segment, and the exact value would cost a walk
-/// along the whole line.
-constexpr double kNearBoxM = 100.0;
+/// Cells (m) of the index of a segment's line pieces. A point farther than
+/// one cell from every piece is not on that segment: its distance is taken
+/// as one cell (the cost of being off it), not walked along the whole line.
+constexpr double kPieceCellM = 50.0;
 
-/// A segment's line in the plane, with its bounding box.
+/// Grid key of cell (x, y).
+int64_t CellKey(int64_t x, int64_t y) { return (x << 32) ^ (y & 0xffffffffLL); }
+
+/// A segment's line in the plane, its pieces indexed by grid cell.
 struct PlaneLine {
-    std::vector<XY> points;  ///< the line
-    double min_x = 0.0;      ///< bounding box
-    double min_y = 0.0;      ///< bounding box
-    double max_x = 0.0;      ///< bounding box
-    double max_y = 0.0;      ///< bounding box
+    std::vector<XY> points;                                   ///< the line
+    std::unordered_map<int64_t, std::vector<size_t>> pieces;  ///< cell -> pieces (i: points i, i + 1) crossing it
 };
 
 PlaneLine ToPlane(const NetworkSegment &segment, const LocalProjection &projection)
 {
     PlaneLine line;
-    line.min_x = line.min_y = std::numeric_limits<double>::max();
-    line.max_x = line.max_y = std::numeric_limits<double>::lowest();
-    for (size_t i = 0; i < segment.lat.size(); ++i) {
-        const XY q = projection.Forward(segment.lon[i], segment.lat[i]);
-        line.points.push_back(q);
-        line.min_x = std::min(line.min_x, q.x);
-        line.min_y = std::min(line.min_y, q.y);
-        line.max_x = std::max(line.max_x, q.x);
-        line.max_y = std::max(line.max_y, q.y);
+    for (size_t i = 0; i < segment.lat.size(); ++i)
+        line.points.push_back(projection.Forward(segment.lon[i], segment.lat[i]));
+    for (size_t i = 0; i + 1 < line.points.size(); ++i) {
+        const XY &a = line.points[i], &b = line.points[i + 1];
+        const int64_t x0 = static_cast<int64_t>(std::floor(std::min(a.x, b.x) / kPieceCellM));
+        const int64_t x1 = static_cast<int64_t>(std::floor(std::max(a.x, b.x) / kPieceCellM));
+        const int64_t y0 = static_cast<int64_t>(std::floor(std::min(a.y, b.y) / kPieceCellM));
+        const int64_t y1 = static_cast<int64_t>(std::floor(std::max(a.y, b.y) / kPieceCellM));
+        for (int64_t x = x0; x <= x1; ++x)
+            for (int64_t y = y0; y <= y1; ++y)
+                line.pieces[CellKey(x, y)].push_back(i);
     }
     return line;
 }
 
-/// Distance from `q` to `line`: exact near it, to its bounding box beyond.
+/// Distance from `q` to `line`, capped at kPieceCellM: only the pieces in
+/// the cells around the point are measured.
 double DistanceTo(const XY &q, const PlaneLine &line)
 {
-    if (line.points.empty())
-        return 0.0;
-    const double dx = std::max({line.min_x - q.x, 0.0, q.x - line.max_x});
-    const double dy = std::max({line.min_y - q.y, 0.0, q.y - line.max_y});
-    const double to_box = std::hypot(dx, dy);
-    if (to_box > kNearBoxM)
-        return to_box;
-    return line.points.size() == 1 ? Dist(q, line.points[0]) : DistanceToLine(q, line.points);
+    if (line.points.size() == 1)
+        return std::min(kPieceCellM, Dist(q, line.points[0]));
+    double best = kPieceCellM;
+    const int64_t cx = static_cast<int64_t>(std::floor(q.x / kPieceCellM));
+    const int64_t cy = static_cast<int64_t>(std::floor(q.y / kPieceCellM));
+    for (int64_t dy = -1; dy <= 1; ++dy)
+        for (int64_t dx = -1; dx <= 1; ++dx) {
+            const auto found = line.pieces.find(CellKey(cx + dx, cy + dy));
+            if (found == line.pieces.end())
+                continue;
+            for (size_t i : found->second)
+                best = std::min(best, DistanceToLine(q, {line.points[i], line.points[i + 1]}));
+        }
+    return best;
 }
 
 /// Cuts of a track of `count` points into `steps` stretches in proportion
@@ -115,20 +125,28 @@ std::vector<size_t> BestCuts(const std::vector<XY> &points, const std::vector<co
 
 } // namespace
 
-void AssignStepRanges(SegmentNetwork &network, const std::vector<OverviewTrack> &tracks)
+void AssignStepRanges(SegmentNetwork &network, const std::vector<RecordedTrack> &tracks)
 {
-    std::map<std::string, const OverviewTrack *> by_id;
-    for (const OverviewTrack &track : tracks)
+    std::map<std::string, const RecordedTrack *> by_id;
+    for (const RecordedTrack &track : tracks)
         by_id[track.id] = &track;
     for (NetworkRoute &route : network.routes) {
         const auto found = by_id.find(route.id);
-        if (route.steps.empty() || found == by_id.end() || found->second->lat.empty())
+        if (route.steps.empty() || found == by_id.end() || found->second->points.empty())
             continue;
-        const OverviewTrack &track = *found->second;
-        const LocalProjection projection(track.lon[track.lon.size() / 2], track.lat[track.lat.size() / 2]);
+        const std::vector<or_point> &recorded = found->second->points;
+        // The points with a position, and where they are among all.
+        std::vector<size_t> located;
+        for (size_t i = 0; i < recorded.size(); ++i)
+            if (!std::isnan(recorded[i].lat) && !std::isnan(recorded[i].lon))
+                located.push_back(i);
+        if (located.empty())
+            continue;
+        const or_point &middle = recorded[located[located.size() / 2]];
+        const LocalProjection projection(middle.lon, middle.lat);
         std::vector<XY> points;
-        for (size_t i = 0; i < track.lat.size(); ++i)
-            points.push_back(projection.Forward(track.lon[i], track.lat[i]));
+        for (size_t i : located)
+            points.push_back(projection.Forward(recorded[i].lon, recorded[i].lat));
         // Each segment of the route in the plane, once; the node a step
         // starts from.
         std::map<int, PlaneLine> planes;
@@ -145,8 +163,8 @@ void AssignStepRanges(SegmentNetwork &network, const std::vector<OverviewTrack> 
         }
         const std::vector<size_t> cuts = BestCuts(points, lines, nodes);
         for (size_t k = 0; k < route.steps.size(); ++k) {
-            route.steps[k].first = cuts[k];
-            route.steps[k].last = cuts[k + 1];
+            route.steps[k].first = k == 0 ? 0 : located[cuts[k]];
+            route.steps[k].last = k + 1 == route.steps.size() ? recorded.size() - 1 : located[cuts[k + 1]];
         }
     }
 }

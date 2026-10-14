@@ -17,14 +17,31 @@ void LibraryDomain::Start(const std::string &source)
     core::LogLine("scanning %s", model_.input_name.c_str());
 }
 
-bool LibraryDomain::Handles(IntentKind) const { return false; }
+bool LibraryDomain::Handles(IntentKind kind) const { return kind == IntentKind::ReloadOverview; }
 
-void LibraryDomain::Handle(const Intent &, Intents &) {}
+void LibraryDomain::Handle(const Intent &intent, Intents &)
+{
+    if (intent.kind == IntentKind::ReloadOverview && scan_reported_)
+        LoadOverview();
+}
+
+void LibraryDomain::LoadOverview()
+{
+    model_.tracks.clear();
+    tracks_reported_ = false;
+    std::vector<std::string> ids;
+    for (const core::Outing &outing : model_.outings)
+        ids.push_back(outing.raw.id);
+    overview_.Start(input_.Vtable(), input_.Handle(), ids, model_.EnabledFilters());
+}
 
 // @impl 0f87-6acd-ce40-0dd9
 void LibraryDomain::Tick(Intents &)
 {
+    const size_t known = model_.outings.size();
     const std::string scan_error = library_.Take(model_.outings);
+    if (model_.outings.size() != known)
+        ++model_.outings_version;
     model_.scanning = library_.Scanning();
     model_.scanned = library_.Scanned();
     model_.scan_total = library_.Total();
@@ -43,10 +60,7 @@ void LibraryDomain::Tick(Intents &)
         model_.status = status;
         core::LogLine("%s", status);
         // Then every track, for the overview map.
-        std::vector<std::string> ids;
-        for (const core::Outing &outing : model_.outings)
-            ids.push_back(outing.raw.id);
-        overview_.Start(input_.Vtable(), input_.Handle(), ids);
+        LoadOverview();
     }
     overview_.Take(model_.tracks);
     model_.tracks_loading = overview_.Loading();

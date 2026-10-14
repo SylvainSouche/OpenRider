@@ -52,7 +52,10 @@ ComputedStats ComputeStats(const std::vector<or_point> &points, const MotionPara
             d = std::max(0.0, p.dist_m - q.dist_m);
         s.distance_m += d;
         const double dt = p.t_s - q.t_s;
-        const bool stopped = (still[i] && still[i - 1]) || (dt > 0.0 && d / dt < still_speed);
+        // The interval counts as its end point does (as the device counts
+        // its moving time); without recorded speed, as the fallback rule.
+        const bool stopped = !std::isnan(p.speed_ms) ? still[i]
+                                                      : (still[i] && still[i - 1]) || (dt > 0.0 && d / dt < still_speed);
         if (!stopped)
             s.moving_s += dt;
     }

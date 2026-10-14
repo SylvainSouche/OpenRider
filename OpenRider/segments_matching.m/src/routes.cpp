@@ -11,11 +11,11 @@ namespace matching {
 using openrider::sdk::Dist;
 using openrider::sdk::XY;
 
-void CutAtTurnArounds(Network &network, const std::vector<std::vector<XY>> &lines, const MatchParams &params,
+void CutAtTurnArounds(Network &network, const std::vector<openrider::sdk::PlaneTrack> &lines, const MatchParams &params,
                       double merge_m)
 {
     std::vector<std::pair<int, int>> turn_cuts;
-    for (const std::vector<XY> &line : lines) {
+    for (const openrider::sdk::PlaneTrack &line : lines) {
         const std::vector<State> path = MatchTrack(network, line, params);
         for (size_t i = 1; i < path.size(); ++i) {
             const State &a = path[i - 1], &b = path[i];
@@ -37,8 +37,8 @@ void CutAtTurnArounds(Network &network, const std::vector<std::vector<XY>> &line
     network.Reindex();
 }
 
-TrackChains ChainTracks(const Network &network, const std::vector<std::vector<XY>> &lines,
-                        const std::vector<openrider::sdk::OverviewTrack> &tracks, const MatchParams &params)
+TrackChains ChainTracks(const Network &network, const std::vector<openrider::sdk::PlaneTrack> &lines,
+                        const std::vector<openrider::sdk::RecordedTrack> &tracks, const MatchParams &params)
 {
     TrackChains chains;
     chains.users.resize(network.edges.size());

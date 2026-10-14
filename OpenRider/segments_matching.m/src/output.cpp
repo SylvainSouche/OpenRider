@@ -9,7 +9,7 @@ using openrider::sdk::Length;
 using openrider::sdk::XY;
 
 openrider::sdk::SegmentNetwork ToSegmentNetwork(const Network &network, TrackChains chains,
-                                      const std::vector<openrider::sdk::OverviewTrack> &tracks,
+                                      const std::vector<openrider::sdk::RecordedTrack> &tracks,
                                       const openrider::sdk::LocalProjection &projection)
 {
     openrider::sdk::SegmentNetwork result;

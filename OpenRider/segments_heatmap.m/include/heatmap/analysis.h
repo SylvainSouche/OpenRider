@@ -24,7 +24,9 @@ struct Match {
 /// skeleton vertex.
 struct Analysis {
     Proj pr;                                    ///< local projection
-    std::vector<std::vector<XY>> xy;            ///< tracks, metres
+    std::vector<std::vector<XY>> xy;            ///< tracks' moving recorded points, metres
+    std::vector<std::vector<XY>> velocity;      ///< per point: its velocity (m/s)
+    std::vector<std::vector<double>> along;     ///< per point: path from the track's first point (m)
     std::vector<std::vector<size_t>> turns;     ///< per track: turn-around point indices
     std::vector<std::vector<int>> pass_of;      ///< per track point: pass index (turn-arounds split passes)
     std::vector<std::vector<XY>> lines;         ///< skeleton lines, one vertex per cell
@@ -37,6 +39,6 @@ struct Analysis {
 };
 
 /// Runs the heat-map analysis of `tracks` (see heatmap.h, steps 1-6).
-Analysis Analyse(const std::vector<OverviewTrack> &tracks, const SegmentParams &params);
+Analysis Analyse(const std::vector<RecordedTrack> &tracks, const SegmentParams &params);
 
 } // namespace heatmap
