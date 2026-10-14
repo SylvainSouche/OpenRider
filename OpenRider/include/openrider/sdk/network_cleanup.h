@@ -4,6 +4,7 @@
 /// dropping junction blobs, merging duplicate descriptions of one path.
 #pragma once
 
+#include <openrider/sdk/rests.h>
 #include <openrider/sdk/segments.h>
 
 namespace openrider::sdk {
@@ -13,6 +14,8 @@ struct CleanupParams {
     double min_turn_m = 80.0;            ///< shorter back-and-forth along a segment is jitter
     double max_loop_m = 150.0;           ///< shorter loops are junction blobs
     double duplicate_distance_m = 25.0;  ///< segments within this of each other are one path
+    std::vector<RestPlace> kept_places;  ///< places whose nodes stay nodes (rest places)
+    double kept_radius_m = 30.0;         ///< a node within this of a kept place stays
 };
 
 /// Joins the two segments meeting at a node that is no junction: exactly
@@ -20,8 +23,10 @@ struct CleanupParams {
 /// passing there goes from one to the other (none starts, ends or turns
 /// around there). Back-and-forth
 /// along a segment shorter than `min_turn_m` is removed first as jitter.
-/// Renumbers segments and nodes, dropping those no route uses.
-void MergeThroughNodes(SegmentNetwork &network, double min_turn_m);
+/// Nodes within `kept_radius_m` of one of `kept` (rest places) are never
+/// joined through. Renumbers segments and nodes, dropping those no route uses.
+void MergeThroughNodes(SegmentNetwork &network, double min_turn_m, const std::vector<RestPlace> &kept = {},
+                       double kept_radius_m = 0.0);
 
 /// Removes loops (a segment from a node back to itself) shorter than
 /// `max_length_m`, whatever their routes: blobs around a junction.

@@ -52,8 +52,23 @@ ATF_TEST_CASE_BODY(different_routes_keep_the_cut)
     ATF_REQUIRE_EQ(net.segments.size(), 2u);
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(rest_places_stay_nodes);
+ATF_TEST_CASE_BODY(rest_places_stay_nodes)
+{
+    // As above, but tracks rest at n1: it stays a boundary.
+    openrider::sdk::SegmentNetwork net;
+    net.nodes = {{0, 6.60, 45.9}, {1, 6.61, 45.9}, {2, 6.62, 45.9}};
+    net.segments = {Segment(0, 0, 1, 6.60, 6.61, {"r1"}), Segment(1, 1, 2, 6.61, 6.62, {"r1"})};
+    net.routes = {{"r1", {{0, true}, {1, true}}}};
+    openrider::sdk::MergeThroughNodes(net, 10.0, {{6.6101, 45.9, 1}}, 30.0);
+    ATF_REQUIRE_EQ(net.segments.size(), 2u);
+    openrider::sdk::MergeThroughNodes(net, 10.0);  // without the place: one segment
+    ATF_REQUIRE_EQ(net.segments.size(), 1u);
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, rest_places_stay_nodes);
     ATF_ADD_TEST_CASE(tcs, same_routes_without_branching_are_one_segment);
     ATF_ADD_TEST_CASE(tcs, different_routes_keep_the_cut);
 }

@@ -31,10 +31,15 @@
 ///  6. mean track of a segment: offsets of the matched points from the
 ///     skeleton, averaged per track and then across tracks, along the
 ///     segment.
+/// Rests (the SDK's RestIntervals: a pause at a place, walks around it
+/// included) are left out and break their track into passes; every rest
+/// place cuts the shared lines passing it, and the clean-up keeps those
+/// nodes: a place where tracks stop is a segment boundary.
 /// Callers group tracks of similar activities before calling.
 #pragma once
 
 #include <openrider/sdk/recorded_track.h>
+#include <openrider/sdk/rests.h>
 #include <openrider/sdk/segments.h>
 
 #include <functional>
@@ -65,6 +70,7 @@ struct SegmentParams {
     double min_piece_m = 50.0;    ///< shorter runs on a segment are not counted
     double max_excursion_m = 150.0;  ///< leaving a segment and rejoining it within
                                      ///< this distance is not leaving it
+    openrider::sdk::RestParams rest;  ///< what makes a rest (left out, a place cut into the segments)
 };
 
 /// A common segment.

@@ -7,6 +7,7 @@
 #include <openrider/sdk/local_projection.h>
 #include <openrider/sdk/plane_geometry.h>
 #include <openrider/sdk/recorded_track.h>
+#include <openrider/sdk/rests.h>
 
 #include <cstddef>
 #include <vector>
@@ -22,6 +23,7 @@ struct PlaneTrack {
     std::vector<XY> points;      ///< positions
     std::vector<XY> velocities;  ///< velocities (m/s), from the recorded speed
     std::vector<double> along;   ///< path from the first point (m), along the kept positions
+    std::vector<size_t> breaks;  ///< indices k where a rest lies between points k - 1 and k
 
     /// Number of points.
     size_t size() const { return points.size(); }
@@ -31,7 +33,9 @@ struct PlaneTrack {
     PlaneTrack Slice(size_t first, size_t last) const;
 };
 
-/// `track`'s moving points with a position, in `projection`'s plane.
-PlaneTrack ToPlane(const RecordedTrack &track, const LocalProjection &projection);
+/// `track`'s moving points with a position, in `projection`'s plane, but
+/// for the points of `rests` (a pause is left out whole, walks around it
+/// included); each rest breaks the track there.
+PlaneTrack ToPlane(const RecordedTrack &track, const LocalProjection &projection, const std::vector<Rest> &rests = {});
 
 } // namespace openrider::sdk

@@ -47,6 +47,8 @@ SegmentNetwork BuildNetwork(const std::vector<RecordedTrack> &tracks, const Segm
     cleanup.min_turn_m = std::max(80.0, 2.0 * params.trace_width_m);
     cleanup.max_loop_m = params.max_excursion_m;
     cleanup.duplicate_distance_m = std::max(25.0, params.trace_width_m);
+    cleanup.kept_places = assembly.analysis.rest_places;
+    cleanup.kept_radius_m = std::max(params.rest.max_radius_m, params.tolerance_m);
     openrider::sdk::CleanUpNetwork(assembly.net, cleanup);
     return std::move(assembly.net);
 }

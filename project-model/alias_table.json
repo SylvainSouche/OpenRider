@@ -1091,6 +1091,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-rest-places": {
+    "active": true,
+    "id": "0f87-6acf-9261-7ced",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-restrained-cpp": {
     "active": true,
     "id": "0f87-6acc-ea44-75e5",
@@ -1928,6 +1934,12 @@
   "impl-recorded-tracks": {
     "active": true,
     "id": "0f87-6acf-6371-f34e",
+    "status": "asserted",
+    "type": "impl"
+  },
+  "impl-rests": {
+    "active": true,
+    "id": "0f87-6acf-972e-b67d",
     "status": "asserted",
     "type": "impl"
   },

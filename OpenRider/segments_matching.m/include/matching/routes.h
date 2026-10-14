@@ -25,6 +25,10 @@ struct TrackChains {
 void CutAtTurnArounds(Network &network, const std::vector<openrider::sdk::PlaneTrack> &lines, const MatchParams &params,
                       double merge_m);
 
+/// Cuts every edge passing within `radius_m` of one of `places` at its
+/// station nearest the place.
+void CutAtPlaces(Network &network, const std::vector<openrider::sdk::XY> &places, double radius_m);
+
 /// Each track's chain: its matched states collapsed into steps (one per
 /// edge travelled in one direction).
 TrackChains ChainTracks(const Network &network, const std::vector<openrider::sdk::PlaneTrack> &lines,

@@ -15,6 +15,8 @@
 
 namespace matching {
 
+using openrider::sdk::XY;
+
 namespace {
 
 // Projection around the tracks' centre.
@@ -46,13 +48,19 @@ bool InsertTracks(Network &network, const std::vector<openrider::sdk::PlaneTrack
         if (track.size() < 2)
             continue;
         size_t start = 0;
+        // Passes end at turn-arounds and at rests.
         std::vector<size_t> cuts = TurnArounds(track, arm, std::max(25.0, params.tolerance_m), 40.0);
+        for (size_t b : track.breaks)
+            if (b > 0)
+                cuts.push_back(b - 1);
+        std::sort(cuts.begin(), cuts.end());
         cuts.push_back(track.size() - 1);
         for (size_t cut : cuts) {
             if (cut <= start)
                 continue;
             InsertPass(network, track.Slice(start, cut), static_cast<int>(t), params);
-            start = cut;
+            // After a rest the track resumes at its next point.
+            start = std::binary_search(track.breaks.begin(), track.breaks.end(), cut + 1) ? cut + 1 : cut;
         }
     }
     return true;
@@ -67,9 +75,18 @@ openrider::sdk::SegmentNetwork BuildNetwork(const std::vector<openrider::sdk::Re
     if (tracks.empty())
         return {};
     const openrider::sdk::LocalProjection projection = CentredProjection(tracks);
+    // Each track's rests, left out; the places where tracks rest.
     std::vector<openrider::sdk::PlaneTrack> lines;
-    for (const openrider::sdk::RecordedTrack &track : tracks)
-        lines.push_back(openrider::sdk::ToPlane(track, projection));
+    std::vector<openrider::sdk::Rest> all_rests;
+    for (const openrider::sdk::RecordedTrack &track : tracks) {
+        const std::vector<openrider::sdk::Rest> rests = openrider::sdk::RestIntervals(track.points, params.rest);
+        all_rests.insert(all_rests.end(), rests.begin(), rests.end());
+        lines.push_back(openrider::sdk::ToPlane(track, projection, rests));
+    }
+    const std::vector<openrider::sdk::RestPlace> places = openrider::sdk::RestPlaces(all_rests, params.rest.max_radius_m);
+    std::vector<XY> place_points;
+    for (const openrider::sdk::RestPlace &place : places)
+        place_points.push_back(projection.Forward(place.lon, place.lat));
 
     // 1-3. The network grown pass after pass.
     Network network(std::max(10.0, params.tolerance_m));
@@ -84,6 +101,7 @@ openrider::sdk::SegmentNetwork BuildNetwork(const std::vector<openrider::sdk::Re
     MatchParams final_params = params;
     final_params.tolerance_m = 2.0 * params.tolerance_m;
     CutAtTurnArounds(network, lines, final_params, params.tolerance_m);
+    CutAtPlaces(network, place_points, std::max(params.rest.max_radius_m, params.tolerance_m));
     TrackChains chains = ChainTracks(network, lines, tracks, final_params);
     MergeCloseNodes(network, params.tolerance_m);
     FillChainGaps(network, chains);
@@ -94,6 +112,8 @@ openrider::sdk::SegmentNetwork BuildNetwork(const std::vector<openrider::sdk::Re
     cleanup.min_turn_m = arm;
     cleanup.max_loop_m = 150.0;
     cleanup.duplicate_distance_m = std::max(25.0, 1.5 * params.tolerance_m);
+    cleanup.kept_places = places;
+    cleanup.kept_radius_m = std::max(params.rest.max_radius_m, params.tolerance_m);
     openrider::sdk::CleanUpNetwork(result, cleanup);
     return result;
 }

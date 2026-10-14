@@ -27,7 +27,9 @@ struct Analysis {
     std::vector<std::vector<XY>> xy;            ///< tracks' moving recorded points, metres
     std::vector<std::vector<XY>> velocity;      ///< per point: its velocity (m/s)
     std::vector<std::vector<double>> along;     ///< per point: path from the track's first point (m)
-    std::vector<std::vector<size_t>> turns;     ///< per track: turn-around point indices
+    std::vector<std::vector<size_t>> turns;     ///< per track: turn-around (and rest) point indices, ending passes
+    std::vector<openrider::sdk::RestPlace> rest_places;  ///< where tracks rest
+    std::vector<XY> rest_points;                ///< the same, metres
     std::vector<std::vector<int>> pass_of;      ///< per track point: pass index (turn-arounds split passes)
     std::vector<std::vector<XY>> lines;         ///< skeleton lines, one vertex per cell
     std::vector<std::vector<Match>> matches;    ///< per track point

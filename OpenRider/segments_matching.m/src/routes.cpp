@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 
 namespace matching {
 
@@ -34,6 +35,26 @@ void CutAtTurnArounds(Network &network, const std::vector<openrider::sdk::PlaneT
         if (distinct.empty() || distinct.back().first != cut.first || cut.second - distinct.back().second > merge_stations)
             distinct.push_back(cut);
     network.SplitAll(distinct);
+    network.Reindex();
+}
+
+void CutAtPlaces(Network &network, const std::vector<XY> &places, double radius_m)
+{
+    std::vector<std::pair<int, int>> cuts;
+    for (const XY &place : places) {
+        std::map<int, std::pair<double, int>> nearest;  // edge -> (distance, station)
+        network.Near(place, radius_m, [&](int e, int s) {
+            const double d = Dist(place, network.edges[static_cast<size_t>(e)].stations[static_cast<size_t>(s)]);
+            auto found = nearest.find(e);
+            if (found == nearest.end() || d < found->second.first)
+                nearest[e] = {d, s};
+        });
+        for (const auto &[e, at] : nearest)
+            cuts.push_back({e, at.second});
+    }
+    std::sort(cuts.begin(), cuts.end());
+    cuts.erase(std::unique(cuts.begin(), cuts.end()), cuts.end());
+    network.SplitAll(cuts);
     network.Reindex();
 }
 

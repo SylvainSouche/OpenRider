@@ -40,12 +40,24 @@ void ProjectTracks(Analysis &analysis, const std::vector<RecordedTrack> &tracks,
     xy.assign(tracks.size(), {});
     analysis.velocity.assign(tracks.size(), {});
     analysis.along.assign(tracks.size(), {});
+    // Each track's rests, left out (a pause and the walks around it); they
+    // end passes like turn-arounds.
+    std::vector<std::vector<size_t>> breaks(tracks.size());
+    std::vector<openrider::sdk::Rest> all_rests;
     for (size_t t = 0; t < tracks.size(); ++t) {
-        openrider::sdk::PlaneTrack plane = openrider::sdk::ToPlane(tracks[t], projection);
+        const std::vector<openrider::sdk::Rest> rests = openrider::sdk::RestIntervals(tracks[t].points, params.rest);
+        all_rests.insert(all_rests.end(), rests.begin(), rests.end());
+        openrider::sdk::PlaneTrack plane = openrider::sdk::ToPlane(tracks[t], projection, rests);
         xy[t] = std::move(plane.points);
         analysis.velocity[t] = std::move(plane.velocities);
         analysis.along[t] = std::move(plane.along);
+        for (size_t b : plane.breaks)
+            if (b > 0)
+                breaks[t].push_back(b - 1);  // the last point before the rest
     }
+    analysis.rest_places = openrider::sdk::RestPlaces(all_rests, params.rest.max_radius_m);
+    for (const openrider::sdk::RestPlace &place : analysis.rest_places)
+        analysis.rest_points.push_back(projection.Forward(place.lon, place.lat));
 
     // Turn-arounds split each track into passes: a stretch done out and back
     // is passed twice, and the two passes count as two contributors to the
@@ -58,6 +70,12 @@ void ProjectTracks(Analysis &analysis, const std::vector<RecordedTrack> &tracks,
         analysis.turns[t] = TurnArounds(xy[t], analysis.along[t], turn_arm, std::max(25.0, params.trace_width_m / 2.0),
                                         std::max(40.0, params.trace_width_m));
     DropHairpins(xy, analysis.along, turn_arm, analysis.turns);
+    for (size_t t = 0; t < tracks.size(); ++t) {
+        std::vector<size_t> &turns = analysis.turns[t];
+        turns.insert(turns.end(), breaks[t].begin(), breaks[t].end());
+        std::sort(turns.begin(), turns.end());
+        turns.erase(std::unique(turns.begin(), turns.end()), turns.end());
+    }
     for (size_t t = 0; t < tracks.size(); ++t) {
         std::vector<int> &pass = analysis.pass_of[t];
         pass.assign(xy[t].size(), 0);
