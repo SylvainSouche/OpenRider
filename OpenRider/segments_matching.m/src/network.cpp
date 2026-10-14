@@ -26,6 +26,15 @@ XY Network::Tangent(int e, int s) const
     return {b.x - a.x, b.y - a.y};
 }
 
+double Network::DistanceAcross(int e, int s, const XY &q) const
+{
+    const std::vector<XY> &st = edges[static_cast<size_t>(e)].stations;
+    const size_t at = static_cast<size_t>(s);
+    std::vector<XY> around(st.begin() + static_cast<long>(at > 0 ? at - 1 : at),
+                           st.begin() + static_cast<long>(std::min(st.size(), at + 2)));
+    return around.size() >= 2 ? openrider::sdk::DistanceToLine(q, around) : openrider::sdk::Dist(q, st[at]);
+}
+
 int Network::AddNode(const XY &q)
 {
     nodes.push_back(q);

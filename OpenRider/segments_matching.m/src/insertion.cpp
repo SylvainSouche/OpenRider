@@ -7,19 +7,19 @@ namespace matching {
 
 using openrider::sdk::XY;
 
-bool Alongside(const Network &network, const std::vector<XY> &pass, size_t first, size_t last, const MatchParams &params)
+bool Alongside(const Network &network, const PlaneTrack &pass, size_t first, size_t last, const MatchParams &params)
 {
     size_t near = 0;
     for (size_t i = first; i <= last; ++i) {
         bool found = false;
-        network.Near(pass[i], 2.0 * params.tolerance_m, [&](int, int) { found = true; });
+        network.Near(pass.points[i], 2.0 * params.tolerance_m, [&](int, int) { found = true; });
         near += found ? 1 : 0;
     }
     return static_cast<double>(near) >= 0.8 * static_cast<double>(last - first + 1);
 }
 
 
-void InsertPass(Network &network, const std::vector<XY> &pass, int route, const MatchParams &params)
+void InsertPass(Network &network, const PlaneTrack &pass, int route, const MatchParams &params)
 {
     const std::vector<State> path = MatchTrack(network, pass, params);
     for (size_t i = 0; i < pass.size(); ++i) {
@@ -27,8 +27,8 @@ void InsertPass(Network &network, const std::vector<XY> &pass, int route, const 
         if (state.edge < 0)
             continue;
         Edge &edge = network.edges[static_cast<size_t>(state.edge)];
-        edge.sums[static_cast<size_t>(state.station)].x += pass[i].x;
-        edge.sums[static_cast<size_t>(state.station)].y += pass[i].y;
+        edge.sums[static_cast<size_t>(state.station)].x += pass.points[i].x;
+        edge.sums[static_cast<size_t>(state.station)].y += pass.points[i].y;
         edge.weights[static_cast<size_t>(state.station)] += 1.0;
         edge.routes.insert(route);
     }
@@ -45,7 +45,7 @@ void InsertPass(Network &network, const std::vector<XY> &pass, int route, const 
         size_t j = i;
         while (j + 1 < pass.size() && path[j + 1].edge < 0)
             ++j;
-        if (static_cast<double>(j - i) * params.station_m >= params.min_new_m && !Alongside(network, pass, i, j, params))
+        if (pass.along[j] - pass.along[i] >= params.min_new_m && !Alongside(network, pass, i, j, params))
             stretches.push_back({i, j});
         i = j + 1;
     }
@@ -66,15 +66,15 @@ void InsertPass(Network &network, const std::vector<XY> &pass, int route, const 
     }
     const std::vector<int> junctions = network.SplitAll(requests);
     for (size_t k = 0; k < stretches.size(); ++k) {
-        const XY &first = pass[stretches[k].first], &last = pass[stretches[k].last];
+        const XY &first = pass.points[stretches[k].first], &last = pass.points[stretches[k].last];
         const int from = start_request[k] >= 0 ? junctions[static_cast<size_t>(start_request[k])]
                                                : network.NodeAt(first, 2.0 * params.tolerance_m);
         const int to = end_request[k] >= 0 ? junctions[static_cast<size_t>(end_request[k])]
                                            : network.NodeAt(last, 2.0 * params.tolerance_m);
         std::vector<XY> line;
         line.push_back(network.nodes[static_cast<size_t>(from)]);
-        line.insert(line.end(), pass.begin() + static_cast<long>(stretches[k].first),
-                    pass.begin() + static_cast<long>(stretches[k].last) + 1);
+        line.insert(line.end(), pass.points.begin() + static_cast<long>(stretches[k].first),
+                    pass.points.begin() + static_cast<long>(stretches[k].last) + 1);
         line.push_back(network.nodes[static_cast<size_t>(to)]);
         Edge edge;
         edge.from = from;

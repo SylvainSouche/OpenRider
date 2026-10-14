@@ -16,18 +16,6 @@ std::vector<XY> Stations(const std::vector<XY> &line, double step)
 }
 
 
-std::vector<XY> Headings(const std::vector<XY> &line)
-{
-    std::vector<XY> headings(line.size());
-    for (size_t i = 0; i < line.size(); ++i) {
-        const XY &a = line[i > 0 ? i - 1 : i];
-        const XY &b = line[i + 1 < line.size() ? i + 1 : i];
-        headings[i] = {b.x - a.x, b.y - a.y};
-    }
-    return headings;
-}
-
-
 std::vector<XY> Smoothed(const std::vector<XY> &line, int half)
 {
     std::vector<XY> out(line.size());
@@ -44,18 +32,28 @@ std::vector<XY> Smoothed(const std::vector<XY> &line, int half)
 }
 
 
-std::vector<size_t> TurnArounds(const std::vector<XY> &line, double step, double arm, double close, double spike)
+std::vector<size_t> TurnArounds(const PlaneTrack &track, double arm, double close, double spike)
 {
     std::vector<size_t> turns;
-    const size_t reach = static_cast<size_t>(std::ceil(arm / step));
-    size_t spike_end = 0;
+    const std::vector<XY> &line = track.points;
+    size_t spike_end = 0;     // index of the last turn's after-point
     double turn_height = 0.0;
-    for (size_t i = reach; i + reach < line.size(); ++i) {
-        const XY &before = line[i - reach], &after = line[i + reach];
-        if (Dist(before, after) >= close || std::min(Dist(line[i], before), Dist(line[i], after)) <= spike)
+    size_t before = 0, after = 0;
+    for (size_t i = 0; i < line.size(); ++i) {
+        // The points `arm` metres of path before and after i.
+        while (before + 1 < i && track.along[i] - track.along[before + 1] >= arm)
+            ++before;
+        if (after < i)
+            after = i;
+        while (after + 1 < line.size() && track.along[after] - track.along[i] < arm)
+            ++after;
+        if (track.along[i] - track.along[before] < arm || track.along[after] - track.along[i] < arm)
+            continue;  // too close to an end
+        const XY &a = line[before], &b = line[after];
+        if (Dist(a, b) >= close || std::min(Dist(line[i], a), Dist(line[i], b)) <= spike)
             continue;
-        const double height = Dist(line[i], {(before.x + after.x) / 2.0, (before.y + after.y) / 2.0});
-        if (!turns.empty() && i - reach < spike_end) {
+        const double height = Dist(line[i], {(a.x + b.x) / 2.0, (a.y + b.y) / 2.0});
+        if (!turns.empty() && before < spike_end) {
             if (height > turn_height) {
                 turns.back() = i;
                 turn_height = height;
@@ -64,7 +62,7 @@ std::vector<size_t> TurnArounds(const std::vector<XY> &line, double step, double
             turns.push_back(i);
             turn_height = height;
         }
-        spike_end = i + reach;
+        spike_end = after;
     }
     return turns;
 }

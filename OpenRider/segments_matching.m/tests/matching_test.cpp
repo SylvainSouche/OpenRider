@@ -7,6 +7,7 @@
 
 #include "matching/matching.h"
 
+#include <openrider/sdk/overview.h>
 #include <openrider/sdk/segment_exchange.h>
 
 #include <cmath>
@@ -43,8 +44,8 @@ openrider::sdk::OverviewTrack Track(const std::string &id, const std::vector<std
     return track;
 }
 
-// Metric position of a network node.
-// The recorded points of a test line: one a second along its positions.
+// The recorded points of a test line: one a second along its positions
+// (10 m apart), recorded at 10 m/s.
 openrider::sdk::RecordedTrack Recorded(const openrider::sdk::OverviewTrack &line)
 {
     openrider::sdk::RecordedTrack track{line.id, {}};
@@ -53,11 +54,23 @@ openrider::sdk::RecordedTrack Recorded(const openrider::sdk::OverviewTrack &line
         p.t_s = static_cast<double>(i);
         p.lat = line.lat[i];
         p.lon = line.lon[i];
-        p.alt_m = p.dist_m = p.speed_ms = p.hr = p.cadence = p.temp_c = std::nan("");
+        p.speed_ms = 10.0;
+        p.alt_m = p.dist_m = p.hr = p.cadence = p.temp_c = std::nan("");
         track.points.push_back(p);
     }
     return track;
 }
+
+// Recorded() of each line.
+std::vector<openrider::sdk::RecordedTrack> Recorded(const std::vector<openrider::sdk::OverviewTrack> &lines)
+{
+    std::vector<openrider::sdk::RecordedTrack> tracks;
+    for (const openrider::sdk::OverviewTrack &line : lines)
+        tracks.push_back(Recorded(line));
+    return tracks;
+}
+
+// Metric position of a network node.
 
 std::pair<double, double> At(const openrider::sdk::NetworkNode &node)
 {
@@ -83,7 +96,7 @@ ATF_TEST_CASE_BODY(shared_stretch_and_junctions)
     const std::vector<openrider::sdk::OverviewTrack> tracks = {
         Track("a", {{-300, 400}, {0, 0}, {1000, 0}, {1300, 400}}, 7),
         Track("b", {{-300, -400}, {0, 0}, {1000, 0}, {1300, -400}}, 11)};
-    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(tracks, matching::MatchParams{});
+    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(Recorded(tracks), matching::MatchParams{});
     RequireConnected(net);
     int shared = 0;
     for (const openrider::sdk::NetworkSegment &segment : net.segments)
@@ -107,7 +120,7 @@ ATF_TEST_CASE_BODY(close_parallel_legs_stay_apart)
     // not be merged into one.
     const std::vector<std::pair<double, double>> zigzag = {{0, -300}, {0, 300}, {25, 320}, {25, -300}};
     const std::vector<openrider::sdk::OverviewTrack> tracks = {Track("a", zigzag, 3), Track("b", zigzag, 5)};
-    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(tracks, matching::MatchParams{});
+    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(Recorded(tracks), matching::MatchParams{});
     RequireConnected(net);
     double shared_length = 0.0;
     for (const openrider::sdk::NetworkSegment &segment : net.segments)
@@ -120,7 +133,7 @@ ATF_TEST_CASE_WITHOUT_HEAD(out_and_back_alone_is_one_segment_both_ways);
 ATF_TEST_CASE_BODY(out_and_back_alone_is_one_segment_both_ways)
 {
     const std::vector<openrider::sdk::OverviewTrack> tracks = {Track("a", {{0, 0}, {800, 0}, {0, 0}}, 9)};
-    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(tracks, matching::MatchParams{});
+    const openrider::sdk::SegmentNetwork net = matching::BuildNetwork(Recorded(tracks), matching::MatchParams{});
     RequireConnected(net);
     double total = 0.0;
     for (const openrider::sdk::NetworkSegment &segment : net.segments)

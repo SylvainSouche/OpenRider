@@ -1895,6 +1895,12 @@
     "status": "asserted",
     "type": "impl"
   },
+  "impl-point-velocities": {
+    "active": true,
+    "id": "0f87-6acf-6ab9-9a82",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-recorded-tracks": {
     "active": true,
     "id": "0f87-6acf-6371-f34e",
@@ -1938,9 +1944,15 @@
     "type": "impl"
   },
   "impl-segments-matching": {
-    "active": true,
+    "active": false,
     "id": "0f87-6ace-2f7b-f4d7",
-    "status": "verified",
+    "status": "superseded",
+    "type": "impl"
+  },
+  "impl-segments-matching-recorded": {
+    "active": true,
+    "id": "0f87-6acf-6ab9-65de",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-segments-plugins": {

@@ -60,6 +60,10 @@ public:
     /// Direction of edge `e` at station `s` (not normalised).
     openrider::sdk::XY Tangent(int e, int s) const;
 
+    /// Distance from `q` to edge `e`'s line around station `s` (the pieces
+    /// joining it to its neighbours): across the line, not to the station.
+    double DistanceAcross(int e, int s, const openrider::sdk::XY &q) const;
+
     /// Adds a node at `q`.
     /// @return its index
     int AddNode(const openrider::sdk::XY &q);

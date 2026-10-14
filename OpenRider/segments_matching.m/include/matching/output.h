@@ -16,7 +16,7 @@ namespace matching {
 /// Every node and edge in WGS84, the edges' lines smoothed and ending on
 /// their nodes, with the tracks using them; and the chains as routes.
 openrider::sdk::SegmentNetwork ToSegmentNetwork(const Network &network, TrackChains chains,
-                                      const std::vector<openrider::sdk::OverviewTrack> &tracks,
+                                      const std::vector<openrider::sdk::RecordedTrack> &tracks,
                                       const openrider::sdk::LocalProjection &projection);
 
 } // namespace matching
