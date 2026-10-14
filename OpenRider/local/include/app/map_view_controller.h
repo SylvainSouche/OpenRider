@@ -20,6 +20,11 @@ namespace app {
 /// Highest zoom of the view; beyond the layer's last level, tiles are enlarged.
 constexpr int kMaxViewZoom = 20;
 
+/// Deepest tile level a layer may declare (centimetres per pixel): a layer
+/// declaring more is refused, so that the 2^zoom tiles across the world fit
+/// int arithmetic.
+constexpr int kMaxTileZoom = 24;
+
 /// Where the map looks.
 struct MapCamera {
     double lon = 6.63;               ///< view centre, WGS84 longitude
@@ -118,8 +123,9 @@ public:
     /// Adds a tiles protocol.
     void AddPlugin(const or_tiles_vtable *tiles_vtable) { plugins_.push_back(tiles_vtable); }
 
-    /// Adds a layer definition; false if no protocol accepts it.
-    bool AddLayer(const std::string &json);
+    /// Adds a layer definition: "" when added, else why not (no protocol
+    /// accepts it, or its zoom levels lie outside 0..kMaxTileZoom).
+    std::string AddLayer(const std::string &json);
 
     /// Sets the tile cache root.
     void SetCacheDir(const std::string &dir) { cache_dir_ = dir; }

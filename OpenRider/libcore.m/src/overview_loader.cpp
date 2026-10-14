@@ -27,12 +27,14 @@ void OverviewLoader::Start(const or_input_vtable *input, void *handle, std::vect
     worker_ = std::thread(&OverviewLoader::Run, this, input, handle, std::move(ids));
 }
 
-void OverviewLoader::Take(std::vector<openrider::sdk::OverviewTrack> &out)
+size_t OverviewLoader::Take(std::vector<openrider::sdk::OverviewTrack> &out)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    const size_t taken = pending_.size();
     for (openrider::sdk::OverviewTrack &t : pending_)
         out.push_back(std::move(t));
     pending_.clear();
+    return taken;
 }
 
 void OverviewLoader::Run(const or_input_vtable *input, void *handle, std::vector<std::string> ids)

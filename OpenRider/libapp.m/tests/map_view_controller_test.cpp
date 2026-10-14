@@ -23,6 +23,8 @@ void *FakeOpen(const char *json, char *, size_t)
         return nullptr;
     FakeLayer *l = new FakeLayer;
     l->info = {"fake", "Fake", "EPSG:3857", 1, 17, 256, {-180, -85.05, 180, 85.05}, "(c) fake", 1, ""};
+    if (std::string(json).find("\"deep\"") != std::string::npos)
+        l->info.max_zoom = 31;  // 1 << 31 overflows an int
     return l;
 }
 void FakeClose(void *h) { delete static_cast<FakeLayer *>(h); }
@@ -58,7 +60,7 @@ struct Fixture {
         char tmpl[] = "/tmp/openrider-mapvc-XXXXXX";
         map.AddPlugin(&kTiles);
         map.SetCacheDir(mkdtemp(tmpl));
-        ATF_REQUIRE(map.AddLayer("{\"protocol\":\"fake\"}"));
+        ATF_REQUIRE_EQ(map.AddLayer("{\"protocol\":\"fake\"}"), "");
         ATF_REQUIRE_EQ(map.Select(0), "");
         for (int i = 0; i < 2; ++i) {
             core::Outing o{};
@@ -151,9 +153,20 @@ ATF_TEST_CASE_BODY(outing_mode_fits_the_track)
     ATF_REQUIRE(f.map.ViewModel().overview.fitted);                          // overview camera kept
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(layer_with_too_deep_zoom_refused);
+ATF_TEST_CASE_BODY(layer_with_too_deep_zoom_refused)
+{
+    app::MapViewController map;
+    map.AddPlugin(&kTiles);
+    ATF_REQUIRE(map.AddLayer("{\"protocol\":\"fake\",\"deep\":1}").find("zoom levels") != std::string::npos);
+    ATF_REQUIRE(map.ViewModel().layers.empty());
+    ATF_REQUIRE_EQ(map.AddLayer("{\"protocol\":\"other\"}"), "not usable by any tiles plugin");
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
     ATF_ADD_TEST_CASE(tcs, overview_fits_tracks_and_publishes_visible);
+    ATF_ADD_TEST_CASE(tcs, layer_with_too_deep_zoom_refused);
     ATF_ADD_TEST_CASE(tcs, pan_and_zoom_move_the_camera);
     ATF_ADD_TEST_CASE(tcs, hover_and_click_select_an_outing);
     ATF_ADD_TEST_CASE(tcs, outing_mode_fits_the_track);

@@ -9,6 +9,7 @@
 #include <openrider/sdk/route_ranges.h>
 #include <openrider/sdk/segment_exchange.h>
 
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -58,9 +59,12 @@ const or_filter_vtable kHalf = {sizeof(or_filter_vtable), OR_FILTER_TRACK, "half
 
 // Segments plugin: one shared segment along the first track, followed by
 // every track.
+std::atomic<int> g_segment_builds{0};  // builds run by FakeSegments
+
 int FakeSegments(const or_segment_track *tracks, size_t count, const double *, or_segment_cancel_cb, void *,
                  or_segment_network **out, char *, size_t)
 {
+    ++g_segment_builds;
     const std::vector<openrider::sdk::OverviewTrack> input = openrider::sdk::ImportTracks(tracks, count);
     openrider::sdk::SegmentNetwork network;
     network.nodes = {{0, input[0].lon.front(), input[0].lat.front()}, {1, input[0].lon.back(), input[0].lat.back()}};
@@ -268,9 +272,31 @@ ATF_TEST_CASE_BODY(segment_comparison)
     ATF_REQUIRE(!f.model.comparison.open);
 }
 
+// A parameter change, however small, rebuilds the networks.
+ATF_TEST_CASE_WITHOUT_HEAD(small_parameter_change_rebuilds);
+ATF_TEST_CASE_BODY(small_parameter_change_rebuilds)
+{
+    Fixture f;
+    auto settle = [&] {
+        for (int i = 0; i < 500 && (f.model.segments_building || f.model.segment_groups.empty()); ++i) {
+            app::Step(f.c, f.intents);
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+    };
+    f.Send(app::IntentKind::SetShowSegments, 1);
+    settle();
+    const int builds = g_segment_builds.load();
+    ATF_REQUIRE(builds > 0);
+    f.Send(app::IntentKind::SetSegmentParam, 0, 0, 8.0000001);  // to_string(double) keeps 6 decimals
+    app::Step(f.c, f.intents);
+    settle();
+    ATF_REQUIRE(g_segment_builds.load() > builds);
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
     ATF_ADD_TEST_CASE(tcs, segment_comparison);
+    ATF_ADD_TEST_CASE(tcs, small_parameter_change_rebuilds);
     ATF_ADD_TEST_CASE(tcs, segments_follow_the_overview);
     ATF_ADD_TEST_CASE(tcs, scan_and_overview_fill_the_model);
     ATF_ADD_TEST_CASE(tcs, selecting_loads_points_and_stats);

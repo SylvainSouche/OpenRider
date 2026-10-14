@@ -14,6 +14,7 @@
 #include <openrider/sdk/stats.h>
 #include <openrider/segments.h>
 
+#include <cstdint>
 #include <set>
 #include <string>
 #include <vector>
@@ -79,6 +80,7 @@ struct AppModel {
     /// @name Every track, thinned, for the overview
     /// @{
     std::vector<openrider::sdk::OverviewTrack> tracks;  ///< loaded so far
+    uint64_t tracks_version = 0;              ///< changed whenever `tracks` changes
     bool tracks_loading = false;              ///< the load is running
     size_t tracks_done = 0;                   ///< outings processed so far
     size_t tracks_total = 0;                  ///< outings to process

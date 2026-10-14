@@ -66,14 +66,17 @@ void SegmentsDomain::Update()
         model_.segments_building = builder_.Building();
         return;
     }
-    // What the networks depend on: the map filter, the tracks loaded, the
-    // method and its parameter values.
+    // What the networks depend on: the map filter, the tracks loaded (their
+    // version), the method and its parameter values (exactly: %a).
     const core::OutingFilter filter = model_.MapFilter();
     const SegmentMethod &method = model_.segment_methods[static_cast<size_t>(model_.segment_method)];
     std::string basis = filter.type_key + "|" + filter.from_date + "|" + filter.to_date + "|" +
-                        std::to_string(model_.tracks.size()) + "|" + method.vtable->id;
-    for (double value : method.values)
-        basis += "|" + std::to_string(value);
+                        std::to_string(model_.tracks_version) + "|" + method.vtable->id;
+    for (double value : method.values) {
+        char text[40];
+        std::snprintf(text, sizeof text, "|%a", value);
+        basis += text;
+    }
     if (basis != basis_) {
         basis_ = basis;
         std::map<std::string, std::string> sport_of;  // outing id -> sport, for the shown outings

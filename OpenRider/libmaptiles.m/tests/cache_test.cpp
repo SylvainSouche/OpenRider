@@ -1,9 +1,12 @@
 #include <atf-c++.hpp>
 
 
+#include <atomic>
 #include <cstdlib>
 #include <string>
 #include <sys/stat.h>
+#include <thread>
+#include <vector>
 #include "maptiles/cache_eviction.h"
 #include "maptiles/tile_cache.h"
 
@@ -62,9 +65,42 @@ ATF_TEST_CASE_BODY(eviction_keeps_under_maximum)
     ATF_REQUIRE(Exists(c.Path("l", 1, 0, 4)));  // the latest one survives
 }
 
+// Writers on several threads, as the fetch workers: the cache ends within
+// its maximum, every write lands, and no temporary file is left.
+ATF_TEST_CASE_WITHOUT_HEAD(concurrent_writers_stay_under_maximum);
+ATF_TEST_CASE_BODY(concurrent_writers_stay_under_maximum)
+{
+    const std::string root = TempDir();
+    maptiles::TileCache c(root, 1000);
+    const std::string hundred(100, 'x');
+    std::vector<std::thread> writers;
+    std::atomic<int> failures{0};
+    for (int w = 0; w < 4; ++w)
+        writers.emplace_back([&, w] {
+            for (int y = 0; y < 50; ++y)
+                if (!c.Put("l", 1, w, y, hundred).Ok())
+                    ++failures;
+        });
+    for (std::thread &writer : writers)
+        writer.join();
+    ATF_REQUIRE_EQ(failures.load(), 0);
+    c.Evict();
+    uint64_t total = 0;
+    for (int w = 0; w < 4; ++w)
+        for (int y = 0; y < 50; ++y) {
+            struct stat st;
+            if (stat(c.Path("l", 1, w, y).c_str(), &st) == 0)
+                total += static_cast<uint64_t>(st.st_size);
+        }
+    ATF_REQUIRE(total <= 1000);
+    const std::string listing = "find " + root + " -name '*.tmp*' | grep -q .";
+    ATF_REQUIRE(std::system(listing.c_str()) != 0);  // no temporary file left
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
     ATF_ADD_TEST_CASE(tcs, lru_victims_oldest_first);
     ATF_ADD_TEST_CASE(tcs, put_then_get);
     ATF_ADD_TEST_CASE(tcs, eviction_keeps_under_maximum);
+    ATF_ADD_TEST_CASE(tcs, concurrent_writers_stay_under_maximum);
 }

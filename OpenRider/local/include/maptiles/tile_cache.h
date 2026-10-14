@@ -36,14 +36,18 @@ public:
 
     /// Scans the whole cache and deletes the least recently used tiles until
     /// it fits; called by Put() when the running total exceeds the maximum.
+    /// One eviction at a time: a call while another runs returns at once
+    /// (the running one accounts for the tiles written meanwhile).
     void Evict();
 
 private:
     std::string root_;          ///< cache directory
     uint64_t max_bytes_;        ///< size above which tiles are evicted
-    std::mutex mutex_;          ///< guards total_ and total_known_
+    std::mutex mutex_;          ///< guards total_, written_ and total_known_
     uint64_t total_ = 0;        ///< running total of the cache size (bytes)
+    uint64_t written_ = 0;      ///< bytes written since construction
     bool total_known_ = false;  ///< total_ comes from a full scan
+    std::mutex evict_mutex_;    ///< held by the one eviction running
 };
 
 } // namespace maptiles

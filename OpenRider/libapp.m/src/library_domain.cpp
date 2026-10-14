@@ -48,7 +48,8 @@ void LibraryDomain::Tick(Intents &)
             ids.push_back(outing.raw.id);
         overview_.Start(input_.Vtable(), input_.Handle(), ids);
     }
-    overview_.Take(model_.tracks);
+    if (overview_.Take(model_.tracks) > 0)
+        ++model_.tracks_version;
     model_.tracks_loading = overview_.Loading();
     model_.tracks_done = overview_.Done();
     model_.tracks_total = overview_.Total();

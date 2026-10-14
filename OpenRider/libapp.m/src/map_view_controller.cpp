@@ -97,7 +97,7 @@ MapViewController::MapViewController() = default;
 
 MapViewController::~MapViewController() { Shutdown(); }
 
-bool MapViewController::AddLayer(const std::string &json)
+std::string MapViewController::AddLayer(const std::string &json)
 {
     MapLayerInfo info;
     info.json = json;
@@ -119,10 +119,13 @@ bool MapViewController::AddLayer(const std::string &json)
         info.max_zoom = layer->max_zoom;
         info.tile_size = layer->tile_size;
         core::CallPlugin(tiles_vtable, [&] { tiles_vtable->close(handle); });
+        if (info.min_zoom < 0 || info.max_zoom > kMaxTileZoom || info.min_zoom > info.max_zoom || info.tile_size <= 0)
+            return "zoom levels " + std::to_string(info.min_zoom) + ".." + std::to_string(info.max_zoom) +
+                   " outside 0.." + std::to_string(kMaxTileZoom) + ", or no tile size";
         view_model_.layers.push_back(info);
-        return true;
+        return "";
     }
-    return false;
+    return "not usable by any tiles plugin";
 }
 
 void MapViewController::Shutdown()
@@ -148,8 +151,8 @@ std::vector<std::string> MapViewController::LoadLayers(const std::vector<std::st
         plugins_.push_back(static_cast<const or_tiles_vtable *>(plugin.info->vtable));
     for (const std::string &dir : dirs)
         for (const std::string &path : JsonFiles(dir))
-            if (!AddLayer(ReadText(path)))
-                problems.push_back("map layer " + path + " is not usable by any tiles plugin");
+            if (const std::string why = AddLayer(ReadText(path)); !why.empty())
+                problems.push_back("map layer " + path + ": " + why);
     if (view_model_.layers.empty()) {
         problems.push_back("No map layer found");
         return problems;
@@ -261,7 +264,7 @@ void MapViewController::RequestVisibleTiles()
     if (!layer || !fetcher_ || view_model_.width <= 0.0f)
         return;
     const MapCamera &camera = view_model_.Camera();
-    const int tile_zoom = std::min(camera.zoom, layer->max_zoom);
+    const int tile_zoom = std::clamp(std::min(camera.zoom, layer->max_zoom), 0, kMaxTileZoom);
     // Size on screen of one tile of that level (larger than tile_size when
     // over-zoomed), and the number of tiles across the world.
     const double tile_px = layer->tile_size * std::pow(2.0, camera.zoom - tile_zoom);
