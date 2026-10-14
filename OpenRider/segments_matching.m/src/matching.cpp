@@ -3,7 +3,7 @@
 #include "matching/insertion.h"
 #include "matching/network.h"
 #include "matching/output.h"
-#include "matching/plane_track.h"
+#include <openrider/sdk/plane_track.h>
 #include "matching/routes.h"
 #include "matching/track_geometry.h"
 
@@ -36,13 +36,13 @@ openrider::sdk::LocalProjection CentredProjection(const std::vector<openrider::s
 // Inserts every track, pass after pass: a track is split at its
 // turn-arounds so that a stretch done out and back matches itself.
 // @return false when cancelled
-bool InsertTracks(Network &network, const std::vector<PlaneTrack> &tracks, const MatchParams &params, double arm,
+bool InsertTracks(Network &network, const std::vector<openrider::sdk::PlaneTrack> &tracks, const MatchParams &params, double arm,
                   const std::function<bool()> &cancelled)
 {
     for (size_t t = 0; t < tracks.size(); ++t) {
         if (cancelled && cancelled())
             return false;
-        const PlaneTrack &track = tracks[t];
+        const openrider::sdk::PlaneTrack &track = tracks[t];
         if (track.size() < 2)
             continue;
         size_t start = 0;
@@ -67,9 +67,9 @@ openrider::sdk::SegmentNetwork BuildNetwork(const std::vector<openrider::sdk::Re
     if (tracks.empty())
         return {};
     const openrider::sdk::LocalProjection projection = CentredProjection(tracks);
-    std::vector<PlaneTrack> lines;
+    std::vector<openrider::sdk::PlaneTrack> lines;
     for (const openrider::sdk::RecordedTrack &track : tracks)
-        lines.push_back(ToPlane(track, projection));
+        lines.push_back(openrider::sdk::ToPlane(track, projection));
 
     // 1-3. The network grown pass after pass.
     Network network(std::max(10.0, params.tolerance_m));

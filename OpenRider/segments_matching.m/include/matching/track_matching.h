@@ -6,7 +6,7 @@
 #include "matching/costs.h"
 #include "matching/matching.h"
 #include "matching/network.h"
-#include "matching/plane_track.h"
+#include <openrider/sdk/plane_track.h>
 
 #include <vector>
 
@@ -30,6 +30,6 @@ struct State {
 /// since the previous point, or passing from the end of a segment to the
 /// start of the next through their common node; turning back on a segment
 /// costs kTurnCost, entering or leaving the network kSwitchCost.
-std::vector<State> MatchTrack(const Network &network, const PlaneTrack &track, const MatchParams &params);
+std::vector<State> MatchTrack(const Network &network, const openrider::sdk::PlaneTrack &track, const MatchParams &params);
 
 } // namespace matching

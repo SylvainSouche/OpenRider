@@ -32,7 +32,7 @@ std::vector<XY> Smoothed(const std::vector<XY> &line, int half)
 }
 
 
-std::vector<size_t> TurnArounds(const PlaneTrack &track, double arm, double close, double spike)
+std::vector<size_t> TurnArounds(const openrider::sdk::PlaneTrack &track, double arm, double close, double spike)
 {
     std::vector<size_t> turns;
     const std::vector<XY> &line = track.points;

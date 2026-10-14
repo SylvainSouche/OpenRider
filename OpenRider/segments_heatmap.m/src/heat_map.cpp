@@ -17,33 +17,60 @@ namespace heatmap {
 std::unordered_set<Cell> Corridor(const Analysis &analysis, const SegmentParams &params)
 {
     const std::vector<std::vector<XY>> &xy = analysis.xy;
-    // @impl 0f87-6acd-60a9-7bf6
+    // @impl 0f87-6acf-6d54-643d
     // @impl 0f87-6acd-dc0b-a958
-    // 2. Blurred heat map: each track drawn as a line trace_width_m wide.
-    // Along the track, a disc of that diameter is stamped: 1 on the cells
-    // whose centre lies inside it, 0.5 on a rim one cell wider (the blur),
-    // once per track (the higher value); tracks add up. The cell of the
-    // point itself always counts, so a width below the cell size still
-    // draws a one-cell line. Discs are stamped every half radius at most,
-    // which leaves the band covered to 97% of its half-width.
+    // 2. Blurred heat map: each recorded point paints the stretch of way it
+    // stands for, trace_width_m wide -- half the path to the point before
+    // and to the point after (kMaxPaintHalfM at most), along its own
+    // velocity. Along that stretch a disc of that diameter is stamped: 1 on
+    // the cells whose centre lies inside it, 0.5 on a rim one cell wider
+    // (the blur), once per pass (the higher value); passes add up. The cell
+    // of the point itself always counts, so a width below the cell size
+    // still paints a one-cell line. Discs are stamped every half radius at
+    // most, which leaves the band covered to 97% of its half-width.
     const double cell = params.cell_m;
     const double radius = std::max(0.0, params.trace_width_m / 2.0);
     const double rim = radius + cell;
     const int reach = static_cast<int>(std::ceil(rim / cell));
     std::unordered_map<Cell, double> heat;
     std::unordered_map<Cell, int> reached;  // distinct tracks per cell
-    std::vector<std::vector<XY>> passes;
+    struct Pass {
+        size_t track, first, last;  // points first..last of the track
+    };
+    std::vector<Pass> passes;
     for (size_t t = 0; t < xy.size(); ++t) {
+        if (xy[t].empty())
+            continue;
         size_t start = 0;
         for (size_t turn : analysis.turns[t]) {
-            passes.emplace_back(xy[t].begin() + static_cast<long>(start), xy[t].begin() + static_cast<long>(turn) + 1);
+            passes.push_back({t, start, turn});
             start = turn;
         }
-        passes.emplace_back(xy[t].begin() + static_cast<long>(start), xy[t].end());
+        passes.push_back({t, start, xy[t].size() - 1});
     }
-    for (const std::vector<XY> &l : passes) {
+    const double step = std::max(cell * 0.5, radius * 0.5);
+    for (const Pass &pass : passes) {
+        const std::vector<XY> &points = xy[pass.track];
+        const std::vector<XY> &velocity = analysis.velocity[pass.track];
+        const std::vector<double> &along = analysis.along[pass.track];
+        // Where each point of the pass paints: along its velocity, from half
+        // the way back to the previous point to half the way to the next.
+        std::vector<XY> stamps;
+        for (size_t k = pass.first; k <= pass.last; ++k) {
+            const double back = k > pass.first ? std::min(kMaxPaintHalfM, (along[k] - along[k - 1]) / 2.0) : 0.0;
+            const double ahead = k < pass.last ? std::min(kMaxPaintHalfM, (along[k + 1] - along[k]) / 2.0) : 0.0;
+            const double speed = std::hypot(velocity[k].x, velocity[k].y);
+            stamps.push_back(points[k]);
+            if (!(speed > 0.0))
+                continue;
+            const XY unit{velocity[k].x / speed, velocity[k].y / speed};
+            for (double s = step; s <= back; s += step)
+                stamps.push_back({points[k].x - unit.x * s, points[k].y - unit.y * s});
+            for (double s = step; s <= ahead; s += step)
+                stamps.push_back({points[k].x + unit.x * s, points[k].y + unit.y * s});
+        }
         std::unordered_map<Cell, double> mine;
-        for (const XY &q : Densify(l, std::max(cell * 0.5, radius * 0.5))) {
+        for (const XY &q : stamps) {
             const int64_t ix = static_cast<int64_t>(std::floor(q.x / cell));
             const int64_t iy = static_cast<int64_t>(std::floor(q.y / cell));
             mine[Key(ix, iy)] = 1.0;

@@ -1728,9 +1728,15 @@
     "type": "impl"
   },
   "impl-heatmap-blur": {
-    "active": true,
+    "active": false,
     "id": "0f87-6acd-60a9-7bf6",
-    "status": "verified",
+    "status": "superseded",
+    "type": "impl"
+  },
+  "impl-heatmap-recorded": {
+    "active": true,
+    "id": "0f87-6acf-6d54-643d",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-histogram": {
@@ -1869,6 +1875,12 @@
     "active": true,
     "id": "0f87-6acd-5daf-1652",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-plane-track": {
+    "active": true,
+    "id": "0f87-6acf-6d54-b5b0",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-plugin-abi": {

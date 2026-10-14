@@ -3,7 +3,7 @@
 /// (module-level utilities).
 #pragma once
 
-#include "matching/plane_track.h"
+#include <openrider/sdk/plane_track.h>
 
 #include <openrider/sdk/plane_geometry.h>
 
@@ -23,6 +23,6 @@ std::vector<openrider::sdk::XY> Smoothed(const std::vector<openrider::sdk::XY> &
 /// Indices where `track` turns back on itself: `arm` metres of path before
 /// and after, it is within `close` of itself while the point stands out
 /// from both by more than `spike`. One index per turn.
-std::vector<size_t> TurnArounds(const PlaneTrack &track, double arm, double close, double spike);
+std::vector<size_t> TurnArounds(const openrider::sdk::PlaneTrack &track, double arm, double close, double spike);
 
 } // namespace matching

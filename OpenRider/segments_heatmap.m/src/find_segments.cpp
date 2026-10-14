@@ -8,7 +8,7 @@
 namespace heatmap {
 
 // @impl 0f87-6acd-6028-c636
-SegmentResult FindSegments(const std::vector<OverviewTrack> &tracks, const SegmentParams &params)
+SegmentResult FindSegments(const std::vector<RecordedTrack> &tracks, const SegmentParams &params)
 {
     SegmentResult out;
     if (tracks.empty())

@@ -199,11 +199,11 @@ segment only (a turn-around within it).
 - The comparison panel takes its passages from the ranges, on the same
   recorded points (`PassageAlong`); `FindPassages` remains for a network
   without ranges.
-- The matching method works on the recorded points themselves: moving
-  points (SDK not-moving rule), each with its own velocity (SDK
-  `PointVelocities`), matched by their distance across the segment's line
-  and their path walked. The heat-map method still thins the recorded points
-  internally.
+- Both in-tree methods work on the recorded points themselves: each
+  track's moving points (SDK not-moving rule) with their own velocities
+  (SDK `PlaneTrack`, `PointVelocities`). Matching scores points by their
+  distance across a segment's line and the path walked; the heat map has
+  each point paint the stretch of way it stands for, along its velocity.
 - The cancel callback moves to the host services (5.2) in a later minor
   version.
 
@@ -263,7 +263,7 @@ plugins' outputs were unchanged by the move (compared byte for byte).
 |---|---|---|---|
 | Geometry | `plane_geometry.h`, `local_projection.h` | local projection; plane points, distances, lengths, point along a line, distance to a line, resampling | stable |
 | Motion | `motion.h`, `velocity.h` | motion parameters; haversine; moving-average speed; percentile; not-moving mask (recorded speed <= 0.3 m/s, positional rule as fallback); velocity of each recorded point | stable |
-| Tracks | `recorded_track.h`, `overview.h`, `segment_passages.h`, `route_ranges.h` | recorded track (an outing's recorded points, what analysis works on); thinned track for display (positions, per-point noise, box); thinning; GPS noise per point; position on a line; a passage over a known range; passages found from geometry (fallback); route step ranges | provisional |
+| Tracks | `recorded_track.h`, `plane_track.h`, `overview.h`, `segment_passages.h`, `route_ranges.h` | recorded track (an outing's recorded points, what analysis works on); its moving points in the plane with velocities and path; thinned track for display (positions, per-point noise, box); thinning; GPS noise per point; position on a line; a passage over a known range; passages found from geometry (fallback); route step ranges | provisional |
 | Series | `series.h` | derived series of an outing: speed, altitude, vertical speed and grade over windows, histograms per period; x axes | stable |
 | Statistics | `stats.h` | outing statistics from points (moving time from the raw points) | stable |
 | Networks | `segments.h`, `network_cleanup.h` | segment network types; clean-up (pass-through merging, short loops, duplicates) | provisional, as 5.6 |

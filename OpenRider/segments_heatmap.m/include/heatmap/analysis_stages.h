@@ -13,7 +13,7 @@ namespace heatmap {
 
 /// 1. Local projection around the tracks' centre; tracks in metres; their
 /// turn-arounds (hairpins dropped) splitting each into passes.
-void ProjectTracks(Analysis &analysis, const std::vector<OverviewTrack> &tracks, const SegmentParams &params);
+void ProjectTracks(Analysis &analysis, const std::vector<RecordedTrack> &tracks, const SegmentParams &params);
 
 /// 2-3. Blurred heat map of the passes, each drawn as a line trace_width_m
 /// wide; the corridor: cells dense enough and reached by enough passes.
@@ -25,11 +25,11 @@ void TraceLines(Analysis &analysis, const std::unordered_set<Cell> &corridor, co
 
 /// 5. Each track point matched to the nearest skeleton vertex within the
 /// snapping tolerance, where the track moves along the line.
-void MapTracks(Analysis &analysis, const std::vector<OverviewTrack> &tracks, const SegmentParams &params);
+void MapTracks(Analysis &analysis, const std::vector<RecordedTrack> &tracks, const SegmentParams &params);
 
 /// Pieces: each track's runs on one line (long enough) and its own parts;
 /// short excursions off a line and back are no excursion.
-void FindPieces(Analysis &analysis, const std::vector<OverviewTrack> &tracks, const SegmentParams &params);
+void FindPieces(Analysis &analysis, const std::vector<RecordedTrack> &tracks, const SegmentParams &params);
 
 /// 6. Shared lines (followed by enough passes) and their mean tracks;
 /// pieces on the other lines become their tracks' own parts.

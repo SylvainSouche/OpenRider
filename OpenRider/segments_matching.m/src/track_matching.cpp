@@ -16,7 +16,7 @@ constexpr double kPi = 3.14159265358979323846;
 using openrider::sdk::Dist;
 using openrider::sdk::XY;
 
-std::vector<State> MatchTrack(const Network &network, const PlaneTrack &track, const MatchParams &params)
+std::vector<State> MatchTrack(const Network &network, const openrider::sdk::PlaneTrack &track, const MatchParams &params)
 {
     const std::vector<XY> &line = track.points;
     const double min_cos = std::cos(params.max_angle_deg * kPi / 180.0);

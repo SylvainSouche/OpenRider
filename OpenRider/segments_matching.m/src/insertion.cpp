@@ -7,7 +7,7 @@ namespace matching {
 
 using openrider::sdk::XY;
 
-bool Alongside(const Network &network, const PlaneTrack &pass, size_t first, size_t last, const MatchParams &params)
+bool Alongside(const Network &network, const openrider::sdk::PlaneTrack &pass, size_t first, size_t last, const MatchParams &params)
 {
     size_t near = 0;
     for (size_t i = first; i <= last; ++i) {
@@ -19,7 +19,7 @@ bool Alongside(const Network &network, const PlaneTrack &pass, size_t first, siz
 }
 
 
-void InsertPass(Network &network, const PlaneTrack &pass, int route, const MatchParams &params)
+void InsertPass(Network &network, const openrider::sdk::PlaneTrack &pass, int route, const MatchParams &params)
 {
     const std::vector<State> path = MatchTrack(network, pass, params);
     for (size_t i = 0; i < pass.size(); ++i) {

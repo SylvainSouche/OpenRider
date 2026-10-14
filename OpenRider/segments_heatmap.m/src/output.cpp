@@ -9,7 +9,7 @@ namespace heatmap {
 
 void WriteNetwork(Assembly &assembly)
 {
-    const std::vector<OverviewTrack> &tracks = assembly.tracks;
+    const std::vector<RecordedTrack> &tracks = assembly.tracks;
     const SegmentParams &params = assembly.params;
     const Analysis &analysis = assembly.analysis;
     std::vector<XY> &node_pos = assembly.node_pos;

@@ -14,7 +14,7 @@
 
 namespace heatmap {
 
-void MapTracks(Analysis &analysis, const std::vector<OverviewTrack> &tracks, const SegmentParams &params)
+void MapTracks(Analysis &analysis, const std::vector<RecordedTrack> &tracks, const SegmentParams &params)
 {
     const std::vector<std::vector<XY>> &xy = analysis.xy;
     std::vector<std::vector<XY>> &lines = analysis.lines;
@@ -33,11 +33,10 @@ void MapTracks(Analysis &analysis, const std::vector<OverviewTrack> &tracks, con
     std::vector<std::vector<Match>> &matches = analysis.matches;
     matches.assign(tracks.size(), {});
     // A point matches a line only where the track moves along it (either
-    // way): its velocity -- here the direction from the previous point to the
-    // next -- within 60 degrees of the line's direction. Position alone puts
-    // a hairpin's tip on a leg, or a point on the wrong one of two close
-    // parallel paths; direction tells them apart. Points barely moving (a
-    // pause) have no reliable direction and match by position.
+    // way): its own velocity within 60 degrees of the line's direction.
+    // Position alone puts a hairpin's tip on a leg, or a point on the wrong
+    // one of two close parallel paths; direction tells them apart. (Points
+    // not moving are not analysed at all.)
     auto line_direction = [&](int li, int vi) {
         const std::vector<XY> &l = lines[static_cast<size_t>(li)];
         const XY &a = l[static_cast<size_t>(std::max(0, vi - 2))];
@@ -47,9 +46,7 @@ void MapTracks(Analysis &analysis, const std::vector<OverviewTrack> &tracks, con
     for (size_t t = 0; t < tracks.size(); ++t) {
         for (size_t qi = 0; qi < xy[t].size(); ++qi) {
             const XY &q = xy[t][qi];
-            const XY &before = xy[t][qi > 0 ? qi - 1 : qi];
-            const XY &after = xy[t][qi + 1 < xy[t].size() ? qi + 1 : qi];
-            const XY velocity{after.x - before.x, after.y - before.y};
+            const XY &velocity = analysis.velocity[t][qi];
             const double speed = std::hypot(velocity.x, velocity.y);
             Match m;
             double best = snap;
@@ -64,7 +61,7 @@ void MapTracks(Analysis &analysis, const std::vector<OverviewTrack> &tracks, con
                         const double d = Dist(v, q);
                         if (d >= best)
                             continue;
-                        if (speed > 2.0) {
+                        if (speed > 0.0) {
                             const XY along = line_direction(li, vi);
                             const double length = std::hypot(along.x, along.y);
                             if (length > 0.0 &&
@@ -91,7 +88,7 @@ void MapTracks(Analysis &analysis, const std::vector<OverviewTrack> &tracks, con
     }
 }
 
-void FindPieces(Analysis &analysis, const std::vector<OverviewTrack> &tracks, const SegmentParams &params)
+void FindPieces(Analysis &analysis, const std::vector<RecordedTrack> &tracks, const SegmentParams &params)
 {
     const std::vector<std::vector<XY>> &xy = analysis.xy;
     std::vector<std::vector<XY>> &lines = analysis.lines;

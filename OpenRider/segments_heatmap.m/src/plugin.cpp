@@ -2,7 +2,6 @@
 // behind the plugin ABI (openrider/segments.h).
 
 #include <openrider/plugin.h>
-#include <openrider/sdk/overview.h>
 #include <openrider/sdk/params.h>
 #include <openrider/sdk/route_ranges.h>
 #include <openrider/sdk/segment_exchange.h>
@@ -38,17 +37,12 @@ int HeatmapBuild(const or_segment_track *tracks, size_t count, const double *val
         return 1;
     }
     const std::vector<openrider::sdk::RecordedTrack> recorded = openrider::sdk::ImportTracks(tracks, count);
-    // The method still works on thinned tracks, as the application gave it
-    // before; it moves to the recorded points next.
-    std::vector<openrider::sdk::OverviewTrack> input;
-    for (const openrider::sdk::RecordedTrack &track : recorded)
-        input.push_back(openrider::sdk::ThinTrack(track.id, track.points, openrider::sdk::kOverviewSpacingM));
     heatmap::SegmentParams params;
     params.trace_width_m = values[TraceWidth];
     params.cell_m = values[CellSize];
     bool stopped = false;
     openrider::sdk::SegmentNetwork network =
-        heatmap::BuildNetwork(input, params, [&] { return stopped = stopped || (cancel && cancel(user) != 0); });
+        heatmap::BuildNetwork(recorded, params, [&] { return stopped = stopped || (cancel && cancel(user) != 0); });
     if (stopped)
         return OR_SEGMENTS_CANCELLED;  // the network is incomplete
     openrider::sdk::AssignStepRanges(network, recorded);

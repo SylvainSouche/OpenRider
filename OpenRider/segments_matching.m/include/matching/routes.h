@@ -5,7 +5,7 @@
 
 #include "matching/matching.h"
 #include "matching/network.h"
-#include "matching/plane_track.h"
+#include <openrider/sdk/plane_track.h>
 
 #include <openrider/sdk/segments.h>
 
@@ -22,12 +22,12 @@ struct TrackChains {
 
 /// Cuts edges where a track turns back mid-edge (matched with `params`);
 /// requests on an edge closer than `merge_m` make one cut.
-void CutAtTurnArounds(Network &network, const std::vector<PlaneTrack> &lines, const MatchParams &params,
+void CutAtTurnArounds(Network &network, const std::vector<openrider::sdk::PlaneTrack> &lines, const MatchParams &params,
                       double merge_m);
 
 /// Each track's chain: its matched states collapsed into steps (one per
 /// edge travelled in one direction).
-TrackChains ChainTracks(const Network &network, const std::vector<PlaneTrack> &lines,
+TrackChains ChainTracks(const Network &network, const std::vector<openrider::sdk::PlaneTrack> &lines,
                         const std::vector<openrider::sdk::RecordedTrack> &tracks, const MatchParams &params);
 
 /// Nodes closer than `distance_m` are one junction (tracks leaving a path a

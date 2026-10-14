@@ -9,7 +9,7 @@ namespace heatmap {
 
 void ChainRoutes(Assembly &assembly)
 {
-    const std::vector<OverviewTrack> &tracks = assembly.tracks;
+    const std::vector<RecordedTrack> &tracks = assembly.tracks;
     const SegmentParams &params = assembly.params;
     const Analysis &analysis = assembly.analysis;
     const double cut_resolution_m = assembly.cut_resolution_m;
