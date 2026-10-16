@@ -15,11 +15,13 @@
 namespace {
 
 // Indices into kParams.
-enum Param { TraceWidth, CellSize, ParamCount };
+enum Param { TraceWidth, CellSize, RestWindow, RestRadius, ParamCount };
 
 const or_filter_param kParams[ParamCount] = {
     {"trace_width_m", "Trace width (m)", 8.0, 1.0, 50.0},
     {"cell_m", "Grid cell (m)", 8.0, 2.0, 16.0},
+    {"rest_window_s", "Rest: time at a place (s)", 120.0, 30.0, 600.0},
+    {"rest_radius_m", "Rest: place radius (m), 0 = none", 30.0, 0.0, 100.0},
 };
 
 // Builds the network of `tracks` with the declared parameters `values`.
@@ -40,6 +42,8 @@ int HeatmapBuild(const or_segment_track *tracks, size_t count, const double *val
     heatmap::SegmentParams params;
     params.trace_width_m = values[TraceWidth];
     params.cell_m = values[CellSize];
+    params.rest.window_s = values[RestWindow];
+    params.rest.max_radius_m = values[RestRadius];
     bool stopped = false;
     openrider::sdk::SegmentNetwork network =
         heatmap::BuildNetwork(recorded, params, [&] { return stopped = stopped || (cancel && cancel(user) != 0); });

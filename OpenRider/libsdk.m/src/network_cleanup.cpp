@@ -1,5 +1,6 @@
 #include <openrider/sdk/network_cleanup.h>
 
+#include <openrider/sdk/motion.h>
 #include <openrider/sdk/plane_geometry.h>
 
 #include <algorithm>
@@ -40,7 +41,7 @@ void RemoveSegments(SegmentNetwork &net, const std::vector<bool> &drop)
 // `min_turn_m` are jitter and removed first.
 // @impl 0f87-6ace-13b5-2444
 // @impl 0f87-6ace-3222-ba6b
-void MergeThroughNodes(SegmentNetwork &net, double min_turn_m)
+void MergeThroughNodes(SegmentNetwork &net, double min_turn_m, const std::vector<RestPlace> &kept, double kept_radius_m)
 {
     std::vector<bool> removed(net.segments.size(), false);
     // Going along a short segment and straight back along it is mapping
@@ -103,6 +104,11 @@ void MergeThroughNodes(SegmentNetwork &net, double min_turn_m)
             const std::vector<int> &at = touching[node];
             if (at.size() != 2 || at[0] == at[1])
                 continue;
+            const NetworkNode &here = net.nodes[node];
+            if (std::any_of(kept.begin(), kept.end(), [&](const RestPlace &place) {
+                    return HaversineM(here.lat, here.lon, place.lat, place.lon) <= kept_radius_m;
+                }))
+                continue;  // a rest place: a boundary of its own
             NetworkSegment &first = net.segments[static_cast<size_t>(at[0])];
             NetworkSegment &second = net.segments[static_cast<size_t>(at[1])];
             // No branching and the same routes on both sides: one segment,
@@ -406,11 +412,11 @@ void CleanUpNetwork(SegmentNetwork &network, const CleanupParams &params)
     // segments meet through nodes that are no longer junctions. Each can
     // make the next possible.
     for (int round = 0; round < 6; ++round) {
-        MergeThroughNodes(network, params.min_turn_m);
+        MergeThroughNodes(network, params.min_turn_m, params.kept_places, params.kept_radius_m);
         if (!DropShortLoops(network, params.max_loop_m) && !MergeDuplicates(network, params.duplicate_distance_m))
             break;
     }
-    MergeThroughNodes(network, params.min_turn_m);
+    MergeThroughNodes(network, params.min_turn_m, params.kept_places, params.kept_radius_m);
 }
 
 } // namespace openrider::sdk

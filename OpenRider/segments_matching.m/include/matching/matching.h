@@ -28,10 +28,15 @@
 ///     cut where a track turns back mid-segment, then each track gives its
 ///     chain of segments;
 ///  5. shared clean-up (core/network_cleanup.h).
+/// Rests (the SDK's RestIntervals: a pause at a place, walks around it
+/// included) are left out of the matching and break their track into
+/// passes; every rest place cuts the segments passing it, and the clean-up
+/// keeps those nodes: a place where tracks stop is a segment boundary.
 /// Callers group tracks of similar activities before calling.
 #pragma once
 
 #include <openrider/sdk/recorded_track.h>
+#include <openrider/sdk/rests.h>
 #include <openrider/sdk/segments.h>
 
 #include <functional>
@@ -45,6 +50,7 @@ struct MatchParams {
     double min_new_m = 40.0;      ///< a stretch off the network at least this long becomes a segment
     double max_angle_deg = 50.0;  ///< direction of travel within this of the segment's
     double station_m = 5.0;       ///< spacing of the stations along segments
+    openrider::sdk::RestParams rest;  ///< what makes a rest (left out, a place cut into the segments)
 };
 
 /// Builds the segment network of `tracks` (see the file description).

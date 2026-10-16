@@ -71,6 +71,20 @@ void FindTraversals(Assembly &assembly)
                     cut_candidates[static_cast<size_t>(tr.line)].push_back(v);
         }
     }
+    // Rest places cut the lines passing them, at the vertex nearest each.
+    const double reach = std::max(assembly.params.rest.max_radius_m, assembly.params.tolerance_m);
+    for (const XY &place : analysis.rest_points)
+        for (size_t li = 0; li < lines.size(); ++li) {
+            int best = -1;
+            double best_d = reach;
+            for (size_t v = 0; v < lines[li].size(); ++v)
+                if (Dist(lines[li][v], place) <= best_d) {
+                    best_d = Dist(lines[li][v], place);
+                    best = static_cast<int>(v);
+                }
+            if (best > margin && best < static_cast<int>(lines[li].size()) - 1 - margin)
+                cut_candidates[li].push_back(best);
+        }
 }
 
 void CutSharedLines(Assembly &assembly)

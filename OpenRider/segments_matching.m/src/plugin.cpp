@@ -15,12 +15,14 @@
 namespace {
 
 // Indices into kParams.
-enum Param { Tolerance, MinNew, MaxAngle, ParamCount };
+enum Param { Tolerance, MinNew, MaxAngle, RestWindow, RestRadius, ParamCount };
 
 const or_filter_param kParams[ParamCount] = {
     {"tolerance_m", "Matching distance (m)", 15.0, 3.0, 50.0},
     {"min_new_m", "Shortest new path (m)", 40.0, 10.0, 300.0},
     {"max_angle_deg", "Direction tolerance (deg)", 50.0, 15.0, 85.0},
+    {"rest_window_s", "Rest: time at a place (s)", 120.0, 30.0, 600.0},
+    {"rest_radius_m", "Rest: place radius (m), 0 = none", 30.0, 0.0, 100.0},
 };
 
 // Builds the network of `tracks` with the declared parameters `values`.
@@ -42,6 +44,8 @@ int MatchingBuild(const or_segment_track *tracks, size_t count, const double *va
     params.tolerance_m = values[Tolerance];
     params.min_new_m = values[MinNew];
     params.max_angle_deg = values[MaxAngle];
+    params.rest.window_s = values[RestWindow];
+    params.rest.max_radius_m = values[RestRadius];
     bool stopped = false;
     openrider::sdk::SegmentNetwork network =
         matching::BuildNetwork(recorded, params, [&] { return stopped = stopped || (cancel && cancel(user) != 0); });
