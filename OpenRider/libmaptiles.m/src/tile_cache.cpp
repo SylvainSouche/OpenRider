@@ -7,9 +7,9 @@
 #include <cstdio>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <unistd.h>
 #include <unordered_map>
+#include <utime.h>
 #include <vector>
 
 namespace maptiles {
@@ -35,6 +35,8 @@ void ScanTiles(const std::string &dir, std::vector<CacheEntry> &out)
         else if (name.size() > 5 && name.compare(name.size() - 5, 5, ".tile") == 0) {
 #ifdef __APPLE__
             const double mtime = st.st_mtimespec.tv_sec + st.st_mtimespec.tv_nsec * 1e-9;
+#elif defined(_WIN32)
+            const double mtime = static_cast<double>(st.st_mtime);  // whole seconds only
 #else
             const double mtime = st.st_mtim.tv_sec + st.st_mtim.tv_nsec * 1e-9;
 #endif
@@ -69,7 +71,7 @@ bool TileCache::Get(const std::string &layer, int z, int x, int y, std::string &
     while ((chunk_size = std::fread(chunk, 1, sizeof chunk, file)) > 0)
         bytes.append(chunk, chunk_size);
     std::fclose(file);
-    utimes(path.c_str(), nullptr);  // most recently used now
+    utime(path.c_str(), nullptr);  // most recently used now
     return !bytes.empty();
 }
 

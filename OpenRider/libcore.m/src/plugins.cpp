@@ -8,7 +8,13 @@
 #include <openrider/tiles.h>
 
 #include <dirent.h>
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 #include <algorithm>
 #include <cstddef>
@@ -16,6 +22,49 @@
 namespace core {
 
 namespace {
+
+#ifdef _WIN32
+/// Opens the shared library at `path` (LoadLibrary); nullptr on failure.
+void *OpenLibrary(const std::string &path) { return LoadLibraryA(path.c_str()); }
+
+/// Address of `symbol` in an open library, or nullptr.
+void *LibrarySymbol(void *library, const char *symbol)
+{
+    return reinterpret_cast<void *>(GetProcAddress(static_cast<HMODULE>(library), symbol));
+}
+
+/// Closes a library opened by OpenLibrary().
+void CloseLibrary(void *library) { FreeLibrary(static_cast<HMODULE>(library)); }
+
+/// Why the last OpenLibrary() failed.
+std::string LibraryError()
+{
+    const DWORD code = GetLastError();
+    char text[256] = "";
+    const DWORD n = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code, 0,
+                                   text, sizeof text, nullptr);
+    std::string message(text, n);
+    while (!message.empty() && (message.back() == '\n' || message.back() == '\r' || message.back() == '.'))
+        message.pop_back();
+    return message.empty() ? "cannot load (error " + std::to_string(code) + ")" : message;
+}
+#else
+/// Opens the shared library at `path` (dlopen); nullptr on failure.
+void *OpenLibrary(const std::string &path) { return dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL); }
+
+/// Address of `symbol` in an open library, or nullptr.
+void *LibrarySymbol(void *library, const char *symbol) { return dlsym(library, symbol); }
+
+/// Closes a library opened by OpenLibrary().
+void CloseLibrary(void *library) { dlclose(library); }
+
+/// Why the last OpenLibrary() failed.
+std::string LibraryError()
+{
+    const char *e = dlerror();
+    return e ? e : "cannot load";
+}
+#endif
 
 bool IsSharedLibrary(const std::string &name)
 {
@@ -93,30 +142,57 @@ std::string PluginCheck(const or_plugin_info *info, uint32_t kind)
     return "";
 }
 
+uint32_t PluginKindFromDir(const std::string &dir)
+{
+    for (uint32_t kind = OR_PLUGIN_INPUT; kind <= OR_PLUGIN_SEGMENTS; ++kind)
+        if (dir == PluginKindDir(kind))
+            return kind;
+    return 0;
+}
+
+// @impl 0f87-6acd-24ce-521a
+// @impl 1c06-6ad1-23a6-133d
+PluginLoad LoadPlugin(const std::string &path, uint32_t kind)
+{
+    PluginLoad load;
+    void *h = OpenLibrary(path);
+    if (!h) {
+        load.problem = LibraryError();
+        return load;
+    }
+    auto entry = reinterpret_cast<or_plugin_entry_fn>(LibrarySymbol(h, OR_PLUGIN_ENTRY_SYMBOL));
+    if (!entry) {
+        load.stage = PluginStage::kEntry;
+        load.problem = "no " OR_PLUGIN_ENTRY_SYMBOL " entry point";
+        CloseLibrary(h);
+        return load;
+    }
+    const or_plugin_info *info = entry();
+    load.problem = PluginCheck(info, kind);
+    if (!load.problem.empty()) {
+        load.stage = PluginStage::kDescriptor;
+        CloseLibrary(h);
+        return load;
+    }
+    load.stage = PluginStage::kAccepted;
+    load.plugin = LoadedPlugin{path, info, h};
+    return load;
+}
+
 // @impl 0f87-6acd-24ce-521a
 PluginScan LoadPlugins(const std::vector<std::string> &roots, uint32_t kind)
 {
     PluginScan scan;
     for (const std::string &root : roots) {
         for (const std::string &path : LibrariesIn(root + "/" + PluginKindDir(kind))) {
-            void *h = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
-            if (!h) {
-                const char *e = dlerror();
-                scan.problems.push_back(path + ": " + (e ? e : "cannot load"));
+            PluginLoad load = LoadPlugin(path, kind);
+            if (load.stage != PluginStage::kAccepted) {
+                scan.problems.push_back(path + ": " + load.problem);
                 continue;
             }
-            auto entry = reinterpret_cast<or_plugin_entry_fn>(dlsym(h, OR_PLUGIN_ENTRY_SYMBOL));
-            const or_plugin_info *info = entry ? entry() : nullptr;
-            const std::string why =
-                entry ? PluginCheck(info, kind) : "no " OR_PLUGIN_ENTRY_SYMBOL " entry point";
-            if (!why.empty()) {
-                scan.problems.push_back(path + ": " + why);
-                dlclose(h);
-                continue;
-            }
-            if (!(info->flags & OR_PLUGIN_THREAD_SAFE))
-                SerialisePlugin(info->vtable);
-            scan.loaded.push_back(LoadedPlugin{path, info, h});
+            if (!(load.plugin.info->flags & OR_PLUGIN_THREAD_SAFE))
+                SerialisePlugin(load.plugin.info->vtable);
+            scan.loaded.push_back(load.plugin);
         }
     }
     return scan;

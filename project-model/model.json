@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "skill_version": "2.4.0",
-  "objects": 660,
-  "edges": 1089,
-  "last_write": "2026-10-14T16:52:30"
+  "skill_version": "2.9.0",
+  "objects": 684,
+  "edges": 1136,
+  "last_write": "2026-10-16T18:15:32"
 }

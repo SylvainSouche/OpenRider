@@ -1,6 +1,6 @@
 /// @file
 /// Locations the application reads from and writes to (module-level
-/// utilities). macOS for now; the cross-platform layout is decided later.
+/// utilities). macOS and Windows; other platforms use the macOS layout for now.
 #pragma once
 
 #include <string>
@@ -17,16 +17,18 @@ std::string BundledPluginsDir();
 /// Resources shipped with the application: `<exe>/../share/openrider`.
 std::string BundledShareDir();
 
-/// The user's application data: `~/Library/Application Support/OpenRider`.
+/// The user's application data: `~/Library/Application Support/OpenRider`
+/// (Windows: `%APPDATA%/OpenRider`, roaming with the profile).
 std::string UserSupportDir();
 
 /// The user's own plugins: `<UserSupportDir()>/plugins`.
 std::string UserPluginsDir();
 
-/// Session logs: `~/Library/Logs/OpenRider`.
+/// Session logs: `~/Library/Logs/OpenRider` (Windows: `%LOCALAPPDATA%/OpenRider/Logs`).
 std::string UserLogsDir();
 
-/// Caches (map tiles...): `~/Library/Caches/OpenRider`.
+/// Caches (map tiles...): `~/Library/Caches/OpenRider`
+/// (Windows: `%LOCALAPPDATA%/OpenRider/Cache`).
 std::string UserCacheDir();
 
 /// Creates `path` and its parents (mkdir -p).

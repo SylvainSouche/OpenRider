@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numbers>
 
 namespace openrider::sdk {
 
@@ -20,7 +21,7 @@ std::vector<float> PointNoise(const std::vector<or_point> &points)
     if (valid.size() < 3)
         return noise;
     const double lat0 = points[valid[0]].lat;
-    const double kx = 111320.0 * std::cos(lat0 * M_PI / 180.0), ky = 110540.0;
+    const double kx = 111320.0 * std::cos(lat0 * std::numbers::pi / 180.0), ky = 110540.0;
     // Second difference at each interior valid point.
     std::vector<double> jitter(valid.size(), 0.0);
     for (size_t k = 1; k + 1 < valid.size(); ++k) {
