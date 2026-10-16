@@ -7,6 +7,11 @@
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
+#elif defined(_WIN32)
+#include <direct.h>
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #else
 #include <unistd.h>
 #endif
@@ -15,11 +20,24 @@ namespace core {
 
 namespace {
 
+#ifndef _WIN32
 std::string Home()
 {
     const char *h = std::getenv("HOME");
     return h ? h : "";
 }
+#else
+/// The value of environment variable `name`, with '/' separators; empty when unset.
+std::string EnvDir(const char *name)
+{
+    const char *value = std::getenv(name);
+    std::string dir = value ? value : "";
+    for (char &c : dir)
+        if (c == '\\')
+            c = '/';
+    return dir;
+}
+#endif
 
 std::string Parent(const std::string &path)
 {
@@ -31,8 +49,8 @@ std::string Parent(const std::string &path)
 
 std::string ExecutableDir()
 {
-    char buf[PATH_MAX];
 #ifdef __APPLE__
+    char buf[PATH_MAX];
     uint32_t size = sizeof buf;
     if (_NSGetExecutablePath(buf, &size) != 0)
         return ".";
@@ -40,21 +58,40 @@ std::string ExecutableDir()
     if (realpath(buf, real))
         return Parent(real);
     return Parent(buf);
+#elif defined(_WIN32)
+    char buf[MAX_PATH];
+    const DWORD n = GetModuleFileNameA(nullptr, buf, sizeof buf);
+    if (n == 0 || n == sizeof buf)
+        return ".";
+    std::string path(buf, n);
+    for (char &c : path)
+        if (c == '\\')
+            c = '/';
+    return Parent(path);
 #else
+    char buf[PATH_MAX];
     const ssize_t n = readlink("/proc/self/exe", buf, sizeof buf - 1);
     if (n <= 0)
         return ".";
     buf[n] = '\0';
-    return parent(buf);
+    return Parent(buf);
 #endif
 }
 
 std::string BundledPluginsDir() { return Parent(ExecutableDir()) + "/plugins"; }
 std::string BundledShareDir() { return Parent(ExecutableDir()) + "/share/openrider"; }
+#ifdef _WIN32
+// @impl 1c06-6ad1-21c2-3a5c
+std::string UserSupportDir() { return EnvDir("APPDATA") + "/OpenRider"; }
+std::string UserPluginsDir() { return UserSupportDir() + "/plugins"; }
+std::string UserLogsDir() { return EnvDir("LOCALAPPDATA") + "/OpenRider/Logs"; }
+std::string UserCacheDir() { return EnvDir("LOCALAPPDATA") + "/OpenRider/Cache"; }
+#else
 std::string UserSupportDir() { return Home() + "/Library/Application Support/OpenRider"; }
 std::string UserPluginsDir() { return UserSupportDir() + "/plugins"; }
 std::string UserLogsDir() { return Home() + "/Library/Logs/OpenRider"; }
 std::string UserCacheDir() { return Home() + "/Library/Caches/OpenRider"; }
+#endif
 
 bool MakeDirs(const std::string &path)
 {
@@ -65,7 +102,13 @@ bool MakeDirs(const std::string &path)
     while (pos != std::string::npos) {
         pos = path.find('/', pos + 1);
         partial = path.substr(0, pos);
+#ifdef _WIN32
+        if (partial.back() == ':')
+            continue;  // a drive ("C:"), not a directory to create
+        if (_mkdir(partial.c_str()) != 0 && errno != EEXIST)
+#else
         if (mkdir(partial.c_str(), 0755) != 0 && errno != EEXIST)
+#endif
             return false;
     }
     struct stat st;

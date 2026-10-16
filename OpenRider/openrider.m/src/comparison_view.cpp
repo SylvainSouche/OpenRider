@@ -8,6 +8,7 @@
 
 #include "core/long_date.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 

@@ -35,6 +35,15 @@ extern "C" {
 /** Name of the function every plugin exports (an or_plugin_entry_fn). */
 #define OR_PLUGIN_ENTRY_SYMBOL "openrider_plugin"
 
+/* @impl 1c06-6ad1-21b6-02fe */
+/** Marks the entry function as exported from the plugin's shared library:
+ * `extern "C" OR_PLUGIN_EXPORT const or_plugin_info *openrider_plugin(void)`. */
+#ifdef _WIN32
+#define OR_PLUGIN_EXPORT __declspec(dllexport)
+#else
+#define OR_PLUGIN_EXPORT __attribute__((visibility("default")))
+#endif
+
 /** Plugin kinds; each one has its own subdirectory under plugins/. */
 enum or_plugin_kind {
     OR_PLUGIN_INPUT = 1,    /**< plugins/input: data backends, see input.h */

@@ -60,7 +60,7 @@ const or_plugin_info kInfo = {OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLU
 
 } // namespace
 
-extern "C" __attribute__((visibility("default"))) const or_plugin_info *openrider_plugin(void)
+extern "C" OR_PLUGIN_EXPORT const or_plugin_info *openrider_plugin(void)
 {
     return &kInfo;
 }

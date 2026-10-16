@@ -1,5 +1,7 @@
 #include "texture_mirror.h"
 
+// glext.h too: Windows' gl.h stops at OpenGL 1.1 (no GL_CLAMP_TO_EDGE).
+#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 namespace ui {

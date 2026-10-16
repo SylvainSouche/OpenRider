@@ -1,0 +1,3 @@
+# The project model is written by scripts/model.py: stored with LF whatever
+# the platform's Python writes (Windows Python writes CRLF).
+project-model/** text eol=lf

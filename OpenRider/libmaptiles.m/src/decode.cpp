@@ -3,6 +3,7 @@
 #include <stb_image.h>
 #include <tiffio.h>
 
+#include <cstdint>
 #include <cstring>
 
 namespace maptiles {

@@ -17,7 +17,7 @@ namespace core {
 struct LoadedPlugin {
     std::string path;                      ///< library file
     const or_plugin_info *info = nullptr;  ///< its descriptor
-    void *handle = nullptr;                ///< dlopen handle; kept open for the process lifetime
+    void *handle = nullptr;                ///< dlopen/LoadLibrary handle; kept open for the process lifetime
 };
 
 /// The outcome of loading the plugins of one kind.
@@ -37,6 +37,29 @@ size_t VtableMinimumSize(uint32_t kind);
 /// major ABI version, a newer minor one, another kind, a missing field, or
 /// a function table smaller than VtableMinimumSize().
 std::string PluginCheck(const or_plugin_info *info, uint32_t kind);
+
+/// How far loading one plugin library got.
+enum class PluginStage {
+    kOpen,        ///< the library did not open
+    kEntry,       ///< it opened but exports no OR_PLUGIN_ENTRY_SYMBOL
+    kDescriptor,  ///< its descriptor was refused by PluginCheck()
+    kAccepted     ///< accepted
+};
+
+/// The outcome of loading one plugin library.
+struct PluginLoad {
+    PluginStage stage = PluginStage::kOpen;  ///< kAccepted, or the stage that failed
+    std::string problem;                     ///< why it failed; "" when accepted
+    LoadedPlugin plugin;                     ///< the accepted plugin; its handle is null otherwise
+};
+
+/// Kind whose subdirectory (PluginKindDir()) is `dir`, or 0 if none.
+uint32_t PluginKindFromDir(const std::string &dir);
+
+/// Loads the library at `path` as a plugin of `kind`, exactly as
+/// LoadPlugins() does for each library it finds: opens it, looks up its
+/// entry point and checks its descriptor. A refused library is closed again.
+PluginLoad LoadPlugin(const std::string &path, uint32_t kind);
 
 /// Loads every plugin of `kind` found under `<root>/<kind dir>/` for each of `roots`.
 PluginScan LoadPlugins(const std::vector<std::string> &roots, uint32_t kind);
