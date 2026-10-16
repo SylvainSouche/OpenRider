@@ -82,6 +82,14 @@ version string, kind-specific vtable). Kinds: input 1, filters 2, tiles 3,
 workflows 4, segments 5. Plugins are found under `plugins/<kind dir>/`, in
 the bundled directory then the user's.
 
+The entry function is the only symbol a plugin must export, and it exports it
+explicitly: `extern "C" OR_PLUGIN_EXPORT const or_plugin_info
+*openrider_plugin(void)`. `OR_PLUGIN_EXPORT` (`plugin.h`) is
+`__declspec(dllexport)` on Windows and default visibility elsewhere. A plugin
+never relies on the linker exporting everything: on Windows that automatic
+export stops as soon as any linked object carries a `dllexport` of its own (a
+bundled static library such as cJSON does), and the entry would vanish.
+
 ABI 2.0 adds `api_minor` and `flags`. The first flag,
 `OR_PLUGIN_THREAD_SAFE`, says the plugin may be called from several threads
 at once; without it the application makes every call to the plugin from one
@@ -300,3 +308,56 @@ loading, paths, the session log files, long-date formatting
    services come in a minor version with the first plugin needing them.
 4. Header documentation updated to state each contract above (threading,
    order, identity, stability level).
+
+## 9. Testing a plugin: `openrider-plugin-check`
+
+<!-- @impl 1c06-6ad1-23a6-b98b -->
+OpenRider ships `openrider-plugin-check` in `bin/`, beside the `openrider`
+executable. It loads a plugin through the application's own loader
+(`core::LoadPlugin`, the function the application calls for every library
+it finds), so it accepts exactly what the application accepts and nothing
+else. **Run it in your plugin's test harness**, with the
+`openrider-plugin-check` of each OpenRider version you target: a plugin that
+builds and passes its own unit tests can still be refused at load time, and
+nothing else tells you. (On Windows, for instance, a DLL silently loses its
+entry point when the linker stops exporting everything — 5.1.)
+
+```sh
+openrider-plugin-check [--kind KIND] PLUGIN...
+```
+
+`KIND` is the plugin's directory name: `input`, `filters`, `tiles`,
+`workflows` or `segments`. Without `--kind`, it is the name of the
+directory holding `PLUGIN`, so a plugin already in place in
+`plugins/<kind>/` needs none.
+
+For each plugin it makes the application's three checks, in order:
+
+1. the library opens (its own run-time dependencies are found);
+2. it exports `openrider_plugin` (5.1);
+3. its descriptor is accepted for that kind: same ABI major version, a minor
+   version no newer than the application's, the kind asked for, a name and
+   a function table, and a table at least as large as the kind's ABI 2.0
+   table (§4).
+
+It reports in [TAP](https://testanything.org): one test point per check
+(after a failure, the later checks of that plugin are skipped), a `#` line
+with the reason for each failure, and the accepted plugin's name, version,
+ABI and thread-safety. The exit status is the verdict: 0 when every plugin is
+accepted, non-zero otherwise (currently 1 when one is refused, 2 on a usage
+error; rely only on zero versus non-zero), so any harness can use it as is:
+
+```
+$ openrider-plugin-check --kind filters build/libmy_filter.so
+# OpenRider plugin ABI 2.0
+ok 1 - libmy_filter.so: library opens
+ok 2 - libmy_filter.so: exports openrider_plugin
+ok 3 - libmy_filter.so: descriptor accepted as a 'filters' plugin
+# my_filter 1.0, ABI 2.0, thread-safe
+1..3
+```
+
+It does not check what the application does not check at load time: run-time
+dependency sealing (§2, `plugin_sealing.tst` for in-tree plugins) and the
+behaviour of the kind's functions stay with your own tests. OpenRider runs it
+on its own plugins (`plugin_check.tst`).

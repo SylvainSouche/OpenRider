@@ -107,6 +107,19 @@ ATF_TEST_CASE_BODY(kind_directories)
     ATF_REQUIRE_EQ(std::string(core::PluginKindDir(OR_PLUGIN_TILES)), "tiles");
     ATF_REQUIRE_EQ(std::string(core::PluginKindDir(OR_PLUGIN_WORKFLOW)), "workflows");
     ATF_REQUIRE_EQ(std::string(core::PluginKindDir(OR_PLUGIN_SEGMENTS)), "segments");
+    for (uint32_t kind = OR_PLUGIN_INPUT; kind <= OR_PLUGIN_SEGMENTS; ++kind)
+        ATF_REQUIRE_EQ(core::PluginKindFromDir(core::PluginKindDir(kind)), kind);
+    ATF_REQUIRE_EQ(core::PluginKindFromDir("filter"), 0u);
+    ATF_REQUIRE_EQ(core::PluginKindFromDir(""), 0u);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(missing_library_fails_to_open);
+ATF_TEST_CASE_BODY(missing_library_fails_to_open)
+{
+    const core::PluginLoad load = core::LoadPlugin("/nonexistent/openrider/plugin.so", OR_PLUGIN_INPUT);
+    ATF_REQUIRE(load.stage == core::PluginStage::kOpen);
+    ATF_REQUIRE(!load.problem.empty());
+    ATF_REQUIRE(load.plugin.handle == nullptr);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(missing_directory_loads_nothing);
@@ -127,4 +140,5 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, refuses_wrong_kind_or_incomplete);
     ATF_ADD_TEST_CASE(tcs, kind_directories);
     ATF_ADD_TEST_CASE(tcs, missing_directory_loads_nothing);
+    ATF_ADD_TEST_CASE(tcs, missing_library_fails_to_open);
 }

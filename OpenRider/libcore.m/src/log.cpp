@@ -29,12 +29,24 @@ std::vector<std::string> ListDir(const std::string &dir)
     return names;
 }
 
+/// Breaks `when` down into local time, thread-safely (localtime_r is POSIX;
+/// Windows has localtime_s, with its arguments swapped).
+std::tm LocalTime(std::time_t when)
+{
+    std::tm tm{};
+#ifdef _WIN32
+    localtime_s(&tm, &when);
+#else
+    localtime_r(&when, &tm);
+#endif
+    return tm;
+}
+
 } // namespace
 
 std::string LogFileName(std::time_t when)
 {
-    std::tm tm{};
-    localtime_r(&when, &tm);
+    const std::tm tm = LocalTime(when);
     char buf[64];
     std::strftime(buf, sizeof buf, "OpenRider-%Y-%m-%d_%H-%M-%S.log", &tm);
     return buf;
@@ -90,8 +102,7 @@ void LogLine(const char *format, ...)
     if (!g_file)
         return;
     const std::time_t now = std::time(nullptr);
-    std::tm tm{};
-    localtime_r(&now, &tm);
+    const std::tm tm = LocalTime(now);
     char stamp[32];
     std::strftime(stamp, sizeof stamp, "%H:%M:%S ", &tm);
     std::fputs(stamp, g_file);
