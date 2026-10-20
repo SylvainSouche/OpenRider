@@ -22,6 +22,10 @@ bmake test       # unit tests (ATF/Kyua)
 Third-party sources (Dear ImGui, …) are fetched at build time and checked
 against each module's `distinfo`; they are never committed.
 
+Linux (glibc and musl), FreeBSD and NetBSD build and pass the tests too: the
+packages each needs, the results and how to reproduce them are in
+[docs/platforms.md](docs/platforms.md).
+
 ## Architecture
 
 Two Bmake It frameworks:
