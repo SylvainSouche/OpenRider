@@ -10,6 +10,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 namespace core {
 
@@ -42,6 +43,14 @@ public:
 
     /// Display label in `lang` ("en"/"fr"); falls back to the sport's label,
     /// then to the raw key.
+    /// The type keys with a label: sports alone ("running") and sports with
+    /// a sub-sport ("running/trail"), sorted -- the choices offered.
+    std::vector<std::string> LabelledKeys() const;
+
+    /// The label of key `key` (a sport alone or "sport/sub_sport"), the key
+    /// itself if none.
+    std::string KeyLabel(const std::string &key, const std::string &lang) const;
+
     std::string Label(const ActivityType &type, const std::string &lang) const;
 
     /// Icon glyph (UTF-8) for the type, falling back to its sport's, then a

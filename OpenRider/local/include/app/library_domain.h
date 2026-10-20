@@ -8,6 +8,7 @@
 #include "app/model_domain.h"
 
 #include "core/library.h"
+#include "core/outing_types.h"
 #include "core/overview_loader.h"
 
 #include <string>
@@ -21,14 +22,19 @@ class LibraryDomain : public ModelDomain {
 public:
     /// @param model the model; must outlive the domain
     /// @param input the input plugin; must outlive the domain
-    LibraryDomain(AppModel &model, const InputSource &input) : model_(model), input_(input) {}
+    LibraryDomain(AppModel &model, InputSource &input) : model_(model), input_(input) {}
 
-    /// Begins scanning outings; their types resolved with the model's
-    /// catalog through the `source` correspondence table.
-    void Start(const std::string &source);
+    /// Begins scanning the outings of every input source; their types
+    /// resolved with the model's catalog, each source with its own table.
+    void Start();
+
+    /// Reads the types the user settled for outings from `path` (and saves
+    /// them there); they override the sources' types.
+    void SetTypesFile(const std::string &path);
 
     /// ReloadOverview: the overview tracks loaded again, with the filters
-    /// now enabled.
+    /// now enabled. SetOutingType, ConfirmOutingTypes: outing types chosen
+    /// and settled by the user (remembered in the types file).
     bool Handles(IntentKind kind) const override;
     void Handle(const Intent &intent, Intents &out) override;
     void Tick(Intents &out) override;
@@ -39,7 +45,8 @@ private:
     void LoadOverview();
 
     AppModel &model_;                ///< the model this domain changes
-    const InputSource &input_;       ///< where outings come from
+    InputSource &input_;             ///< where outings come from
+    core::OutingTypes types_;        ///< types settled by the user
     core::Library library_;          ///< outing scan
     core::OverviewLoader overview_;  ///< overview track loading
     bool scan_reported_ = false;     ///< the end of the scan was handled

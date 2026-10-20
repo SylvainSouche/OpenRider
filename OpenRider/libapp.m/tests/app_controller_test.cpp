@@ -89,6 +89,20 @@ void FreeSegments(or_segment_network *network) { openrider::sdk::FreeExportedNet
 const or_filter_param kSegmentParams[] = {{"width", "Width", 8.0, 1.0, 50.0}};
 const or_segments_vtable kSegments = {sizeof(or_segments_vtable), "fake", "Fake", 1, kSegmentParams, FakeSegments, FreeSegments};
 
+// A GPX folder of one outing, on the fake points, whose type is to be
+// confirmed.
+int FakeGpxList(void *, or_outing_cb cb, void *user, char *, size_t)
+{
+    or_outing o{};
+    std::snprintf(o.id, sizeof o.id, "gpx:x");
+    std::snprintf(o.name, sizeof o.name, "Walk");
+    std::snprintf(o.start_local, sizeof o.start_local, "2026-07-01 08:00:00");
+    std::snprintf(o.source_type, sizeof o.source_type, "hike");
+    cb(user, &o, 0, 1);
+    return 0;
+}
+const or_input_vtable kGpx = {sizeof(or_input_vtable), nullptr, nullptr, FakeGpxList, FakePoints};
+
 struct Fixture {
     app::AppModel model;
     app::AppController app{model};
@@ -100,14 +114,20 @@ struct Fixture {
     app::Controllers c{model, app, main, list, map, outing, comparison};
     app::Intents intents;
 
-    Fixture()
+    // `types_file` given: a GPX source too, the settled types kept there.
+    explicit Fixture(const std::string &types_file = "")
     {
-        app.SetInput(&kInput, nullptr, "fake");
+        app.AddInput(&kInput, nullptr, "fake", "garmin_connect");
+        if (!types_file.empty()) {
+            app.SetOutingTypesFile(types_file);
+            app.AddInput(&kGpx, nullptr, "gpx", "gpx", true);
+        }
         app.AddFilter(&kHalf);
         app.AddSegmentMethod(&kSegments);
         app.Start();
-        for (int i = 0; i < 500 && (model.outings.size() < 3 || model.scanning || model.tracks_loading ||
-                                    model.tracks.size() < 3);
+        const size_t expected = types_file.empty() ? 3 : 4;
+        for (int i = 0; i < 500 && (model.outings.size() < expected || model.scanning || model.tracks_loading ||
+                                    model.tracks.size() < expected);
              ++i) {
             app::Step(c, intents);
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -310,6 +330,34 @@ ATF_TEST_CASE_BODY(small_parameter_change_rebuilds)
     ATF_REQUIRE(g_segment_builds.load() > builds);
 }
 
+// A GPX outing comes unconfirmed; its type is changed, then confirmed and
+// remembered: the next start finds it settled.
+ATF_TEST_CASE_WITHOUT_HEAD(gpx_types_confirmed_and_remembered);
+ATF_TEST_CASE_BODY(gpx_types_confirmed_and_remembered)
+{
+    char dir[] = "/tmp/openrider-types-XXXXXX";
+    const std::string file = std::string(mkdtemp(dir)) + "/outing_types.json";
+    {
+        Fixture f(file);
+        ATF_REQUIRE_EQ(f.model.outings.size(), 4u);
+        const size_t gpx = 3;
+        ATF_REQUIRE_EQ(std::string(f.model.outings[gpx].raw.id), "gpx:x");
+        ATF_REQUIRE(!f.model.outings[gpx].confirmed);
+        ATF_REQUIRE(f.model.outings[0].confirmed);
+        app::Intent set{app::IntentKind::SetOutingType};
+        set.i = static_cast<int>(gpx);
+        set.text = "walking/generic";
+        f.Send(set);
+        ATF_REQUIRE_EQ(f.model.outings[gpx].type.Key(), "walking/generic");
+        ATF_REQUIRE(!f.model.outings[gpx].confirmed);  // still to be confirmed
+        f.Send(app::IntentKind::ConfirmOutingTypes);
+        ATF_REQUIRE(f.model.outings[gpx].confirmed);
+    }
+    Fixture again(file);
+    ATF_REQUIRE(again.model.outings[3].confirmed);
+    ATF_REQUIRE_EQ(again.model.outings[3].type.Key(), "walking/generic");
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
     ATF_ADD_TEST_CASE(tcs, segment_comparison);
@@ -319,6 +367,7 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, selecting_loads_points_and_stats);
     ATF_ADD_TEST_CASE(tcs, filters_are_non_destructive);
     ATF_ADD_TEST_CASE(tcs, filters_reload_the_overview);
+    ATF_ADD_TEST_CASE(tcs, gpx_types_confirmed_and_remembered);
     ATF_ADD_TEST_CASE(tcs, query_drives_list_and_map_filters);
     ATF_ADD_TEST_CASE(tcs, errors_queue_and_quit);
 }

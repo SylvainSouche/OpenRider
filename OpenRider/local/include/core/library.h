@@ -4,6 +4,7 @@
 #pragma once
 
 #include "core/activity_type.h"
+#include "core/input_set.h"
 #include "core/type_catalog.h"
 
 #include <openrider/input.h>
@@ -18,8 +19,10 @@ namespace core {
 
 /// One outing of the library.
 struct Outing {
-    or_outing raw;      ///< as delivered by the input plugin
-    ActivityType type;  ///< resolved type
+    or_outing raw;          ///< as delivered by the input plugin
+    ActivityType type;      ///< resolved type
+    size_t source = 0;      ///< index of its source in the InputSet
+    bool confirmed = true;  ///< its type is settled (else the user is asked to confirm it)
 };
 
 /// Reads every outing of an input plugin in the background. The owner polls
@@ -29,13 +32,16 @@ public:
     /// Waits for a running scan.
     ~Library();
 
-    /// Starts reading all outings in the background.
-    /// @param input the input plugin's vtable
-    /// @param handle the plugin's open handle; must outlive the scan
+    /// Starts reading the outings of every source of `inputs` in the
+    /// background, one source after the other. Each outing's type resolves
+    /// with its source's table; outings of a source whose types are to be
+    /// confirmed come unconfirmed. An outing duplicating one of an earlier
+    /// source (start within a minute, distance within 15% when both are
+    /// known) is left out: the earlier source wins.
+    /// @param inputs the sources; must outlive the scan (outing ids are
+    ///        assigned to their source in it)
     /// @param catalog resolves outing types; must outlive the scan
-    /// @param source correspondence table used to resolve types (e.g. "garmin_connect")
-    void StartScan(const or_input_vtable *input, void *handle,
-                   const TypeCatalog *catalog, const std::string &source);
+    void StartScan(InputSet *inputs, const TypeCatalog *catalog);
 
     /// A scan is running.
     bool Scanning() const { return scanning_.load(); }
@@ -56,15 +62,18 @@ public:
     /// @return the error of a finished scan, "" if none
     std::string Take(std::vector<Outing> &out);
 
+    /// Outings left out of the finished scan as duplicates.
+    size_t Hidden() const { return hidden_.load(); }
+
 private:
     /// The scan, run on the worker thread.
-    void Run(const or_input_vtable *input, void *handle, const TypeCatalog *catalog,
-             std::string source);
+    void Run(InputSet *inputs, const TypeCatalog *catalog);
 
     std::thread worker_;                 ///< runs Run()
     std::atomic<bool> scanning_{false};  ///< a scan is running
     std::atomic<size_t> done_{0};        ///< outings read
     std::atomic<size_t> total_{0};       ///< outings announced
+    std::atomic<size_t> hidden_{0};      ///< duplicates left out
     std::mutex mutex_;              ///< guards pending_ and error_
     std::vector<Outing> pending_;   ///< read, not yet taken
     std::string error_;             ///< error of the finished scan

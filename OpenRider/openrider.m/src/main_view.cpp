@@ -3,6 +3,8 @@
 #include "views.h"
 
 #include <algorithm>
+#include <string>
+#include <vector>
 
 namespace ui {
 
@@ -76,6 +78,88 @@ void DrawAbout(const app::MainViewModel &view_model, app::Intents &out)
     ImGui::EndPopup();
 }
 
+// New outings whose type is to be confirmed (GPX files): each with its
+// category and subcategory, prefilled from the file, changed or confirmed.
+void DrawTypeConfirmation(const app::AppModel &model, app::Intents &out)
+{
+    std::vector<size_t> pending;
+    for (size_t i = 0; i < model.outings.size(); ++i)
+        if (!model.outings[i].confirmed)
+            pending.push_back(i);
+    if (pending.empty() || model.scanning || !model.errors.empty())
+        return;
+    const char *title = "New outings: confirm their type";
+    if (!ImGui::IsPopupOpen(title))
+        ImGui::OpenPopup(title);
+    if (!ImGui::BeginPopupModal(title, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+    auto set_type = [&](size_t outing, const std::string &key) {
+        app::Intent intent{app::IntentKind::SetOutingType};
+        intent.i = static_cast<int>(outing);
+        intent.text = key;
+        out.Push(std::move(intent));
+    };
+    ImGui::Text("%zu new outing%s from GPX files. Check each type, then confirm.", pending.size(),
+                pending.size() == 1 ? "" : "s");
+    // The categories (sports) and their subcategories with a label.
+    std::vector<std::string> sports;
+    std::vector<std::string> keys = model.types.LabelledKeys();
+    for (const std::string &key : keys)
+        if (key.find('/') == std::string::npos)
+            sports.push_back(key);
+    const float height = std::min(400.0f, ImGui::GetTextLineHeightWithSpacing() * (pending.size() + 1.5f));
+    if (ImGui::BeginTable("##pending", 5, ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit,
+                          ImVec2(760.0f, height))) {
+        ImGui::TableSetupColumn("Date");
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("km");
+        ImGui::TableSetupColumn("Category");
+        ImGui::TableSetupColumn("Subcategory");
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableHeadersRow();
+        for (size_t i : pending) {
+            const core::Outing &outing = model.outings[i];
+            ImGui::PushID(static_cast<int>(i));
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(std::string(outing.raw.start_local).substr(0, 16).c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(outing.raw.name);
+            ImGui::TableNextColumn();
+            ImGui::Text("%.1f", outing.raw.distance_m / 1000.0);
+            ImGui::TableNextColumn();
+            const std::string &sport = outing.type.sport;
+            ImGui::SetNextItemWidth(170.0f);
+            if (ImGui::BeginCombo("##sport", model.types.KeyLabel(sport, model.lang).c_str())) {
+                for (const std::string &choice : sports)
+                    if (ImGui::Selectable(model.types.KeyLabel(choice, model.lang).c_str(), choice == sport))
+                        set_type(i, choice + "/generic");
+                ImGui::EndCombo();
+            }
+            ImGui::TableNextColumn();
+            const std::string current = sport + "/" + outing.type.sub_sport;
+            ImGui::SetNextItemWidth(170.0f);
+            const std::string preview = outing.type.sub_sport == "generic" ? "-" : model.types.KeyLabel(current, model.lang);
+            if (ImGui::BeginCombo("##sub", preview.c_str())) {
+                if (ImGui::Selectable("-", outing.type.sub_sport == "generic"))
+                    set_type(i, sport + "/generic");
+                for (const std::string &choice : keys)
+                    if (choice.rfind(sport + "/", 0) == 0 &&
+                        ImGui::Selectable(model.types.KeyLabel(choice, model.lang).c_str(), choice == current))
+                        set_type(i, choice);
+                ImGui::EndCombo();
+            }
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+    if (ImGui::Button("Confirm")) {
+        out.Push(app::IntentKind::ConfirmOutingTypes);
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+}
+
 void DrawErrorPopup(const app::AppModel &model, app::Intents &out)
 {
     if (model.errors.empty())
@@ -131,6 +215,7 @@ void DrawMainView(const app::AppModel &model, const ViewModels &view_models, Tex
     DrawStatusBar(model, view_models.map);
     ImGui::End();
     DrawAbout(view_models.main, out);
+    DrawTypeConfirmation(model, out);
     DrawErrorPopup(model, out);
 }
 

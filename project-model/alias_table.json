@@ -803,6 +803,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-gpx-input": {
+    "active": true,
+    "id": "0f87-6ad7-2407-6ee2",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-graph-type": {
     "active": true,
     "id": "0f87-6acd-3338-b48d",
@@ -1757,6 +1763,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-gpx-plugin": {
+    "active": true,
+    "id": "0f87-6ad7-26b7-05d6",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-graph-hover": {
     "active": true,
     "id": "0f87-6acd-32ed-0184",
@@ -1816,6 +1828,12 @@
     "id": "0f87-6acc-e83c-9717",
     "status": "confirmed",
     "type": "req"
+  },
+  "impl-input-set": {
+    "active": true,
+    "id": "0f87-6ad7-26b7-83a2",
+    "status": "asserted",
+    "type": "impl"
   },
   "impl-jitter-plugin": {
     "active": true,
@@ -2151,6 +2169,12 @@
     "active": true,
     "id": "0f87-6acd-2587-fdb3",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-type-confirmation": {
+    "active": true,
+    "id": "0f87-6ad7-26b7-38bf",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-type-icons": {

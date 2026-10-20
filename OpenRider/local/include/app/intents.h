@@ -32,6 +32,8 @@ enum class IntentKind {
     SetFilterParam,      ///< i: filter index, j: parameter index, x: value
     ResetFilterParams,   ///< i: filter index
     ReloadOverview,      ///< the overview tracks again (filters changed)
+    SetOutingType,       ///< i: outing index, text: type key "sport/sub_sport" (an unconfirmed outing stays so)
+    ConfirmOutingTypes,  ///< every unconfirmed outing's type settled and remembered
     DismissError,        ///< drops the error shown
     ReportError,         ///< text
     Quit,                ///< ends the application

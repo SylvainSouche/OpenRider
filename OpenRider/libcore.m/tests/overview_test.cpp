@@ -40,6 +40,17 @@ int FakePoints(void *, const char *, or_point_cb cb, void *user, char *, size_t)
 }
 const or_input_vtable kInput = {sizeof(or_input_vtable), nullptr, nullptr, nullptr, FakePoints};
 
+// The fake input as the only source.
+const core::InputSet &Inputs()
+{
+    static core::InputSet *inputs = [] {
+        auto *set = new core::InputSet;
+        set->Add({&kInput, nullptr, "fake", "", false});
+        return set;
+    }();
+    return *inputs;
+}
+
 // A track filter keeping the first half of the points (the first 500 m).
 int FirstHalf(const or_point *, size_t count, const double *, unsigned char *keep, char *, size_t)
 {
@@ -107,10 +118,10 @@ ATF_TEST_CASE_WITHOUT_HEAD(loader_restarts_after_stop);
 ATF_TEST_CASE_BODY(loader_restarts_after_stop)
 {
     core::OverviewLoader loader;
-    loader.Start(&kInput, nullptr, {"a", "b"});
+    loader.Start(&Inputs(), {"a", "b"});
     ATF_REQUIRE_EQ(Finish(loader).size(), 2u);
     loader.Stop();
-    loader.Start(&kInput, nullptr, {"c", "d", "e"});
+    loader.Start(&Inputs(), {"c", "d", "e"});
     ATF_REQUIRE_EQ(Finish(loader).size(), 3u);  // a previous Stop() does not end the new load
 }
 
@@ -120,8 +131,8 @@ ATF_TEST_CASE_WITHOUT_HEAD(loader_applies_track_filters);
 ATF_TEST_CASE_BODY(loader_applies_track_filters)
 {
     core::OverviewLoader loader;
-    loader.Start(&kInput, nullptr, {"a", "b", "c"});
-    loader.Start(&kInput, nullptr, {"a"}, {{&kFirstHalf, {}}});
+    loader.Start(&Inputs(), {"a", "b", "c"});
+    loader.Start(&Inputs(), {"a"}, {{&kFirstHalf, {}}});
     const auto tracks = Finish(loader);
     ATF_REQUIRE_EQ(tracks.size(), 1u);
     ATF_REQUIRE(tracks[0].north < 45.9 + 600 * 9e-6);  // the line ends near 500 m, not 1000 m

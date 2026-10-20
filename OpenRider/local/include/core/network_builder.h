@@ -3,6 +3,8 @@
 /// activities.
 #pragma once
 
+#include "core/input_set.h"
+
 #include <openrider/input.h>
 #include <openrider/sdk/recorded_track.h>
 #include <openrider/sdk/segments.h>
@@ -46,10 +48,9 @@ public:
     ///        (a group with fewer than two outings with a position has none)
     /// @param plugin the segments plugin to use; must outlive the builder
     /// @param values one value per parameter the plugin declares
-    /// @param input the input plugin reading the outings' points, and
-    /// @param handle its open handle; both must outlive the builder
+    /// @param inputs where the outings' points are read; must outlive the builder
     void Start(std::vector<TrackGroup> groups, const or_segments_vtable *plugin, std::vector<double> values,
-               const or_input_vtable *input, void *handle);
+               const InputSet *inputs);
 
     /// A build is running or waiting.
     bool Building() const { return building_.load(); }
@@ -75,8 +76,7 @@ private:
         std::vector<TrackGroup> groups;               ///< groups to build
         const or_segments_vtable *plugin = nullptr;   ///< segments plugin
         std::vector<double> values;                   ///< its parameter values
-        const or_input_vtable *input = nullptr;       ///< input plugin
-        void *handle = nullptr;                       ///< its handle
+        const InputSet *inputs = nullptr;             ///< where points are read
     };
 
     /// The recorded points of outing `id`, from the cache or loaded now.

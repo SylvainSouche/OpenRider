@@ -17,7 +17,7 @@ ATF_TEST_CASE_BODY(each_model_intent_has_one_domain)
 {
     app::AppModel model;
     app::InputSource input;
-    app::LibraryDomain library(model, input);
+    app::LibraryDomain library(model, input);  // input: non-const, the scan assigns outings to sources
     app::QueryDomain query(model);
     app::OutingDomain outing(model, input);
     app::SegmentsDomain segments(model, input);
@@ -37,7 +37,7 @@ ATF_TEST_CASE_BODY(each_model_intent_has_one_domain)
         app::IntentKind::SetShowSegments,     app::IntentKind::SelectSegmentMethod,   app::IntentKind::SetSegmentParam,
         app::IntentKind::OpenSegmentComparison, app::IntentKind::CloseSegmentComparison, app::IntentKind::ToggleFilter,
         app::IntentKind::SetFilterParam,      app::IntentKind::ResetFilterParams,     app::IntentKind::ReloadOverview,
-        app::IntentKind::DismissError,
+        app::IntentKind::SetOutingType,       app::IntentKind::ConfirmOutingTypes,    app::IntentKind::DismissError,
         app::IntentKind::ReportError,         app::IntentKind::Quit};
     int model_count = 0;
     for (app::IntentKind kind : model_kinds) {

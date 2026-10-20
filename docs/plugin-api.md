@@ -148,6 +148,17 @@ Planned additions (ABI 2 minor, by appending): further point channels for
 power, cadence types, running dynamics; a capability query (which channels
 the source has).
 
+Several input sources are open at once (`core::InputSet`): GarminDB and a
+GPX folder today. Outing ids are unique across sources (the GPX plugin's
+are `gpx:<hash of the file's path>`); the application remembers each
+outing's source and reads its points there. Sources are scanned in order,
+GarminDB first; an outing duplicating one of an earlier source (start
+within a minute, distance within 15%) is hidden. Each source's types
+resolve with its own table (`garmin_connect`, `gpx`); a source may ask
+for its outings' types to be confirmed by the user, and the types the user
+settles are kept by the application (`outing_types.json`), never by the
+plugin.
+
 ### 5.4 Filters (`filter.h`) — stable for track filters, in place
 
 Track filters (`OR_FILTER_TRACK`): given an outing's points and the declared

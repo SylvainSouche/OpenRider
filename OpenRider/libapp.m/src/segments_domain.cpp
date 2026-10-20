@@ -98,7 +98,7 @@ void SegmentsDomain::Update()
         for (auto &entry : groups)
             if (entry.second.ids.size() >= 2)  // a segment needs two routes
                 to_build.push_back(std::move(entry.second));
-        builder_.Start(std::move(to_build), method.vtable, method.values, input_.Vtable(), input_.Handle());
+        builder_.Start(std::move(to_build), method.vtable, method.values, &input_.Set());
         core::LogLine("building segment networks: %s", basis.c_str());
     }
     if (builder_.Take(model_.segment_groups)) {

@@ -3,6 +3,9 @@
 #include "core/plugin_thread.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <ctime>
 
 namespace core {
 
@@ -14,8 +17,7 @@ void Library::Wait()
         worker_.join();
 }
 
-void Library::StartScan(const or_input_vtable *input, void *handle, const TypeCatalog *catalog,
-                         const std::string &source)
+void Library::StartScan(InputSet *inputs, const TypeCatalog *catalog)
 {
     if (scanning_.load())
         return;
@@ -23,9 +25,10 @@ void Library::StartScan(const or_input_vtable *input, void *handle, const TypeCa
         worker_.join();
     done_ = 0;
     total_ = 0;
+    hidden_ = 0;
     error_.clear();
     scanning_ = true;
-    worker_ = std::thread(&Library::Run, this, input, handle, catalog, source);
+    worker_ = std::thread(&Library::Run, this, inputs, catalog);
 }
 
 float Library::Progress() const
@@ -42,34 +45,73 @@ std::string Library::Take(std::vector<Outing> &out)
     return scanning_.load() ? std::string() : error_;
 }
 
-void Library::Run(const or_input_vtable *input, void *handle, const TypeCatalog *catalog,
-                  std::string source)
-{
-    struct Ctx {
-        Library *self;
-        const TypeCatalog *catalog;
-        const std::string *source;
-    } ctx{this, catalog, &source};
+namespace {
 
-    auto cb = [](void *user, const or_outing *o, size_t index, size_t total) -> int {
-        Ctx *c = static_cast<Ctx *>(user);
-        Outing out{*o, c->catalog->Resolve(*c->source, o->source_type, o->fit_sport,
-                                           o->fit_sub_sport)};
-        {
-            std::lock_guard<std::mutex> lock(c->self->mutex_);
-            c->self->pending_.push_back(out);
+// Seconds of a "YYYY-MM-DD HH:MM:SS" time (any fixed zone); NaN if unreadable.
+double Seconds(const char *start)
+{
+    std::tm tm{};
+    if (!start || std::sscanf(start, "%d-%d-%d %d:%d:%d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min,
+                              &tm.tm_sec) != 6)
+        return std::nan("");
+    tm.tm_year -= 1900;
+    tm.tm_mon -= 1;
+    return static_cast<double>(timegm(&tm));
+}
+
+// `a` and `b` are the same outing recorded twice: started within a minute,
+// distances within 15% when both are known.
+bool SameOuting(const or_outing &a, const or_outing &b)
+{
+    const double ta = Seconds(a.start_local), tb = Seconds(b.start_local);
+    if (std::isnan(ta) || std::isnan(tb) || std::fabs(ta - tb) > 60.0)
+        return false;
+    if (std::isnan(a.distance_m) || std::isnan(b.distance_m) || a.distance_m <= 0.0 || b.distance_m <= 0.0)
+        return true;
+    return std::fabs(a.distance_m - b.distance_m) <= 0.15 * std::max(a.distance_m, b.distance_m);
+}
+
+} // namespace
+
+void Library::Run(InputSet *inputs, const TypeCatalog *catalog)
+{
+    std::vector<or_outing> earlier;  // outings of the sources already read
+    size_t counted = 0;              // outings announced by those sources
+    for (size_t s = 0; s < inputs->Sources().size(); ++s) {
+        const InputSet::Source &source = inputs->Sources()[s];
+        struct Ctx {
+            Library *self;
+            std::vector<or_outing> outings;
+            size_t counted;
+        } ctx{this, {}, counted};
+        auto cb = [](void *user, const or_outing *o, size_t index, size_t total) -> int {
+            Ctx *c = static_cast<Ctx *>(user);
+            c->outings.push_back(*o);
+            c->self->total_ = c->counted + total;
+            c->self->done_ = c->counted + index + 1;
+            return 0;
+        };
+        char err[512] = "";
+        int rc = 0;
+        if (source.vtable && source.vtable->list_outings)
+            CallPlugin(source.vtable, [&] { rc = source.vtable->list_outings(source.handle, cb, &ctx, err, sizeof err); });
+        std::vector<Outing> kept;
+        for (const or_outing &o : ctx.outings) {
+            if (std::any_of(earlier.begin(), earlier.end(), [&](const or_outing &e) { return SameOuting(e, o); })) {
+                ++hidden_;
+                continue;
+            }
+            Outing out{o, catalog->Resolve(source.types, o.source_type, o.fit_sport, o.fit_sub_sport), s,
+                       !source.confirm_types};
+            inputs->Assign(o.id, s);
+            kept.push_back(out);
         }
-        c->self->total_ = total;
-        c->self->done_ = index + 1;
-        return 0;
-    };
-    char err[512] = "";
-    int rc = 0;
-    CallPlugin(input, [&] { rc = input->list_outings(handle, cb, &ctx, err, sizeof err); });
-    {
+        earlier.insert(earlier.end(), ctx.outings.begin(), ctx.outings.end());
+        counted += ctx.outings.size();
         std::lock_guard<std::mutex> lock(mutex_);
+        pending_.insert(pending_.end(), kept.begin(), kept.end());
         if (rc != 0)
-            error_ = err[0] ? err : "input plugin failed";
+            error_ += (error_.empty() ? "" : "; ") + source.name + ": " + (err[0] ? err : "input plugin failed");
     }
     scanning_ = false;
 }
