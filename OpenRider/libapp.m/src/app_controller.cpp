@@ -29,10 +29,11 @@ void AppController::LoadTypes(const std::string &labels_json, const std::string 
 }
 
 void AppController::AddInput(const or_input_vtable *input, void *handle, std::string name, std::string types,
-                             bool confirm_types)
+                             bool confirm_types, std::string import_dir)
 {
     model_.input_name += (model_.input_name.empty() ? "" : " + ") + name;
-    input_.Add({input, handle, std::move(name), std::move(types), confirm_types});
+    model_.can_import = model_.can_import || !import_dir.empty();
+    input_.Add({input, handle, std::move(name), std::move(types), confirm_types, std::move(import_dir)});
 }
 
 void AppController::LoadTypeSource(const std::string &source, const std::string &source_json)

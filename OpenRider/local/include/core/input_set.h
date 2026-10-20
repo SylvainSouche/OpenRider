@@ -25,6 +25,7 @@ public:
         std::string name;                         ///< the plugin's name, e.g. "garmindb"
         std::string types;                        ///< the type table its source types resolve with, e.g. "garmin_connect"
         bool confirm_types = false;               ///< its outings' types are to be confirmed by the user
+        std::string import_dir;                   ///< folder its outings are files in (imports go there); "" if none
     };
 
     /// Adds an open source; the earlier sources win over the later ones

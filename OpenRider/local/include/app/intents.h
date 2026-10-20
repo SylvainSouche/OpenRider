@@ -34,6 +34,9 @@ enum class IntentKind {
     ReloadOverview,      ///< the overview tracks again (filters changed)
     SetOutingType,       ///< i: outing index, text: type key "sport/sub_sport" (an unconfirmed outing stays so)
     ConfirmOutingTypes,  ///< every unconfirmed outing's type settled and remembered
+    ImportFiles,         ///< ids: paths of files to import, one after the other
+    ImportAccept,        ///< the file being imported is kept, its type settled
+    ImportCancel,        ///< the file being imported is dropped
     DismissError,        ///< drops the error shown
     ReportError,         ///< text
     Quit,                ///< ends the application

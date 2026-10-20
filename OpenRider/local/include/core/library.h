@@ -25,6 +25,19 @@ struct Outing {
     bool confirmed = true;  ///< its type is settled (else the user is asked to confirm it)
 };
 
+/// The outings of one source, as a scan reads them.
+struct SourceScan {
+    std::vector<Outing> outings;          ///< read, types resolved, assigned to the source
+    std::vector<std::string> hidden_ids;  ///< left out as duplicates of `earlier`
+    std::string error;                    ///< the plugin's error, "" if none
+};
+
+/// Reads every outing of source `source` of `inputs` now: types resolved
+/// with the source's table (unconfirmed if the source asks), each outing
+/// assigned to the source; an outing duplicating one of `earlier` (start
+/// within a minute, distance within 15% when both are known) left out.
+SourceScan ScanSource(InputSet &inputs, const TypeCatalog &catalog, size_t source, const std::vector<or_outing> &earlier);
+
 /// Reads every outing of an input plugin in the background. The owner polls
 /// Progress() and collects outings with Take() while the scan runs.
 class Library {
@@ -65,6 +78,9 @@ public:
     /// Outings left out of the finished scan as duplicates.
     size_t Hidden() const { return hidden_.load(); }
 
+    /// Ids of the outings left out of the finished scan as duplicates.
+    std::vector<std::string> HiddenIds();
+
 private:
     /// The scan, run on the worker thread.
     void Run(InputSet *inputs, const TypeCatalog *catalog);
@@ -77,6 +93,7 @@ private:
     std::mutex mutex_;              ///< guards pending_ and error_
     std::vector<Outing> pending_;   ///< read, not yet taken
     std::string error_;             ///< error of the finished scan
+    std::vector<std::string> hidden_ids_;  ///< duplicates left out
 };
 
 } // namespace core

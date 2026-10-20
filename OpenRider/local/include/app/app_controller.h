@@ -54,8 +54,10 @@ public:
     /// @param name the plugin's name, shown in the status
     /// @param types the type table its source types resolve with (e.g. "garmin_connect")
     /// @param confirm_types its outings' types are to be confirmed by the user
+    /// @param import_dir the folder its outings are files in, where imported
+    ///        files are copied ("" if it takes no import)
     void AddInput(const or_input_vtable *input, void *handle, std::string name, std::string types,
-                  bool confirm_types = false);
+                  bool confirm_types = false, std::string import_dir = "");
 
     /// Adds a filter plugin, disabled, with its default parameters.
     void AddFilter(const or_filter_vtable *filter);

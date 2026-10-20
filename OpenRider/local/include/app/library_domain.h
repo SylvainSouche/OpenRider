@@ -11,6 +11,7 @@
 #include "core/outing_types.h"
 #include "core/overview_loader.h"
 
+#include <set>
 #include <string>
 
 namespace app {
@@ -34,7 +35,10 @@ public:
 
     /// ReloadOverview: the overview tracks loaded again, with the filters
     /// now enabled. SetOutingType, ConfirmOutingTypes: outing types chosen
-    /// and settled by the user (remembered in the types file).
+    /// and settled by the user (remembered in the types file). ImportFiles,
+    /// ImportAccept, ImportCancel: files imported one after the other --
+    /// each copied into the folder of the source taking imports, read back
+    /// as an outing, then kept (its type settled) or dropped.
     bool Handles(IntentKind kind) const override;
     void Handle(const Intent &intent, Intents &out) override;
     void Tick(Intents &out) override;
@@ -44,9 +48,17 @@ private:
     /// (Re)starts loading every outing's overview track.
     void LoadOverview();
 
+    /// Takes the next file of the import queue: copies it, reads it back
+    /// and makes it the outing asked about; refused files are reported.
+    /// The overview is reloaded once the queue is done.
+    void NextImport();
+
     AppModel &model_;                ///< the model this domain changes
     InputSource &input_;             ///< where outings come from
     core::OutingTypes types_;        ///< types settled by the user
+    std::set<std::string> hidden_ids_;  ///< outings already left out as duplicates
+    std::string import_copy_;        ///< the copy of the file being imported
+    bool imported_ = false;          ///< files kept since the overview was loaded
     core::Library library_;          ///< outing scan
     core::OverviewLoader overview_;  ///< overview track loading
     bool scan_reported_ = false;     ///< the end of the scan was handled

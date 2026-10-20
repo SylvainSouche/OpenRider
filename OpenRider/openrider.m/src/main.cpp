@@ -77,14 +77,15 @@ void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::
     struct InputSetup {
         std::string config, types;
         bool confirm_types;
+        std::string import_dir;
     };
     auto setup = [](const std::string &name) {
         if (name == "gpx") {
             const std::string dir = core::UserSupportDir() + "/gpx";
             core::MakeDirs(dir);
-            return InputSetup{"{\"dir\":\"" + dir + "\"}", "gpx", true};
+            return InputSetup{"{\"dir\":\"" + dir + "\"}", "gpx", true, dir};
         }
-        return InputSetup{"", name == "garmindb" ? "garmin_connect" : name, false};
+        return InputSetup{"", name == "garmindb" ? "garmin_connect" : name, false, ""};
     };
     std::vector<core::LoadedPlugin> ordered = inputs.loaded;
     std::stable_sort(ordered.begin(), ordered.end(), [](const core::LoadedPlugin &a, const core::LoadedPlugin &b) {
@@ -102,7 +103,7 @@ void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::
             continue;
         }
         core::LogLine("input plugin %s %s (%s)", p.info->name, p.info->version, p.path.c_str());
-        ctl.AddInput(input, handle, p.info->name, how.types, how.confirm_types);
+        ctl.AddInput(input, handle, p.info->name, how.types, how.confirm_types, how.import_dir);
         opened = true;
     }
     if (inputs.loaded.empty())

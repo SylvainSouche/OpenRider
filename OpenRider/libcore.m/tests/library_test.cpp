@@ -1,11 +1,14 @@
 #include <atf-c++.hpp>
 
+#include "core/file_import.h"
 #include "core/library.h"
 #include "core/outing_selection.h"
 
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <thread>
 
 namespace {
@@ -192,8 +195,24 @@ ATF_TEST_CASE_BODY(scan_of_several_sources)
     ATF_REQUIRE_EQ(inputs.SourceOf("g1"), 0u);
 }
 
+// A copy into a folder never overwrites: " (2)" before the extension.
+ATF_TEST_CASE_WITHOUT_HEAD(copies_into_folder_without_overwriting);
+ATF_TEST_CASE_BODY(copies_into_folder_without_overwriting)
+{
+    char base[] = "/tmp/openrider-copy-XXXXXX";
+    const std::string root = mkdtemp(base);
+    std::filesystem::create_directories(root + "/to");
+    std::ofstream(root + "/run.gpx") << "x";
+    std::string error;
+    ATF_REQUIRE_EQ(core::CopyIntoFolder(root + "/run.gpx", root + "/to", error), root + "/to/run.gpx");
+    ATF_REQUIRE_EQ(core::CopyIntoFolder(root + "/run.gpx", root + "/to", error), root + "/to/run (2).gpx");
+    ATF_REQUIRE_EQ(core::CopyIntoFolder(root + "/missing.gpx", root + "/to", error), "");
+    ATF_REQUIRE(!error.empty());
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, copies_into_folder_without_overwriting);
     ATF_ADD_TEST_CASE(tcs, scan_of_several_sources);
     ATF_ADD_TEST_CASE(tcs, missing_values_sort_last);
     ATF_ADD_TEST_CASE(tcs, filter_by_type_and_dates);

@@ -803,6 +803,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-gpx-import": {
+    "active": true,
+    "id": "0f87-6ad7-2a41-bc39",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-gpx-input": {
     "active": true,
     "id": "0f87-6ad7-2407-6ee2",
@@ -1761,6 +1767,12 @@
     "active": true,
     "id": "0f87-6acd-24ce-494d",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-gpx-import": {
+    "active": true,
+    "id": "0f87-6ad7-2a41-a86a",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-gpx-plugin": {

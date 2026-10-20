@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdio>
 #include <ctime>
+#include <functional>
 
 namespace core {
 
@@ -27,8 +28,15 @@ void Library::StartScan(InputSet *inputs, const TypeCatalog *catalog)
     total_ = 0;
     hidden_ = 0;
     error_.clear();
+    hidden_ids_.clear();
     scanning_ = true;
     worker_ = std::thread(&Library::Run, this, inputs, catalog);
+}
+
+std::vector<std::string> Library::HiddenIds()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return hidden_ids_;
 }
 
 float Library::Progress() const
@@ -73,45 +81,68 @@ bool SameOuting(const or_outing &a, const or_outing &b)
 
 } // namespace
 
+SourceScan ScanSource(InputSet &inputs, const TypeCatalog &catalog, size_t source, const std::vector<or_outing> &earlier,
+                      const std::function<void(size_t, size_t)> &progress)
+{
+    SourceScan scan;
+    const InputSet::Source &from = inputs.Sources()[source];
+    struct Ctx {
+        std::vector<or_outing> outings;
+        const std::function<void(size_t, size_t)> *progress;
+    } ctx{{}, &progress};
+    auto cb = [](void *user, const or_outing *o, size_t index, size_t total) -> int {
+        Ctx *c = static_cast<Ctx *>(user);
+        c->outings.push_back(*o);
+        if (*c->progress)
+            (*c->progress)(index + 1, total);
+        return 0;
+    };
+    char err[512] = "";
+    int rc = 0;
+    if (from.vtable && from.vtable->list_outings)
+        CallPlugin(from.vtable, [&] { rc = from.vtable->list_outings(from.handle, cb, &ctx, err, sizeof err); });
+    if (rc != 0)
+        scan.error = from.name + ": " + (err[0] ? err : "input plugin failed");
+    for (const or_outing &o : ctx.outings) {
+        if (std::any_of(earlier.begin(), earlier.end(), [&](const or_outing &e) { return SameOuting(e, o); })) {
+            scan.hidden_ids.push_back(o.id);
+            continue;
+        }
+        inputs.Assign(o.id, source);
+        scan.outings.push_back(
+            {o, catalog.Resolve(from.types, o.source_type, o.fit_sport, o.fit_sub_sport), source, !from.confirm_types});
+    }
+    return scan;
+}
+
+SourceScan ScanSource(InputSet &inputs, const TypeCatalog &catalog, size_t source, const std::vector<or_outing> &earlier)
+{
+    return ScanSource(inputs, catalog, source, earlier, {});
+}
+
 void Library::Run(InputSet *inputs, const TypeCatalog *catalog)
 {
     std::vector<or_outing> earlier;  // outings of the sources already read
     size_t counted = 0;              // outings announced by those sources
     for (size_t s = 0; s < inputs->Sources().size(); ++s) {
-        const InputSet::Source &source = inputs->Sources()[s];
-        struct Ctx {
-            Library *self;
-            std::vector<or_outing> outings;
-            size_t counted;
-        } ctx{this, {}, counted};
-        auto cb = [](void *user, const or_outing *o, size_t index, size_t total) -> int {
-            Ctx *c = static_cast<Ctx *>(user);
-            c->outings.push_back(*o);
-            c->self->total_ = c->counted + total;
-            c->self->done_ = c->counted + index + 1;
-            return 0;
-        };
-        char err[512] = "";
-        int rc = 0;
-        if (source.vtable && source.vtable->list_outings)
-            CallPlugin(source.vtable, [&] { rc = source.vtable->list_outings(source.handle, cb, &ctx, err, sizeof err); });
-        std::vector<Outing> kept;
-        for (const or_outing &o : ctx.outings) {
-            if (std::any_of(earlier.begin(), earlier.end(), [&](const or_outing &e) { return SameOuting(e, o); })) {
-                ++hidden_;
-                continue;
-            }
-            Outing out{o, catalog->Resolve(source.types, o.source_type, o.fit_sport, o.fit_sub_sport), s,
-                       !source.confirm_types};
-            inputs->Assign(o.id, s);
-            kept.push_back(out);
+        size_t announced = 0;
+        SourceScan scan = ScanSource(*inputs, *catalog, s, earlier, [&](size_t done, size_t total) {
+            announced = total;
+            total_ = counted + total;
+            done_ = counted + done;
+        });
+        hidden_ += scan.hidden_ids.size();
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            hidden_ids_.insert(hidden_ids_.end(), scan.hidden_ids.begin(), scan.hidden_ids.end());
         }
-        earlier.insert(earlier.end(), ctx.outings.begin(), ctx.outings.end());
-        counted += ctx.outings.size();
+        for (const Outing &outing : scan.outings)
+            earlier.push_back(outing.raw);
+        counted += announced;
         std::lock_guard<std::mutex> lock(mutex_);
-        pending_.insert(pending_.end(), kept.begin(), kept.end());
-        if (rc != 0)
-            error_ += (error_.empty() ? "" : "; ") + source.name + ": " + (err[0] ? err : "input plugin failed");
+        pending_.insert(pending_.end(), scan.outings.begin(), scan.outings.end());
+        if (!scan.error.empty())
+            error_ += (error_.empty() ? "" : "; ") + scan.error;
     }
     scanning_ = false;
 }
