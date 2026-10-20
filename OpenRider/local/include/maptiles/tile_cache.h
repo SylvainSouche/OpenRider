@@ -38,7 +38,9 @@ public:
     /// it fits; called by Put() when the running total exceeds the maximum.
     /// One eviction at a time: a call while another runs returns at once
     /// (the running one accounts for the tiles written meanwhile).
-    void Evict();
+    /// @param keep a tile never evicted (the one just written: file times
+    ///        are too coarse on some systems to tell it from older ones)
+    void Evict(const std::string &keep = "");
 
 private:
     std::string root_;          ///< cache directory

@@ -29,7 +29,7 @@ no_application_library_body() {
     dir=$(plugins_dir)
     [ -n "$dir" ] || atf_fail "no plugins/ directory beside a bin/ on PATH"
     found=0
-    for plugin in "$dir"/*/*.dylib "$dir"/*/*.so; do
+    for plugin in "$dir"/*/*.dylib "$dir"/*/*.so "$dir"/*/*.so.*; do
         [ -f "$plugin" ] || continue
         found=$((found + 1))
         if dependencies "$plugin" | grep -Eq 'lib(core|app|maptiles)[.]'; then

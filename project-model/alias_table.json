@@ -1859,6 +1859,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-linux-bsd-builds": {
+    "active": true,
+    "id": "0f87-6ad7-b72d-32b5",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-list-rows": {
     "active": true,
     "id": "0f87-6acd-5b42-dc4b",
@@ -2555,6 +2561,12 @@
     "status": "recorded",
     "type": "obs"
   },
+  "obs-bmakeit-bmake-hardcoded": {
+    "active": true,
+    "id": "0f87-6ad7-b72d-31ae",
+    "status": "recorded",
+    "type": "obs"
+  },
   "obs-bmk-copyup-sigkill": {
     "active": true,
     "id": "0f87-6acd-5c0a-afbb",
@@ -2642,6 +2654,12 @@
   "obs-fox-eval": {
     "active": true,
     "id": "0f87-6acc-e68a-dc9a",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "obs-freebsd-gcc-atf-abi": {
+    "active": true,
+    "id": "0f87-6ad7-b72d-dde3",
     "status": "recorded",
     "type": "obs"
   },

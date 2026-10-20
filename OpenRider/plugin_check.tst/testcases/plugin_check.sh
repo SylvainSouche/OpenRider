@@ -22,9 +22,9 @@ native() {
     fi
 }
 
-# The in-tree plugins, one per line.
+# The in-tree plugins, one per line (ELF systems name them lib*.so.<major>).
 plugins() {
-    for plugin in "$1"/*/*.dylib "$1"/*/*.so "$1"/*/*.dll; do
+    for plugin in "$1"/*/*.dylib "$1"/*/*.so "$1"/*/*.so.* "$1"/*/*.dll; do
         [ -f "$plugin" ] && echo "$plugin"
     done
 }
@@ -34,7 +34,7 @@ system_library() {
     case $(uname) in
     Darwin) echo /usr/lib/libSystem.B.dylib ;;
     CYGWIN* | MINGW* | MSYS*) echo "$(cygpath -m "$SYSTEMROOT")/System32/version.dll" ;;
-    *) ls /lib/*/libc.so.6 /lib64/libc.so.6 /lib/libc.so.6 2>/dev/null | head -n 1 ;;
+    *) ls /lib/*/libc.so.* /lib64/libc.so.* /lib/libc.so.* /usr/lib/libc.so.* 2>/dev/null | head -n 1 ;;
     esac
 }
 
