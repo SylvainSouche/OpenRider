@@ -59,7 +59,8 @@ Rules:
 Until ABI 1, `OR_PLUGIN_API_VERSION` had to equal the application's
 exactly: any change, even an addition, refused every built plugin.
 
-In place since ABI 2.0 (`OR_PLUGIN_API_VERSION` 2, `OR_PLUGIN_API_MINOR` 0):
+In place since ABI 2.0 (`OR_PLUGIN_API_VERSION` 2, `OR_PLUGIN_API_MINOR` 0;
+the current minor version is 1, see 5.5):
 
 - `api_version` is the **major** version (refusal on mismatch), `api_minor`
   the **minor** one: a plugin built for minor *n* loads in an application
@@ -174,11 +175,59 @@ Planned kinds (decided in the model, not specified yet):
   return corrected values instead of a keep mask. Elevation correction needs
   the terrain host service.
 
-### 5.5 Tiles (`tiles.h`) — stable, in place
+### 5.5 Tiles (`tiles.h`) — stable, in place; tile grids since ABI 2.1
 
 A layer definition (JSON) opened by the protocol's plugin, which describes
 the layer and builds tile URLs; the application fetches, caches, decodes and
-draws. WMS and WMTS fit unchanged.
+draws.
+
+**Tile grids (ABI 2.1, appended to the table).** A layer may be published
+in several tile grids — WMTS tile matrix sets — each in its own coordinate
+system: Web Mercator and the provider's national grid, for instance
+(Kartverket publishes UTM 32N, 33N and 35N besides Web Mercator; IGN
+publishes SCAN 25 as one layer in Web Mercator and another in Lambert-93).
+A plugin whose layer needs a document from the service to know its grids
+names it in `capabilities_url()`; the application downloads it (with the
+layer's headers, at most once a week, cached beside the tiles, the cached
+copy used offline) and hands it to `set_capabilities()`. `grid_count()` and
+`grid()` then describe each grid (`or_tile_grid`: identifier, `EPSG:<code>`,
+levels coarsest first; `or_tile_matrix`: identifier, pixel size in the
+system's units, top-left corner as x east and y north, tile and matrix
+sizes, the columns and rows holding tiles), and `grid_tile_url()` addresses
+a tile by grid, level, column and row.
+
+A plugin without these functions (an ABI 2.0 table, or null functions) has
+one grid: Web Mercator levels `min_zoom`..`max_zoom` addressed by
+`tile_url()` — the `xyz` plugin is such a plugin.
+
+The application shows the map in a display coordinate system the user picks
+among Web Mercator (the default) and the systems of the current layer's
+grids. It takes tiles from the grid native to the display when there is
+one; in Web Mercator it prefers the provider's local grid whose system
+covers the view, and warps its tiles (`libreproj`: each tile drawn as a
+mesh of textured triangles refined to a quarter of a pixel). Coordinate
+systems are known from `share/openrider/crs.txt` (and the user's
+`crs.txt`), one line each; a grid in a system not listed there is ignored.
+
+The `wmts` plugin implements the grid functions from OGC WMTS capabilities:
+
+```json
+{
+  "id": "ign_scan25", "name": "IGN SCAN 25 Touristique", "protocol": "wmts",
+  "capabilities": "https://data.geopf.fr/private/wmts?SERVICE=WMTS&REQUEST=GetCapabilities",
+  "layers": ["GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN25TOUR", "GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN25TOUR.L93"],
+  "min_zoom": 6, "max_zoom": 16, "extent": [-178.2, -46.5, 77.6, 51.2],
+  "headers": {"apikey": "..."}, "attribution": "..."
+}
+```
+
+`layers` lists WMTS layers in order of preference: each contributes its tile
+matrix sets, one grid per coordinate system (the first layer listing a
+system wins), restricted to its `TileMatrixSetLimits`. Tiles are requested
+through the layer's REST `ResourceURL` template when it has one, else as KVP
+`GetTile` requests to the service's declared endpoint. `min_zoom` and
+`max_zoom` bound the view's zoom (in Web Mercator levels); `extent` decides
+when the layer is offered.
 
 ### 5.6 Segments (`segments.h`) — stable since ABI 2.0, in place
 
@@ -356,7 +405,8 @@ For each plugin it makes the application's three checks, in order:
 3. its descriptor is accepted for that kind: same ABI major version, a minor
    version no newer than the application's, the kind asked for, a name and
    a function table, and a table at least as large as the kind's ABI 2.0
-   table (§4).
+   table (§4); a tiles plugin built for 2.0 is accepted and keeps its one
+   Web Mercator grid.
 
 It reports in [TAP](https://testanything.org): one test point per check
 (after a failure, the later checks of that plugin are skipped), a `#` line
@@ -367,11 +417,11 @@ error; rely only on zero versus non-zero), so any harness can use it as is:
 
 ```
 $ openrider-plugin-check --kind filters build/libmy_filter.so
-# OpenRider plugin ABI 2.0
+# OpenRider plugin ABI 2.1
 ok 1 - libmy_filter.so: library opens
 ok 2 - libmy_filter.so: exports openrider_plugin
 ok 3 - libmy_filter.so: descriptor accepted as a 'filters' plugin
-# my_filter 1.0, ABI 2.0, thread-safe
+# my_filter 1.0, ABI 2.1, thread-safe
 1..3
 ```
 

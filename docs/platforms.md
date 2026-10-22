@@ -1,7 +1,8 @@
 # Platforms: build and test matrix
 
 OpenRider is built and its whole test suite run natively on each platform
-below (2026-10-20). The Linux platforms run in containers and the BSDs in
+below: macOS and Linux on 2026-10-22, the BSDs on 2026-10-20 (before the
+reprojection module, the WMTS plugin and the performance suite). The Linux platforms run in containers and the BSDs in
 QEMU guests, both from the Bmake It cross-platform harness
 (`tests/harness` in Bmake It: `vm.sh` for the guests, the `bmk/*` container
 images).
@@ -10,16 +11,18 @@ images).
 
 | Platform | clang | gcc |
 |---|---|---|
-| macOS 15 arm64 (host, MacPorts) | all pass | — |
-| Debian 13 arm64 (container) | all pass | all pass |
-| Debian 13 amd64 (container, emulated) | all pass | — |
-| Alpine 3.24 (musl) amd64 (container, emulated) | all pass | — |
-| FreeBSD 15.1 arm64 (QEMU guest) | all pass | builds; tests cannot link (see below) |
-| NetBSD 10.2 arm64 (QEMU guest) | all pass | all pass |
+| macOS 15 arm64 (host, MacPorts) | all pass (194 tests) | — |
+| Debian 13 arm64 (container) | all pass (194) | all pass (194) |
+| Debian 13 amd64 (container, emulated) | all pass (194) | — |
+| Alpine 3.24 (musl) amd64 (container, emulated) | all pass (194) | — |
+| FreeBSD 15.1 arm64 (QEMU guest) | all pass (2026-10-20) | builds; tests cannot link (see below) |
+| NetBSD 10.2 arm64 (QEMU guest) | all pass (2026-10-20) | all pass (2026-10-20) |
 
-"All pass": every module builds -- dependencies, libraries, the five
-plugins, the application -- and every test suite passes (SDK, core, app,
-map tiles, each plugin, GPX, plugin checks; 12 suites).
+"All pass": every module builds -- dependencies, libraries, the plugins,
+the application -- and every test suite passes: SDK, core, app, map tiles,
+reprojection, each plugin, plugin checks, and the performance suite
+(`perf.tst`: budgets in units of a calibration run on the same machine, so
+they hold under emulation too); 15 suites, 194 tests.
 
 Not covered: Windows (built with mingw-w64 elsewhere; no Windows guest),
 FreeBSD and NetBSD amd64 (no guest on an arm64 host), and running the GUI

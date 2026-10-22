@@ -40,15 +40,15 @@ std::string PluginCheck(const or_plugin_info *info, uint32_t kind);
 
 /// How far loading one plugin library got.
 enum class PluginStage {
-    kOpen,        ///< the library did not open
-    kEntry,       ///< it opened but exports no OR_PLUGIN_ENTRY_SYMBOL
-    kDescriptor,  ///< its descriptor was refused by PluginCheck()
-    kAccepted     ///< accepted
+    Open,        ///< the library did not open
+    Entry,       ///< it opened but exports no OR_PLUGIN_ENTRY_SYMBOL
+    Descriptor,  ///< its descriptor was refused by PluginCheck()
+    Accepted     ///< accepted
 };
 
 /// The outcome of loading one plugin library.
 struct PluginLoad {
-    PluginStage stage = PluginStage::kOpen;  ///< kAccepted, or the stage that failed
+    PluginStage stage = PluginStage::Open;  ///< Accepted, or the stage that failed
     std::string problem;                     ///< why it failed; "" when accepted
     LoadedPlugin plugin;                     ///< the accepted plugin; its handle is null otherwise
 };

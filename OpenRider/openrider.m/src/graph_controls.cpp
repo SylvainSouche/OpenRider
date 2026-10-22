@@ -71,12 +71,13 @@ void DrawGraphControls(const std::vector<openrider::sdk::SeriesSpec> &graphs, op
                 ImGui::EndCombo();
             }
         } else if (spec.kind == openrider::sdk::SeriesKind::Grade) {
-            static const char *window_names[] = {"100 m", "1000 m"};
-            int window = spec.grade_window_m == 1000.0 ? 1 : 0;
+            static const double windows[] = {100.0, 500.0, 1000.0};
+            static const char *window_names[] = {"100 m", "500 m", "1000 m"};
+            int window = spec.grade_window_m == 1000.0 ? 2 : spec.grade_window_m == 500.0 ? 1 : 0;
             ImGui::SameLine();
             ImGui::SetNextItemWidth(80.0f);
-            if (ImGui::Combo("##gwindow", &window, window_names, 2)) {
-                spec.grade_window_m = window == 1 ? 1000.0 : 100.0;
+            if (ImGui::Combo("##gwindow", &window, window_names, 3)) {
+                spec.grade_window_m = windows[window];
                 changed = true;
             }
         }

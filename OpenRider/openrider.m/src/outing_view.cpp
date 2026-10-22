@@ -29,6 +29,24 @@ void DrawBackgroundCombo(const app::AppModel &model, const app::MapViewModel &vi
                 out.Push(app::IntentKind::SelectLayer, i);
         ImGui::EndCombo();
     }
+    // The display projection: Web Mercator, or a system the layer's
+    // provider publishes its tiles in.
+    // @impl 0f87-6ada-53d7-171a
+    auto label = [](const reproj::Crs &crs) {
+        return (crs.epsg == 3857 ? std::string("Web Mercator") : crs.name) + " (" + crs.Id() + ")";
+    };
+    ImGui::SameLine();
+    ImGui::TextUnformatted("Projection:");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(260.0f);
+    ImGui::BeginDisabled(view_model.display_choices.size() < 2);
+    if (ImGui::BeginCombo("##projection", label(view_model.display).c_str())) {
+        for (const reproj::Crs &crs : view_model.display_choices)
+            if (ImGui::Selectable(label(crs).c_str(), crs.epsg == view_model.display.epsg))
+                out.Push(app::IntentKind::SetMapCrs, crs.epsg);
+        ImGui::EndCombo();
+    }
+    ImGui::EndDisabled();
 }
 
 // Garmin's statistics (Connect summary JSON, else GarminDB) by default;
@@ -199,15 +217,25 @@ void DrawGraphs(const app::AppModel &model, const app::OutingViewModel &view_mod
             // Tooltip: the value at the hovered sample of this graph.
             const double hover_x = view_model.hover_x;
             size_t nearest_sample = 0;
-            double nearest_distance = std::numeric_limits<double>::infinity();
-            for (size_t k = 0; k < series.x.size(); ++k)
-                if (std::fabs(series.x[k] - hover_x) < nearest_distance) {
-                    nearest_distance = std::fabs(series.x[k] - hover_x);
-                    nearest_sample = k;
-                }
+            if (spec.type == openrider::sdk::GraphType::Histogram) {
+                // The bar holding the cursor: the last edge at or left of it.
+                for (size_t k = 0; k + 1 < series.x.size(); ++k)
+                    if (series.x[k] <= hover_x)
+                        nearest_sample = k;
+            } else {
+                double nearest_distance = std::numeric_limits<double>::infinity();
+                for (size_t k = 0; k < series.x.size(); ++k)
+                    if (std::fabs(series.x[k] - hover_x) < nearest_distance) {
+                        nearest_distance = std::fabs(series.x[k] - hover_x);
+                        nearest_sample = k;
+                    }
+            }
             if (view_model.hover_index >= 0 && nearest_sample < series.y.size()) {
                 ImGui::BeginTooltip();
-                ImGui::Text("%s  %.2f", xlabel, series.x[nearest_sample]);
+                if (spec.type == openrider::sdk::GraphType::Histogram && nearest_sample + 1 < series.x.size())
+                    ImGui::Text("%s  %.2f - %.2f", xlabel, series.x[nearest_sample], series.x[nearest_sample + 1]);
+                else
+                    ImGui::Text("%s  %.2f", xlabel, series.x[nearest_sample]);
                 if (std::isnan(series.y[nearest_sample]))
                     ImGui::Text("%s  -", ylabel);
                 else

@@ -7,6 +7,8 @@
 
 #include "maptiles/tile_cache.h"
 #include "maptiles/tile_fetcher.h"
+#include "maptiles/tile_grid.h"
+#include "reproj/crs_registry.h"
 
 #include <openrider/tiles.h>
 
@@ -29,8 +31,14 @@ constexpr int kMaxTileZoom = 24;
 struct MapCamera {
     double lon = 6.63;               ///< view centre, WGS84 longitude
     double lat = 45.94;              ///< view centre, WGS84 latitude
-    int zoom = 3;                    ///< view zoom level
+    double zoom = 3.0;               ///< view zoom level, fractional (2^zoom scale)
     bool fitted = false;             ///< fitted once to its content
+};
+
+/// A tile grid of a layer and its coordinate system.
+struct MapGrid {
+    maptiles::TileGrid tiles;  ///< levels and tile addressing
+    reproj::Crs crs;           ///< the grid's system
 };
 
 /// A map layer as offered to the user.
@@ -43,6 +51,7 @@ struct MapLayerInfo {
     int min_zoom = 0;     ///< first zoom level served
     int max_zoom = 18;    ///< last zoom level served
     int tile_size = 256;  ///< tile width and height, pixels
+    std::vector<MapGrid> grids;  ///< tile grids, known once the layer is opened
 };
 
 /// A decoded tile ready to draw.
@@ -66,6 +75,8 @@ struct MapViewModel {
     MapCamera comparison;              ///< camera of the segment comparison
     float width = 0.0f;                ///< viewport width, pixels
     float height = 0.0f;               ///< viewport height, pixels
+    reproj::Crs display;               ///< display coordinate system (Web Mercator by default)
+    std::vector<reproj::Crs> display_choices;  ///< Web Mercator and the current layer's grid systems
 
     std::map<maptiles::TileKey, MapTile> tiles;  ///< decoded, ready to draw
     size_t tile_errors = 0;    ///< tiles that failed so far
@@ -130,6 +141,14 @@ public:
     /// Sets the tile cache root.
     void SetCacheDir(const std::string &dir) { cache_dir_ = dir; }
 
+    /// Adds coordinate system definitions (see reproj::CrsRegistry).
+    /// @return problems found, one message each
+    std::vector<std::string> LoadCrs(const std::string &path);
+
+    /// Adds one coordinate system definition line (tests).
+    /// @return "" or why it was refused
+    std::string AddCrs(const std::string &line);
+
     /// Shows layer `index`.
     /// @return "" or why the layer cannot be opened
     std::string Select(int index);
@@ -179,7 +198,11 @@ private:
     /// Overview: pushes SetVisibleIds when the tracks in view change.
     void PublishVisible(const AppModel &model, Intents &out);
 
+    /// Shows the map in `crs`, every camera keeping its ground scale.
+    void SetDisplay(const reproj::Crs &crs);
+
     MapViewModel view_model_;                       ///< changed only here
+    reproj::CrsRegistry registry_;                  ///< coordinate systems known
     std::vector<const or_tiles_vtable *> plugins_;  ///< tiles protocols
     const or_tiles_vtable *tiles_vtable_ = nullptr; ///< protocol of the open layer
     void *layer_ = nullptr;                         ///< open layer handle

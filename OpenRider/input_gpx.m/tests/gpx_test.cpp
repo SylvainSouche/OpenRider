@@ -18,7 +18,7 @@ extern "C" const or_plugin_info *openrider_plugin(void);
 namespace {
 
 // A Garmin-style GPX 1.1 export: name, type, points with heart rate.
-const char *kGarminGpx = R"(<?xml version="1.0" encoding="UTF-8"?>
+const char *const kGarminGpx = R"(<?xml version="1.0" encoding="UTF-8"?>
 <gpx creator="Garmin Connect" version="1.1" xmlns:ns3="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
   <metadata><time>2022-11-20T11:06:48.000Z</time></metadata>
   <trk>

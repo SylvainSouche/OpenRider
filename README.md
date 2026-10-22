@@ -26,6 +26,9 @@ Linux (glibc and musl), FreeBSD and NetBSD build and pass the tests too: the
 packages each needs, the results and how to reproduce them are in
 [docs/platforms.md](docs/platforms.md).
 
+Maps, layers (XYZ and WMTS), the coordinate systems a map can be shown in
+and how reprojection works: [docs/maps.md](docs/maps.md).
+
 ## Architecture
 
 Two Bmake It frameworks:
@@ -39,10 +42,11 @@ Two Bmake It frameworks:
 |---|---|
 | `include/openrider/` | Plugin ABI (pure C, versioned): input, tiles, filters, segments |
 | `libcore` | Domain logic: outings, activity types, statistics, motion, series, overview, segment networks (built by segments plugins), plugin loading, log |
-| `libmaptiles` | Map tiles: Web Mercator, polite fetching, disk cache, decoding, coverage |
+| `libmaptiles` | Map tiles: tile grids (Web Mercator and those a WMTS service publishes), capabilities download, polite fetching, disk cache, decoding, coverage |
+| `libreproj` | Reprojection, independent of the rest: coordinate systems declared as text (`share/common/openrider/crs.txt`: EPSG code, area of use, PROJ string; 163 systems, the European national grids among them), projection methods and 7-parameter datum shifts coded in double precision, batch vertex transforms, raster warping as a GPU triangle mesh or on the CPU |
 | `libapp` | MVC without GUI: `AppModel`, changed only by its domains (library, query, selected outing, segments, comparison, session) owned and routed by `AppController`; view models with their view controllers; intents and dispatcher |
 | `openrider` | Views (Dear ImGui), read-only: draw from the model and view models, report intents |
-| `input_garmindb`, `tiles_xyz`, `filter_jitter`, `segments_heatmap`, `segments_matching` | Plugins, loaded at run time from `plugins/<kind>/` |
+| `input_garmindb`, `input_gpx`, `tiles_xyz`, `tiles_wmts`, `filter_jitter`, `segments_heatmap`, `segments_matching` | Plugins, loaded at run time from `plugins/<kind>/`; `tiles_wmts` reads a service's WMTS capabilities and offers each coordinate system it publishes |
 
 Strict MVC: views receive `const` models and push intents; the dispatcher
 routes each intent to the one controller owning it; only `AppController`

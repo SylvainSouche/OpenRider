@@ -110,6 +110,15 @@ void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::
         out.PushText(app::IntentKind::ReportError, "No input plugin found in " + roots[0] + "/input");
     if (opened)
         ctl.Start();
+    // Coordinate systems: those shipped, then the user's own (optional).
+    for (const std::string &p : map.LoadCrs(share + "/crs.txt"))
+        out.PushText(app::IntentKind::ReportError, "Coordinate systems: " + p);
+    const std::string user_crs = core::UserSupportDir() + "/crs.txt";
+    if (FILE *file = std::fopen(user_crs.c_str(), "r")) {
+        std::fclose(file);
+        for (const std::string &p : map.LoadCrs(user_crs))
+            out.PushText(app::IntentKind::ReportError, "Coordinate systems: " + p);
+    }
     for (const std::string &p : map.LoadLayers({share + "/layers", core::UserSupportDir() + "/layers"}, roots,
                                                 core::UserCacheDir() + "/tiles", "opentopomap"))
         out.PushText(app::IntentKind::ReportError, p);

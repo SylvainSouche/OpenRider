@@ -30,7 +30,7 @@ extern "C" {
 /** Major version of this ABI; a plugin built for another one is refused. */
 #define OR_PLUGIN_API_VERSION 2u
 /** Minor version of this ABI; a plugin built for a newer one is refused. */
-#define OR_PLUGIN_API_MINOR 0u
+#define OR_PLUGIN_API_MINOR 1u
 /* @impl 0f87-6ace-72ef-5cb5 */
 /** Name of the function every plugin exports (an or_plugin_entry_fn). */
 #define OR_PLUGIN_ENTRY_SYMBOL "openrider_plugin"

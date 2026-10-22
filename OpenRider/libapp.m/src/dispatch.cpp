@@ -21,6 +21,7 @@ Owner OwnerOf(IntentKind kind)
     case IntentKind::MapClick:
     case IntentKind::MapDoubleClick:
     case IntentKind::SelectLayer:
+    case IntentKind::SetMapCrs:
     case IntentKind::SetTrackStyle:
     case IntentKind::SetTrackColour:
         return Owner::Map;

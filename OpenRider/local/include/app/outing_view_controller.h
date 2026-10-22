@@ -17,8 +17,9 @@ namespace app {
 struct OutingViewModel {
     openrider::sdk::XAxis xaxis = openrider::sdk::XAxis::Time;                        ///< shared by every graph
     std::vector<openrider::sdk::SeriesSpec> graphs = {openrider::sdk::SeriesSpec{}};  ///< stacked graphs; starts with one
-    int hover_index = -1;          ///< point under the mouse in a graph, -1 = none
-    double hover_x = 0.0;          ///< its x value (cursor line)
+    int hover_index = -1;          ///< point under the mouse in a graph (a bar's first), -1 = none
+    int hover_end_index = -1;      ///< a hovered histogram bar's last point, -1 = a single point
+    double hover_x = 0.0;          ///< its x value (cursor line; a bar's centre)
     bool stats_computed = false;   ///< statistics source when no filter is on: computed, not Garmin's
 };
 

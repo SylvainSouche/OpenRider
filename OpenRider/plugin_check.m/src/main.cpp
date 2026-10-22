@@ -67,22 +67,22 @@ void Check(Tap &tap, const std::string &path, uint32_t kind)
 
     const core::PluginLoad load = core::LoadPlugin(path, kind);
     switch (load.stage) {
-    case core::PluginStage::kOpen:
+    case core::PluginStage::Open:
         tap.NotOk(open, load.problem);
         tap.Skip(entry);
         tap.Skip(descriptor);
         return;
-    case core::PluginStage::kEntry:
+    case core::PluginStage::Entry:
         tap.Ok(open);
         tap.NotOk(entry, load.problem);
         tap.Skip(descriptor);
         return;
-    case core::PluginStage::kDescriptor:
+    case core::PluginStage::Descriptor:
         tap.Ok(open);
         tap.Ok(entry);
         tap.NotOk(descriptor, load.problem);
         return;
-    case core::PluginStage::kAccepted: break;
+    case core::PluginStage::Accepted: break;
     }
     tap.Ok(open);
     tap.Ok(entry);

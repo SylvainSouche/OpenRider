@@ -13,33 +13,33 @@
 #include <vector>
 
 namespace {
-const or_input_vtable g_input{sizeof(or_input_vtable), nullptr, nullptr, nullptr, nullptr};
-const size_t g_short_table = sizeof(size_t);
-const void *const g_dummy_table = &g_input;
+const or_input_vtable kInput{sizeof(or_input_vtable), nullptr, nullptr, nullptr, nullptr};
+const size_t kShortTable = sizeof(size_t);
+const void *const kDummyTable = &kInput;
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(accepts_matching_descriptor);
 ATF_TEST_CASE_BODY(accepts_matching_descriptor)
 {
-    const or_plugin_info ok{OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_INPUT, 0, "x", "1", g_dummy_table};
+    const or_plugin_info ok{OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_INPUT, 0, "x", "1", kDummyTable};
     ATF_REQUIRE_EQ(core::PluginCheck(&ok, OR_PLUGIN_INPUT), "");
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(refuses_other_api_version);
 ATF_TEST_CASE_BODY(refuses_other_api_version)
 {
-    const or_plugin_info old{OR_PLUGIN_API_VERSION + 1, 0, OR_PLUGIN_INPUT, 0, "x", "1", g_dummy_table};
+    const or_plugin_info old{OR_PLUGIN_API_VERSION + 1, 0, OR_PLUGIN_INPUT, 0, "x", "1", kDummyTable};
     ATF_REQUIRE(core::PluginCheck(&old, OR_PLUGIN_INPUT).find("API version") != std::string::npos);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(minor_versions_and_table_sizes);
 ATF_TEST_CASE_BODY(minor_versions_and_table_sizes)
 {
-    const or_plugin_info older{OR_PLUGIN_API_VERSION, 0, OR_PLUGIN_INPUT, OR_PLUGIN_THREAD_SAFE, "x", "1", g_dummy_table};
+    const or_plugin_info older{OR_PLUGIN_API_VERSION, 0, OR_PLUGIN_INPUT, OR_PLUGIN_THREAD_SAFE, "x", "1", kDummyTable};
     ATF_REQUIRE_EQ(core::PluginCheck(&older, OR_PLUGIN_INPUT), "");
-    const or_plugin_info newer{OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR + 1, OR_PLUGIN_INPUT, 0, "x", "1", g_dummy_table};
+    const or_plugin_info newer{OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR + 1, OR_PLUGIN_INPUT, 0, "x", "1", kDummyTable};
     ATF_REQUIRE(core::PluginCheck(&newer, OR_PLUGIN_INPUT).find("newer") != std::string::npos);
-    const or_plugin_info short_table{OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_INPUT, 0, "x", "1", &g_short_table};
+    const or_plugin_info short_table{OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_INPUT, 0, "x", "1", &kShortTable};
     ATF_REQUIRE(core::PluginCheck(&short_table, OR_PLUGIN_INPUT).find("function table") != std::string::npos);
 }
 
@@ -92,7 +92,7 @@ ATF_TEST_CASE_BODY(other_plugin_called_from_one_thread)
 ATF_TEST_CASE_WITHOUT_HEAD(refuses_wrong_kind_or_incomplete);
 ATF_TEST_CASE_BODY(refuses_wrong_kind_or_incomplete)
 {
-    const or_plugin_info tiles{OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_TILES, 0, "x", "1", g_dummy_table};
+    const or_plugin_info tiles{OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_TILES, 0, "x", "1", kDummyTable};
     ATF_REQUIRE(!core::PluginCheck(&tiles, OR_PLUGIN_INPUT).empty());
     const or_plugin_info empty{OR_PLUGIN_API_VERSION, OR_PLUGIN_API_MINOR, OR_PLUGIN_INPUT, 0, "x", "1", nullptr};
     ATF_REQUIRE(!core::PluginCheck(&empty, OR_PLUGIN_INPUT).empty());
@@ -117,7 +117,7 @@ ATF_TEST_CASE_WITHOUT_HEAD(missing_library_fails_to_open);
 ATF_TEST_CASE_BODY(missing_library_fails_to_open)
 {
     const core::PluginLoad load = core::LoadPlugin("/nonexistent/openrider/plugin.so", OR_PLUGIN_INPUT);
-    ATF_REQUIRE(load.stage == core::PluginStage::kOpen);
+    ATF_REQUIRE(load.stage == core::PluginStage::Open);
     ATF_REQUIRE(!load.problem.empty());
     ATF_REQUIRE(load.plugin.handle == nullptr);
 }

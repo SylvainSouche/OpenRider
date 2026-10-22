@@ -629,6 +629,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "crs-declarative": {
+    "active": true,
+    "id": "0f87-6ada-4bb4-d775",
+    "status": "confirmed",
+    "type": "req"
+  },
   "dec-abi2-versioning-host": {
     "active": true,
     "id": "0f87-6ace-6b86-304f",
@@ -716,6 +722,12 @@
   "dec-cross-cutting": {
     "active": true,
     "id": "0f87-6acc-f500-d6cd",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-crs-declarative": {
+    "active": true,
+    "id": "0f87-6ada-4bb4-ae59",
     "status": "recorded",
     "type": "dec"
   },
@@ -839,6 +851,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-histogram-hover": {
+    "active": true,
+    "id": "0f87-6ad9-af15-6d56",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-i18n-ai": {
     "active": true,
     "id": "0f87-6acc-f47c-abf0",
@@ -875,6 +893,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-kartverket-topo": {
+    "active": true,
+    "id": "0f87-6ad8-592a-8afa",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-keep-stationary-rule": {
     "active": true,
     "id": "0f87-6acd-3745-685f",
@@ -890,6 +914,12 @@
   "dec-list-overview": {
     "active": true,
     "id": "0f87-6acd-5b17-ac6e",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-local-grids-display": {
+    "active": true,
+    "id": "0f87-6ada-53d7-7d99",
     "status": "recorded",
     "type": "dec"
   },
@@ -1121,6 +1151,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-relative-zoom": {
+    "active": true,
+    "id": "0f87-6ad8-5529-8c71",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-release-0-1-0": {
     "active": true,
     "id": "0f87-6acd-64df-3c7e",
@@ -1130,6 +1166,24 @@
   "dec-release-0-1-1": {
     "active": true,
     "id": "0f87-6acd-dc25-3236",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-release-checks": {
+    "active": true,
+    "id": "0f87-6ada-5814-de51",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-reproj-module": {
+    "active": false,
+    "id": "0f87-6ada-48b6-53e8",
+    "status": "superseded",
+    "type": "dec"
+  },
+  "dec-reproj-module-2": {
+    "active": true,
+    "id": "0f87-6ada-4bb4-617b",
     "status": "recorded",
     "type": "dec"
   },
@@ -1310,6 +1364,12 @@
   "dec-workflows": {
     "active": true,
     "id": "0f87-6acc-fa23-db9b",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-zoom-gauge": {
+    "active": true,
+    "id": "0f87-6ad8-5b69-766a",
     "status": "recorded",
     "type": "dec"
   },
@@ -1673,6 +1733,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "histogram-bar-hover": {
+    "active": true,
+    "id": "0f87-6ad9-af15-b2d1",
+    "status": "confirmed",
+    "type": "req"
+  },
   "http-libcurl": {
     "active": true,
     "id": "0f87-6acd-17c9-ecd3",
@@ -1743,6 +1809,12 @@
     "active": true,
     "id": "0f87-6acd-23b0-5b0a",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-crs-declarative": {
+    "active": true,
+    "id": "0f87-6ada-4bb4-1ee9",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-doxygen": {
@@ -1817,6 +1889,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-histogram-hover": {
+    "active": true,
+    "id": "0f87-6ad9-af16-ead5",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-icon-colour": {
     "active": true,
     "id": "0f87-6acd-c813-9ed7",
@@ -1853,6 +1931,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-kartverket-topo": {
+    "active": true,
+    "id": "0f87-6ad8-592a-f21b",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-layer-choice": {
     "active": true,
     "id": "0f87-6acd-3542-dba2",
@@ -1869,6 +1953,12 @@
     "active": true,
     "id": "0f87-6acd-5b42-dc4b",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-map-display": {
+    "active": true,
+    "id": "0f87-6ada-53d7-171a",
+    "status": "asserted",
     "type": "impl"
   },
   "impl-map-view": {
@@ -2033,6 +2123,18 @@
     "status": "asserted",
     "type": "impl"
   },
+  "impl-release-checks": {
+    "active": true,
+    "id": "0f87-6ada-5814-8a3f",
+    "status": "asserted",
+    "type": "impl"
+  },
+  "impl-reproj-module": {
+    "active": true,
+    "id": "0f87-6ada-48b6-11bc",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-rests": {
     "active": true,
     "id": "0f87-6acf-972e-b67d",
@@ -2153,6 +2255,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-tile-grids": {
+    "active": true,
+    "id": "0f87-6ada-53d7-4404",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-tile-policy": {
     "active": true,
     "id": "0f87-6acd-2f33-629b",
@@ -2211,6 +2319,12 @@
     "active": true,
     "id": "0f87-6acd-2f33-42fb",
     "status": "verified",
+    "type": "impl"
+  },
+  "impl-zoom-control": {
+    "active": true,
+    "id": "0f87-6ad8-552c-4753",
+    "status": "asserted",
     "type": "impl"
   },
   "input-filetree": {
@@ -2381,6 +2495,18 @@
     "status": "confirmed",
     "type": "req"
   },
+  "map-display-projection": {
+    "active": true,
+    "id": "0f87-6ada-48b6-ba41",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-fine-zoom": {
+    "active": false,
+    "id": "0f87-6ad8-5529-e0a0",
+    "status": "superseded",
+    "type": "req"
+  },
   "map-layer-choice": {
     "active": true,
     "id": "0f87-6acd-32e0-4c32",
@@ -2408,6 +2534,18 @@
   "map-overzoom": {
     "active": true,
     "id": "0f87-6acd-5daf-2aea",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-projection-from-wmts": {
+    "active": true,
+    "id": "0f87-6ada-53d7-4506",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-zoom-control": {
+    "active": true,
+    "id": "0f87-6ad8-5b69-b24f",
     "status": "confirmed",
     "type": "req"
   },
@@ -3010,6 +3148,12 @@
     "id": "0f87-6acd-216d-a154",
     "status": "confirmed",
     "type": "req"
+  },
+  "perf-budgets": {
+    "active": true,
+    "id": "0f87-6ada-5814-dc4b",
+    "status": "confirmed",
+    "type": "nreq"
   },
   "plugin-api-version": {
     "active": true,
@@ -3620,6 +3764,12 @@
   "repo-git-bsd3": {
     "active": true,
     "id": "0f87-6acd-22b5-89b9",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "reproj-module": {
+    "active": true,
+    "id": "0f87-6ada-48b6-678c",
     "status": "confirmed",
     "type": "req"
   },

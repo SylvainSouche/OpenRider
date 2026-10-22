@@ -1,0 +1,230 @@
+# Coordinate systems OpenRider can display maps in, one per line:
+#   EPSG:<code> | <name> | <west>,<south>,<east>,<north> | <PROJ string>
+# The area of use is in WGS84 degrees. The PROJ string is the one
+# `projinfo -o PROJ EPSG:<code>` or epsg.io prints; libreproj knows the
+# methods longlat, merc, webmerc, tmerc, utm, lcc, sterea, somerc,
+# krovak and laea, and the datum shift +towgs84 (7 parameters, position
+# vector). Where PROJ itself uses a grid shift, +towgs84 holds EPSG's
+# best Helmert transformation (1-6 m, enough for display).
+# Generated from PROJ 9.7's database; add a line to add a system.
+
+# World
+EPSG:4326 | WGS 84 | -180,-90,180,90 | +proj=longlat +datum=WGS84
+EPSG:3857 | WGS 84 / Pseudo-Mercator | -180,-85.06,180,85.06 | +proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext
+
+# Europe-wide
+EPSG:3035 | ETRS89-extended / LAEA Europe | -35.58,24.6,44.83,84.73 | +proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m
+EPSG:3034 | ETRS89-extended / LCC Europe | -35.58,24.6,44.83,84.73 | +proj=lcc +lat_0=52 +lon_0=10 +lat_1=35 +lat_2=65 +x_0=4000000 +y_0=2800000 +ellps=GRS80 +units=m
+
+# United Kingdom
+EPSG:27700 | OSGB36 / British National Grid | -9.01,49.75,2.01,61.01 | +proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +towgs84=446.448,-125.157,542.06,0.15,0.247,0.842,-20.489 +units=m
+
+# Ireland
+EPSG:2157 | IRENET95 / Irish Transverse Mercator | -10.56,51.39,-5.34,55.43 | +proj=tmerc +lat_0=53.5 +lon_0=-8 +k=0.99982 +x_0=600000 +y_0=750000 +ellps=GRS80 +units=m
+
+# France
+EPSG:2154 | RGF93 v1 / Lambert-93 | -9.86,41.15,10.38,51.56 | +proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=49 +lat_2=44 +x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m
+
+# Belgium
+EPSG:31370 | BD72 / Belgian Lambert 72 | 2.5,49.5,6.4,51.51 | +proj=lcc +lat_0=90 +lon_0=4.36748666666667 +lat_1=51.1666672333333 +lat_2=49.8333339 +x_0=150000.013 +y_0=5400088.438 +ellps=intl +towgs84=-106.8686,52.2978,-103.7239,0.3366,-0.457,1.8422,-1.2747 +units=m
+EPSG:3812 | ETRS89 / Belgian Lambert 2008 | 2.5,49.5,6.4,51.51 | +proj=lcc +lat_0=50.797815 +lon_0=4.35921583333333 +lat_1=49.8333333333333 +lat_2=51.1666666666667 +x_0=649328 +y_0=665262 +ellps=GRS80 +units=m
+
+# Netherlands
+EPSG:28992 | Amersfoort / RD New | 3.2,50.75,7.22,53.7 | +proj=sterea +lat_0=52.1561605555556 +lon_0=5.38763888888889 +k=0.9999079 +x_0=155000 +y_0=463000 +ellps=bessel +towgs84=565.4171,50.3319,465.5524,-0.398957388243134,0.343987817378283,-1.87740163998045,4.0725 +units=m
+
+# Luxembourg
+EPSG:2169 | LUREF / Luxembourg TM | 5.73,49.44,6.53,50.19 | +proj=tmerc +lat_0=49.8333333333333 +lon_0=6.16666666666667 +k=1 +x_0=80000 +y_0=100000 +ellps=intl +towgs84=-189.6806,18.3463,-42.7695,-0.33746,-3.09264,2.53861,0.4598 +units=m
+
+# Switzerland, Liechtenstein
+EPSG:2056 | CH1903+ / LV95 | 5.95,45.81,10.5,47.81 | +proj=somerc +lat_0=46.9524055555556 +lon_0=7.43958333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m
+
+# Austria
+EPSG:31287 | MGI / Austria Lambert | 9.53,46.4,17.17,49.02 | +proj=lcc +lat_0=47.5 +lon_0=13.3333333333333 +lat_1=49 +lat_2=46 +x_0=400000 +y_0=400000 +ellps=bessel +towgs84=577.326,90.129,463.919,5.137,1.474,5.297,2.4232 +units=m
+EPSG:3416 | ETRS89 / Austria Lambert | 9.53,46.4,17.17,49.02 | +proj=lcc +lat_0=47.5 +lon_0=13.3333333333333 +lat_1=49 +lat_2=46 +x_0=400000 +y_0=400000 +ellps=GRS80 +units=m
+
+# Italy
+EPSG:6875 | RDN2008 / Italy zone (N-E) | 5.93,34.76,18.99,47.1 | +proj=tmerc +lat_0=0 +lon_0=12 +k=0.9985 +x_0=7000000 +y_0=0 +ellps=GRS80 +units=m
+EPSG:6707 | RDN2008 / UTM zone 32N (N-E) | 5.93,36.53,12,47.04 | +proj=utm +zone=32 +ellps=GRS80 +units=m
+EPSG:6708 | RDN2008 / UTM zone 33N (N-E) | 12,34.79,18,47.1 | +proj=utm +zone=33 +ellps=GRS80 +units=m
+
+# Portugal
+EPSG:3763 | ETRS89 / Portugal TM06 | -9.56,36.95,-6.19,42.16 | +proj=tmerc +lat_0=39.6682583333333 +lon_0=-8.13310833333333 +k=1 +x_0=0 +y_0=0 +ellps=GRS80 +units=m
+
+# Poland
+EPSG:2180 | ETRF2000-PL / CS92 | 14.14,49,24.15,55.93 | +proj=tmerc +lat_0=0 +lon_0=19 +k=0.9993 +x_0=500000 +y_0=-5300000 +ellps=GRS80 +units=m
+
+# Czechia, Slovakia
+EPSG:5514 | S-JTSK / Krovak East North | 12.09,47.73,22.56,51.06 | +proj=krovak +lat_0=49.5 +lon_0=24.8333333333333 +alpha=30.2881397527778 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +towgs84=589,76,480,0,0,0,0 +units=m
+
+# Hungary
+EPSG:23700 | HD72 / EOV | 16.11,45.74,22.9,48.58 | +proj=somerc +lat_0=47.1443937222222 +lon_0=19.0485717777778 +k_0=0.99993 +x_0=650000 +y_0=200000 +ellps=GRS67 +towgs84=52.17,-71.82,-14.9,0,0,0,0 +units=m
+
+# Slovenia
+EPSG:3794 | Slovenia 1996 / Slovene National Grid | 13.38,45.42,16.61,46.88 | +proj=tmerc +lat_0=0 +lon_0=15 +k=0.9999 +x_0=500000 +y_0=-5000000 +ellps=GRS80 +units=m
+
+# Croatia
+EPSG:3765 | HTRS96 / Croatia TM | 13.43,42.34,19.43,46.54 | +proj=tmerc +lat_0=0 +lon_0=16.5 +k=0.9999 +x_0=500000 +y_0=0 +ellps=GRS80 +units=m
+
+# Romania
+EPSG:3844 | Pulkovo 1942(58) / Stereo70 | 20.26,43.44,31.41,48.27 | +proj=sterea +lat_0=46 +lon_0=25 +k=0.99975 +x_0=500000 +y_0=500000 +ellps=krass +towgs84=2.329,-147.042,-92.08,-0.309,0.325,0.497,5.69 +units=m
+
+# Bulgaria
+EPSG:7801 | BGS2005 / CCS2005 | 22.36,41.24,28.68,44.23 | +proj=lcc +lat_0=42.6678756833333 +lon_0=25.5 +lat_1=42 +lat_2=43.3333333333333 +x_0=500000 +y_0=4725824.3591 +ellps=GRS80 +units=m
+
+# Greece
+EPSG:2100 | GGRS87 / Greek Grid | 19.57,34.88,28.3,41.75 | +proj=tmerc +lat_0=0 +lon_0=24 +k=0.9996 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=-199.87,74.79,246.62,0,0,0,0 +units=m
+
+# Sweden
+EPSG:3006 | SWEREF99 TM | 10.03,54.96,24.17,69.07 | +proj=utm +zone=33 +ellps=GRS80 +units=m
+
+# Finland
+EPSG:3067 | EUREF-FIN / TM35FIN(E,N) | 19.08,58.84,31.59,70.09 | +proj=utm +zone=35 +ellps=GRS80 +units=m
+
+# Iceland
+EPSG:8088 | ISN2016 / Lambert 2016 | -30.87,59.96,-5.55,69.59 | +proj=lcc +lat_0=65 +lon_0=-19 +lat_1=64.25 +lat_2=65.75 +x_0=2700000 +y_0=300000 +ellps=GRS80 +units=m
+
+# Estonia
+EPSG:3301 | Estonian Coordinate System of 1997 | 20.37,57.52,28.2,60 | +proj=lcc +lat_0=57.5175539305556 +lon_0=24 +lat_1=59.3333333333333 +lat_2=58 +x_0=500000 +y_0=6375000 +ellps=GRS80 +units=m
+
+# Latvia
+EPSG:3059 | LKS-92 / Latvia TM | 19.06,55.67,28.24,58.09 | +proj=tmerc +lat_0=0 +lon_0=24 +k=0.9996 +x_0=500000 +y_0=-6000000 +ellps=GRS80 +units=m
+
+# Lithuania
+EPSG:3346 | LKS94 / Lithuania TM | 19.02,53.89,26.82,56.45 | +proj=tmerc +lat_0=0 +lon_0=24 +k=0.9998 +x_0=500000 +y_0=0 +ellps=GRS80 +units=m
+
+# ETRS89 / UTM: Spain 29-31, Germany and Denmark 32-33, Norway 32-35, ...
+EPSG:25828 | ETRS89 / UTM zone 28N | -16.1,34.93,-11.99,72.44 | +proj=utm +zone=28 +ellps=GRS80 +units=m
+EPSG:25829 | ETRS89 / UTM zone 29N | -12,34.91,-6,74.13 | +proj=utm +zone=29 +ellps=GRS80 +units=m
+EPSG:25830 | ETRS89 / UTM zone 30N | -6,35.26,0.01,80.49 | +proj=utm +zone=30 +ellps=GRS80 +units=m
+EPSG:25831 | ETRS89 / UTM zone 31N | 0,37,6.01,82.45 | +proj=utm +zone=31 +ellps=GRS80 +units=m
+EPSG:25832 | ETRS89 / UTM zone 32N | 6,36.53,12.01,84.01 | +proj=utm +zone=32 +ellps=GRS80 +units=m
+EPSG:25833 | ETRS89 / UTM zone 33N | 12,34.79,18.01,84.01 | +proj=utm +zone=33 +ellps=GRS80 +units=m
+EPSG:25834 | ETRS89 / UTM zone 34N | 18,34.76,24.01,84.01 | +proj=utm +zone=34 +ellps=GRS80 +units=m
+EPSG:25835 | ETRS89 / UTM zone 35N | 24,41.24,30.01,84.01 | +proj=utm +zone=35 +ellps=GRS80 +units=m
+EPSG:25836 | ETRS89 / UTM zone 36N | 30,42.56,36.01,84.01 | +proj=utm +zone=36 +ellps=GRS80 +units=m
+EPSG:25837 | ETRS89 / UTM zone 37N | 36,72.99,38.01,79.07 | +proj=utm +zone=37 +ellps=GRS80 +units=m
+EPSG:25838 | ETRS89 / UTM zone 38N | 42,37,48,41.65 | +proj=utm +zone=38 +ellps=GRS80 +units=m
+
+# WGS 84 / UTM, north
+EPSG:32601 | WGS 84 / UTM zone 1N | -180,0,-174,84 | +proj=utm +zone=1 +datum=WGS84 +units=m
+EPSG:32602 | WGS 84 / UTM zone 2N | -174,0,-168,84 | +proj=utm +zone=2 +datum=WGS84 +units=m
+EPSG:32603 | WGS 84 / UTM zone 3N | -168,0,-162,84 | +proj=utm +zone=3 +datum=WGS84 +units=m
+EPSG:32604 | WGS 84 / UTM zone 4N | -162,0,-156,84 | +proj=utm +zone=4 +datum=WGS84 +units=m
+EPSG:32605 | WGS 84 / UTM zone 5N | -156,0,-150,84 | +proj=utm +zone=5 +datum=WGS84 +units=m
+EPSG:32606 | WGS 84 / UTM zone 6N | -150,0,-144,84 | +proj=utm +zone=6 +datum=WGS84 +units=m
+EPSG:32607 | WGS 84 / UTM zone 7N | -144,0,-138,84 | +proj=utm +zone=7 +datum=WGS84 +units=m
+EPSG:32608 | WGS 84 / UTM zone 8N | -138,0,-132,84 | +proj=utm +zone=8 +datum=WGS84 +units=m
+EPSG:32609 | WGS 84 / UTM zone 9N | -132,0,-126,84 | +proj=utm +zone=9 +datum=WGS84 +units=m
+EPSG:32610 | WGS 84 / UTM zone 10N | -126,0,-120,84 | +proj=utm +zone=10 +datum=WGS84 +units=m
+EPSG:32611 | WGS 84 / UTM zone 11N | -120,0,-114,84 | +proj=utm +zone=11 +datum=WGS84 +units=m
+EPSG:32612 | WGS 84 / UTM zone 12N | -114,0,-108,84 | +proj=utm +zone=12 +datum=WGS84 +units=m
+EPSG:32613 | WGS 84 / UTM zone 13N | -108,0,-102,84 | +proj=utm +zone=13 +datum=WGS84 +units=m
+EPSG:32614 | WGS 84 / UTM zone 14N | -102,0,-96,84 | +proj=utm +zone=14 +datum=WGS84 +units=m
+EPSG:32615 | WGS 84 / UTM zone 15N | -96,0,-90,84 | +proj=utm +zone=15 +datum=WGS84 +units=m
+EPSG:32616 | WGS 84 / UTM zone 16N | -90,0,-84,84 | +proj=utm +zone=16 +datum=WGS84 +units=m
+EPSG:32617 | WGS 84 / UTM zone 17N | -84,0,-78,84 | +proj=utm +zone=17 +datum=WGS84 +units=m
+EPSG:32618 | WGS 84 / UTM zone 18N | -78,0,-72,84 | +proj=utm +zone=18 +datum=WGS84 +units=m
+EPSG:32619 | WGS 84 / UTM zone 19N | -72,0,-66,84 | +proj=utm +zone=19 +datum=WGS84 +units=m
+EPSG:32620 | WGS 84 / UTM zone 20N | -66,0,-60,84 | +proj=utm +zone=20 +datum=WGS84 +units=m
+EPSG:32621 | WGS 84 / UTM zone 21N | -60,0,-54,84 | +proj=utm +zone=21 +datum=WGS84 +units=m
+EPSG:32622 | WGS 84 / UTM zone 22N | -54,0,-48,84 | +proj=utm +zone=22 +datum=WGS84 +units=m
+EPSG:32623 | WGS 84 / UTM zone 23N | -48,0,-42,84 | +proj=utm +zone=23 +datum=WGS84 +units=m
+EPSG:32624 | WGS 84 / UTM zone 24N | -42,0,-36,84 | +proj=utm +zone=24 +datum=WGS84 +units=m
+EPSG:32625 | WGS 84 / UTM zone 25N | -36,0,-30,84 | +proj=utm +zone=25 +datum=WGS84 +units=m
+EPSG:32626 | WGS 84 / UTM zone 26N | -30,0,-24,84 | +proj=utm +zone=26 +datum=WGS84 +units=m
+EPSG:32627 | WGS 84 / UTM zone 27N | -24,0,-18,84 | +proj=utm +zone=27 +datum=WGS84 +units=m
+EPSG:32628 | WGS 84 / UTM zone 28N | -18,0,-12,84 | +proj=utm +zone=28 +datum=WGS84 +units=m
+EPSG:32629 | WGS 84 / UTM zone 29N | -12.01,0,-6,84.01 | +proj=utm +zone=29 +datum=WGS84 +units=m
+EPSG:32630 | WGS 84 / UTM zone 30N | -6,0,0,84 | +proj=utm +zone=30 +datum=WGS84 +units=m
+EPSG:32631 | WGS 84 / UTM zone 31N | 0,0,6,84 | +proj=utm +zone=31 +datum=WGS84 +units=m
+EPSG:32632 | WGS 84 / UTM zone 32N | 6,0,12,84 | +proj=utm +zone=32 +datum=WGS84 +units=m
+EPSG:32633 | WGS 84 / UTM zone 33N | 12,0,18,84 | +proj=utm +zone=33 +datum=WGS84 +units=m
+EPSG:32634 | WGS 84 / UTM zone 34N | 18,0,24,84 | +proj=utm +zone=34 +datum=WGS84 +units=m
+EPSG:32635 | WGS 84 / UTM zone 35N | 24,0,30,84 | +proj=utm +zone=35 +datum=WGS84 +units=m
+EPSG:32636 | WGS 84 / UTM zone 36N | 30,0,36,84 | +proj=utm +zone=36 +datum=WGS84 +units=m
+EPSG:32637 | WGS 84 / UTM zone 37N | 36,0,42,84 | +proj=utm +zone=37 +datum=WGS84 +units=m
+EPSG:32638 | WGS 84 / UTM zone 38N | 42,0,48,84 | +proj=utm +zone=38 +datum=WGS84 +units=m
+EPSG:32639 | WGS 84 / UTM zone 39N | 48,0,54,84 | +proj=utm +zone=39 +datum=WGS84 +units=m
+EPSG:32640 | WGS 84 / UTM zone 40N | 54,0,60,84 | +proj=utm +zone=40 +datum=WGS84 +units=m
+EPSG:32641 | WGS 84 / UTM zone 41N | 60,0,66,84 | +proj=utm +zone=41 +datum=WGS84 +units=m
+EPSG:32642 | WGS 84 / UTM zone 42N | 66,0,72,84 | +proj=utm +zone=42 +datum=WGS84 +units=m
+EPSG:32643 | WGS 84 / UTM zone 43N | 72,0,78,84 | +proj=utm +zone=43 +datum=WGS84 +units=m
+EPSG:32644 | WGS 84 / UTM zone 44N | 78,0,84,84 | +proj=utm +zone=44 +datum=WGS84 +units=m
+EPSG:32645 | WGS 84 / UTM zone 45N | 84,0,90,84 | +proj=utm +zone=45 +datum=WGS84 +units=m
+EPSG:32646 | WGS 84 / UTM zone 46N | 90,0,96,84 | +proj=utm +zone=46 +datum=WGS84 +units=m
+EPSG:32647 | WGS 84 / UTM zone 47N | 96,0,102,84 | +proj=utm +zone=47 +datum=WGS84 +units=m
+EPSG:32648 | WGS 84 / UTM zone 48N | 102,0,108,84 | +proj=utm +zone=48 +datum=WGS84 +units=m
+EPSG:32649 | WGS 84 / UTM zone 49N | 108,0,114,84 | +proj=utm +zone=49 +datum=WGS84 +units=m
+EPSG:32650 | WGS 84 / UTM zone 50N | 114,0,120,84 | +proj=utm +zone=50 +datum=WGS84 +units=m
+EPSG:32651 | WGS 84 / UTM zone 51N | 120,0,126,84 | +proj=utm +zone=51 +datum=WGS84 +units=m
+EPSG:32652 | WGS 84 / UTM zone 52N | 126,0,132,84 | +proj=utm +zone=52 +datum=WGS84 +units=m
+EPSG:32653 | WGS 84 / UTM zone 53N | 132,0,138,84 | +proj=utm +zone=53 +datum=WGS84 +units=m
+EPSG:32654 | WGS 84 / UTM zone 54N | 138,0,144,84 | +proj=utm +zone=54 +datum=WGS84 +units=m
+EPSG:32655 | WGS 84 / UTM zone 55N | 144,0,150,84 | +proj=utm +zone=55 +datum=WGS84 +units=m
+EPSG:32656 | WGS 84 / UTM zone 56N | 150,0,156,84 | +proj=utm +zone=56 +datum=WGS84 +units=m
+EPSG:32657 | WGS 84 / UTM zone 57N | 156,0,162,84 | +proj=utm +zone=57 +datum=WGS84 +units=m
+EPSG:32658 | WGS 84 / UTM zone 58N | 162,0,168,84 | +proj=utm +zone=58 +datum=WGS84 +units=m
+EPSG:32659 | WGS 84 / UTM zone 59N | 168,0,174,84 | +proj=utm +zone=59 +datum=WGS84 +units=m
+EPSG:32660 | WGS 84 / UTM zone 60N | 174,0,180,84 | +proj=utm +zone=60 +datum=WGS84 +units=m
+
+# WGS 84 / UTM, south
+EPSG:32701 | WGS 84 / UTM zone 1S | -180,-80,-174,0 | +proj=utm +zone=1 +south +datum=WGS84 +units=m
+EPSG:32702 | WGS 84 / UTM zone 2S | -174,-80,-168,0 | +proj=utm +zone=2 +south +datum=WGS84 +units=m
+EPSG:32703 | WGS 84 / UTM zone 3S | -168,-80,-162,0 | +proj=utm +zone=3 +south +datum=WGS84 +units=m
+EPSG:32704 | WGS 84 / UTM zone 4S | -162,-80,-156,0 | +proj=utm +zone=4 +south +datum=WGS84 +units=m
+EPSG:32705 | WGS 84 / UTM zone 5S | -156,-80,-150,0 | +proj=utm +zone=5 +south +datum=WGS84 +units=m
+EPSG:32706 | WGS 84 / UTM zone 6S | -150,-80,-144,0 | +proj=utm +zone=6 +south +datum=WGS84 +units=m
+EPSG:32707 | WGS 84 / UTM zone 7S | -144,-80,-138,0 | +proj=utm +zone=7 +south +datum=WGS84 +units=m
+EPSG:32708 | WGS 84 / UTM zone 8S | -138,-80,-132,0 | +proj=utm +zone=8 +south +datum=WGS84 +units=m
+EPSG:32709 | WGS 84 / UTM zone 9S | -132,-80,-126,0 | +proj=utm +zone=9 +south +datum=WGS84 +units=m
+EPSG:32710 | WGS 84 / UTM zone 10S | -126,-80,-120,0 | +proj=utm +zone=10 +south +datum=WGS84 +units=m
+EPSG:32711 | WGS 84 / UTM zone 11S | -120,-80,-114,0 | +proj=utm +zone=11 +south +datum=WGS84 +units=m
+EPSG:32712 | WGS 84 / UTM zone 12S | -114,-80,-108,0 | +proj=utm +zone=12 +south +datum=WGS84 +units=m
+EPSG:32713 | WGS 84 / UTM zone 13S | -108,-80,-102,0 | +proj=utm +zone=13 +south +datum=WGS84 +units=m
+EPSG:32714 | WGS 84 / UTM zone 14S | -102,-80,-96,0 | +proj=utm +zone=14 +south +datum=WGS84 +units=m
+EPSG:32715 | WGS 84 / UTM zone 15S | -96,-80,-90,0 | +proj=utm +zone=15 +south +datum=WGS84 +units=m
+EPSG:32716 | WGS 84 / UTM zone 16S | -90,-80,-84,0 | +proj=utm +zone=16 +south +datum=WGS84 +units=m
+EPSG:32717 | WGS 84 / UTM zone 17S | -84,-80,-78,0 | +proj=utm +zone=17 +south +datum=WGS84 +units=m
+EPSG:32718 | WGS 84 / UTM zone 18S | -78,-80,-72,0 | +proj=utm +zone=18 +south +datum=WGS84 +units=m
+EPSG:32719 | WGS 84 / UTM zone 19S | -72,-80,-66,0 | +proj=utm +zone=19 +south +datum=WGS84 +units=m
+EPSG:32720 | WGS 84 / UTM zone 20S | -66,-80,-60,0 | +proj=utm +zone=20 +south +datum=WGS84 +units=m
+EPSG:32721 | WGS 84 / UTM zone 21S | -60,-80,-54,0 | +proj=utm +zone=21 +south +datum=WGS84 +units=m
+EPSG:32722 | WGS 84 / UTM zone 22S | -54,-80,-48,0 | +proj=utm +zone=22 +south +datum=WGS84 +units=m
+EPSG:32723 | WGS 84 / UTM zone 23S | -48,-80,-42,0 | +proj=utm +zone=23 +south +datum=WGS84 +units=m
+EPSG:32724 | WGS 84 / UTM zone 24S | -42,-80,-36,0 | +proj=utm +zone=24 +south +datum=WGS84 +units=m
+EPSG:32725 | WGS 84 / UTM zone 25S | -36,-80,-30,0 | +proj=utm +zone=25 +south +datum=WGS84 +units=m
+EPSG:32726 | WGS 84 / UTM zone 26S | -30,-80,-24,0 | +proj=utm +zone=26 +south +datum=WGS84 +units=m
+EPSG:32727 | WGS 84 / UTM zone 27S | -24,-80,-18,0 | +proj=utm +zone=27 +south +datum=WGS84 +units=m
+EPSG:32728 | WGS 84 / UTM zone 28S | -18,-80,-12,0 | +proj=utm +zone=28 +south +datum=WGS84 +units=m
+EPSG:32729 | WGS 84 / UTM zone 29S | -12,-80,-6,0 | +proj=utm +zone=29 +south +datum=WGS84 +units=m
+EPSG:32730 | WGS 84 / UTM zone 30S | -6,-80,0,0 | +proj=utm +zone=30 +south +datum=WGS84 +units=m
+EPSG:32731 | WGS 84 / UTM zone 31S | 0,-80,6,0 | +proj=utm +zone=31 +south +datum=WGS84 +units=m
+EPSG:32732 | WGS 84 / UTM zone 32S | 6,-80,12,0 | +proj=utm +zone=32 +south +datum=WGS84 +units=m
+EPSG:32733 | WGS 84 / UTM zone 33S | 12,-80,18,0 | +proj=utm +zone=33 +south +datum=WGS84 +units=m
+EPSG:32734 | WGS 84 / UTM zone 34S | 18,-80,24,0 | +proj=utm +zone=34 +south +datum=WGS84 +units=m
+EPSG:32735 | WGS 84 / UTM zone 35S | 24,-80,30,0 | +proj=utm +zone=35 +south +datum=WGS84 +units=m
+EPSG:32736 | WGS 84 / UTM zone 36S | 30,-80,36,0 | +proj=utm +zone=36 +south +datum=WGS84 +units=m
+EPSG:32737 | WGS 84 / UTM zone 37S | 36,-80,42,0 | +proj=utm +zone=37 +south +datum=WGS84 +units=m
+EPSG:32738 | WGS 84 / UTM zone 38S | 42,-80,48,0 | +proj=utm +zone=38 +south +datum=WGS84 +units=m
+EPSG:32739 | WGS 84 / UTM zone 39S | 48,-80,54,0 | +proj=utm +zone=39 +south +datum=WGS84 +units=m
+EPSG:32740 | WGS 84 / UTM zone 40S | 54,-80,60,0 | +proj=utm +zone=40 +south +datum=WGS84 +units=m
+EPSG:32741 | WGS 84 / UTM zone 41S | 60,-80,66,0 | +proj=utm +zone=41 +south +datum=WGS84 +units=m
+EPSG:32742 | WGS 84 / UTM zone 42S | 66,-80,72,0 | +proj=utm +zone=42 +south +datum=WGS84 +units=m
+EPSG:32743 | WGS 84 / UTM zone 43S | 72,-80,78,0 | +proj=utm +zone=43 +south +datum=WGS84 +units=m
+EPSG:32744 | WGS 84 / UTM zone 44S | 78,-80,84,0 | +proj=utm +zone=44 +south +datum=WGS84 +units=m
+EPSG:32745 | WGS 84 / UTM zone 45S | 84,-80,90,0 | +proj=utm +zone=45 +south +datum=WGS84 +units=m
+EPSG:32746 | WGS 84 / UTM zone 46S | 90,-80,96,0 | +proj=utm +zone=46 +south +datum=WGS84 +units=m
+EPSG:32747 | WGS 84 / UTM zone 47S | 96,-80,102,0 | +proj=utm +zone=47 +south +datum=WGS84 +units=m
+EPSG:32748 | WGS 84 / UTM zone 48S | 102,-80,108,0 | +proj=utm +zone=48 +south +datum=WGS84 +units=m
+EPSG:32749 | WGS 84 / UTM zone 49S | 108,-80,114,0 | +proj=utm +zone=49 +south +datum=WGS84 +units=m
+EPSG:32750 | WGS 84 / UTM zone 50S | 114,-80,120,0 | +proj=utm +zone=50 +south +datum=WGS84 +units=m
+EPSG:32751 | WGS 84 / UTM zone 51S | 120,-80,126,0 | +proj=utm +zone=51 +south +datum=WGS84 +units=m
+EPSG:32752 | WGS 84 / UTM zone 52S | 126,-80,132,0 | +proj=utm +zone=52 +south +datum=WGS84 +units=m
+EPSG:32753 | WGS 84 / UTM zone 53S | 132,-80,138,0 | +proj=utm +zone=53 +south +datum=WGS84 +units=m
+EPSG:32754 | WGS 84 / UTM zone 54S | 138,-80,144,0 | +proj=utm +zone=54 +south +datum=WGS84 +units=m
+EPSG:32755 | WGS 84 / UTM zone 55S | 144,-80,150,0 | +proj=utm +zone=55 +south +datum=WGS84 +units=m
+EPSG:32756 | WGS 84 / UTM zone 56S | 150,-80,156,0 | +proj=utm +zone=56 +south +datum=WGS84 +units=m
+EPSG:32757 | WGS 84 / UTM zone 57S | 156,-80,162,0 | +proj=utm +zone=57 +south +datum=WGS84 +units=m
+EPSG:32758 | WGS 84 / UTM zone 58S | 162,-80,168,0 | +proj=utm +zone=58 +south +datum=WGS84 +units=m
+EPSG:32759 | WGS 84 / UTM zone 59S | 168,-80,174,0 | +proj=utm +zone=59 +south +datum=WGS84 +units=m
+EPSG:32760 | WGS 84 / UTM zone 60S | 174,-80,180,0 | +proj=utm +zone=60 +south +datum=WGS84 +units=m

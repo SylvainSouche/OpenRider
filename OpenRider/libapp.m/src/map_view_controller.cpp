@@ -1,12 +1,13 @@
 #include "app/map_view_controller.h"
 
+#include "app/map_geometry.h"
 #include "app/map_view_utils.h"
 
 #include "core/log.h"
 #include "core/outing_selection.h"
 #include "core/plugin_thread.h"
 #include "core/plugins.h"
-#include "maptiles/mercator.h"
+#include "maptiles/capabilities.h"
 
 #include <algorithm>
 #include <chrono>
@@ -70,30 +71,74 @@ double Distance2ToSegment(double x, double y, double ax, double ay, double bx, d
     return px * px + py * py;
 }
 
-// Highest view zoom for `layer`: at least kMaxViewZoom (over-zoom).
-int MaxViewZoom(const MapLayerInfo *layer)
+// Centres `camera` on the box and picks the largest whole zoom showing it
+// within 90% of the viewport, leaving two levels of zoom-in headroom.
+void FitCamera(MapCamera &camera, const MapLayerInfo &layer, const reproj::Crs &display, double west, double south,
+               double east, double north, float width, float height)
 {
-    return layer ? std::max(kMaxViewZoom, layer->max_zoom) : kMaxViewZoom;
-}
-
-// Centres `camera` on the box and picks the largest zoom showing it within
-// 90% of the viewport, leaving two levels of zoom-in headroom.
-void FitCamera(MapCamera &camera, const MapLayerInfo &layer, double west, double south, double east,
-               double north, float width, float height)
-{
-    camera.zoom = maptiles::FitZoom(west, south, east, north, width * 0.9, height * 0.9, layer.tile_size,
-                                    layer.min_zoom, std::max(layer.max_zoom, kMaxViewZoom - 2));
-    double left, top, right, bottom;
-    maptiles::LonlatToWorld(west, north, camera.zoom, layer.tile_size, left, top);
-    maptiles::LonlatToWorld(east, south, camera.zoom, layer.tile_size, right, bottom);
-    maptiles::WorldToLonlat((left + right) / 2.0, (top + bottom) / 2.0, camera.zoom, layer.tile_size,
-                            camera.lon, camera.lat);
+    // The box in the display system: its border, projected.
+    const reproj::Transformer to_display(reproj::CrsRegistry().Find(4326), display);
+    double x0 = 1e300, y0 = 1e300, x1 = -1e300, y1 = -1e300;
+    constexpr int kSteps = 8;
+    for (int i = 0; i <= kSteps; ++i)
+        for (int j = 0; j <= kSteps; ++j) {
+            double x, y;
+            if (!to_display.Transform(west + (east - west) * i / kSteps, south + (north - south) * j / kSteps, x, y))
+                continue;
+            x0 = std::min(x0, x);
+            x1 = std::max(x1, x);
+            y0 = std::min(y0, y);
+            y1 = std::max(y1, y);
+        }
+    if (x0 > x1)
+        return;
+    const double resolution = std::max((x1 - x0) / (width * 0.9), (y1 - y0) / (height * 0.9));
+    const double fit = resolution > 0.0 ? std::floor(ZoomAtResolution(display, resolution)) : kMaxViewZoom;
+    camera.zoom = std::clamp(fit, static_cast<double>(layer.min_zoom),
+                             static_cast<double>(std::max(layer.max_zoom, kMaxViewZoom - 2)));
+    double lon, lat;
+    if (to_display.Inverse().Transform((x0 + x1) / 2.0, (y0 + y1) / 2.0, lon, lat)) {
+        camera.lon = lon;
+        camera.lat = lat;
+    }
     camera.fitted = true;
 }
 
 } // namespace
 
-MapViewController::MapViewController() = default;
+MapViewController::MapViewController()
+{
+    view_model_.display = registry_.Find(3857);
+    view_model_.display_choices = {view_model_.display};
+}
+
+std::vector<std::string> MapViewController::LoadCrs(const std::string &path)
+{
+    return registry_.LoadFile(path);
+}
+
+std::string MapViewController::AddCrs(const std::string &line)
+{
+    std::string error;
+    return registry_.Add(line, error) ? "" : error;
+}
+
+// @impl 0f87-6ada-53d7-171a
+void MapViewController::SetDisplay(const reproj::Crs &crs)
+{
+    if (!crs.Valid() || crs.epsg == view_model_.display.epsg)
+        return;
+    // Each camera keeps its ground scale at its centre: the resolution
+    // follows the ratio of the two systems' scale factors there.
+    for (MapCamera *camera : {&view_model_.overview, &view_model_.outing, &view_model_.comparison}) {
+        const double old_scale = reproj::ScaleFactor(view_model_.display, camera->lon, camera->lat);
+        const double new_scale = reproj::ScaleFactor(crs, camera->lon, camera->lat);
+        const double resolution = ResolutionAtZoom(view_model_.display, camera->zoom) * new_scale / old_scale;
+        camera->zoom = ZoomAtResolution(crs, resolution);
+    }
+    view_model_.display = crs;
+    core::LogLine("map shown in %s (%s)", crs.Id().c_str(), crs.name.c_str());
+}
 
 MapViewController::~MapViewController() { Shutdown(); }
 
@@ -173,7 +218,7 @@ std::string MapViewController::Select(int index)
     if (index < 0 || index >= static_cast<int>(view_model_.layers.size()) || index == view_model_.current)
         return "";
     Shutdown();
-    const MapLayerInfo &info = view_model_.layers[static_cast<size_t>(index)];
+    const MapLayerInfo info = view_model_.layers[static_cast<size_t>(index)];
     std::string why;
     for (const or_tiles_vtable *tiles_vtable : plugins_) {
         char error[256] = "";
@@ -189,15 +234,40 @@ std::string MapViewController::Select(int index)
     }
     if (!layer_)
         return why.empty() ? "no tiles plugin accepts it" : why;
+    // The grids: a WMTS layer learns them from the service's capabilities.
+    const std::string user_agent = "OpenRider/0.1 (desktop outing viewer; libcurl)";
+    if (const std::string error = maptiles::ProvideCapabilities(tiles_vtable_, layer_, cache_dir_, user_agent);
+        !error.empty()) {
+        core::CallPlugin(tiles_vtable_, [&] { tiles_vtable_->close(layer_); });
+        layer_ = nullptr;
+        return error;
+    }
+    std::vector<maptiles::TileGrid> tile_grids = maptiles::GridsOf(tiles_vtable_, layer_);
+    MapLayerInfo &opened = view_model_.layers[static_cast<size_t>(index)];
+    opened.grids.clear();
+    view_model_.display_choices = {registry_.Find(3857)};
+    for (const maptiles::TileGrid &grid : tile_grids) {
+        MapGrid map_grid{grid, registry_.Find(grid.crs)};
+        if (!map_grid.crs.Valid())
+            core::LogLine("map layer %s: grid %s in %s, an unknown coordinate system", opened.name.c_str(),
+                          grid.id.c_str(), grid.crs.c_str());
+        else if (std::none_of(view_model_.display_choices.begin(), view_model_.display_choices.end(),
+                              [&](const reproj::Crs &crs) { return crs.epsg == map_grid.crs.epsg; }))
+            view_model_.display_choices.push_back(map_grid.crs);
+        opened.grids.push_back(std::move(map_grid));
+    }
+    if (std::none_of(view_model_.display_choices.begin(), view_model_.display_choices.end(),
+                     [&](const reproj::Crs &crs) { return crs.epsg == view_model_.display.epsg; }))
+        SetDisplay(registry_.Find(3857));
     cache_ = std::make_unique<maptiles::TileCache>(cache_dir_, maptiles::kDefaultCacheBytes);
-    fetcher_ = std::make_unique<maptiles::TileFetcher>(tiles_vtable_, layer_, cache_.get(),
-                                                       "OpenRider/0.1 (desktop outing viewer; libcurl)");
+    fetcher_ = std::make_unique<maptiles::TileFetcher>(tiles_vtable_, layer_, std::move(tile_grids), cache_.get(),
+                                                       user_agent);
     view_model_.current = index;
     view_model_.tiles.clear();
     retry_after_.clear();
     unavailable_reported_ = false;
     for (MapCamera *camera : {&view_model_.overview, &view_model_.outing})
-        camera->zoom = std::clamp(camera->zoom, info.min_zoom, MaxViewZoom(&info));
+        camera->zoom = std::clamp(camera->zoom, static_cast<double>(info.min_zoom), static_cast<double>(MaxViewZoom(&info)));
     core::LogLine("map layer %s", info.name.c_str());
     return "";
 }
@@ -214,7 +284,7 @@ void MapViewController::FitOuting(const AppModel &model)
         north = std::max(north, point.lat);
     }
     if (west <= east && view_model_.Layer())
-        FitCamera(view_model_.outing, *view_model_.Layer(), west, south, east, north, view_model_.width,
+        FitCamera(view_model_.outing, *view_model_.Layer(), view_model_.display, west, south, east, north, view_model_.width,
                   view_model_.height);
     view_model_.fitted_outing = model.points_id;
 }
@@ -236,7 +306,7 @@ void MapViewController::FitComparison(const AppModel &model)
         for (const or_point &point : run.points)
             extend(point.lon, point.lat);
     if (west <= east && view_model_.Layer())
-        FitCamera(view_model_.comparison, *view_model_.Layer(), west, south, east, north, view_model_.width,
+        FitCamera(view_model_.comparison, *view_model_.Layer(), view_model_.display, west, south, east, north, view_model_.width,
                   view_model_.height);
     view_model_.fitted_comparison = model.comparison.generation;
 }
@@ -251,44 +321,28 @@ void MapViewController::FitOverview(const AppModel &model)
         north = std::max(north, track.north);
     }
     if (west <= east && view_model_.Layer())
-        FitCamera(view_model_.overview, *view_model_.Layer(), west, south, east, north, view_model_.width,
+        FitCamera(view_model_.overview, *view_model_.Layer(), view_model_.display, west, south, east, north, view_model_.width,
                   view_model_.height);
 }
 
-// Requests the tiles covering the view: from level min(view zoom, layer
-// max); past the layer's last level the view enlarges them (over-zoom).
+// Requests the tiles covering the view, from the grid SourceGrid() picks.
 // @impl 0f87-6acd-5daf-1652
 void MapViewController::RequestVisibleTiles()
 {
-    const MapLayerInfo *layer = view_model_.Layer();
-    if (!layer || !fetcher_ || view_model_.width <= 0.0f)
+    if (!view_model_.Layer() || !fetcher_ || view_model_.width <= 0.0f)
         return;
-    const MapCamera &camera = view_model_.Camera();
-    const int tile_zoom = std::clamp(std::min(camera.zoom, layer->max_zoom), 0, kMaxTileZoom);
-    // Size on screen of one tile of that level (larger than tile_size when
-    // over-zoomed), and the number of tiles across the world.
-    const double tile_px = layer->tile_size * std::pow(2.0, camera.zoom - tile_zoom);
-    const int tiles_across = 1 << tile_zoom;
-    double left, top;
-    MapOrigin(view_model_, left, top);
+    const MapGeometry geometry(view_model_);
     const double now = NowS();
-    const int first_row = std::max(0, static_cast<int>(std::floor(top / tile_px)));
-    const int last_row = std::min(tiles_across - 1, static_cast<int>(std::floor((top + view_model_.height) / tile_px)));
-    const int first_column = static_cast<int>(std::floor(left / tile_px));
-    const int last_column = static_cast<int>(std::floor((left + view_model_.width) / tile_px));
-    for (int row = first_row; row <= last_row; ++row)
-        for (int column = first_column; column <= last_column; ++column) {
-            // Columns wrap around the antimeridian.
-            const maptiles::TileKey key{tile_zoom, ((column % tiles_across) + tiles_across) % tiles_across, row};
-            auto decoded = view_model_.tiles.find(key);
-            if (decoded != view_model_.tiles.end()) {
-                decoded->second.last_used = frame_;
-                continue;
-            }
-            auto retry = retry_after_.find(key);
-            if (retry == retry_after_.end() || retry->second <= now)
-                fetcher_->Request(key);
+    for (const VisibleTile &tile : VisibleTiles(view_model_, geometry, SourceGrid(view_model_, geometry))) {
+        auto decoded = view_model_.tiles.find(tile.key);
+        if (decoded != view_model_.tiles.end()) {
+            decoded->second.last_used = frame_;
+            continue;
         }
+        auto retry = retry_after_.find(tile.key);
+        if (retry == retry_after_.end() || retry->second <= now)
+            fetcher_->Request(tile.key);
+    }
 }
 
 void MapViewController::PublishVisible(const AppModel &model, Intents &out)
@@ -373,12 +427,10 @@ void MapViewController::UpdateHover(const AppModel &model, double mouse_x, doubl
     std::set<std::string> shown;
     for (size_t i : core::SelectOutings(model.outings, model.MapFilter(), core::SortKey::Date, true))
         shown.insert(model.outings[i].raw.id);
-    double left, top;
-    MapOrigin(view_model_, left, top);
-    const int zoom = view_model_.Camera().zoom;
-    const double mouse_world_x = left + view_model_.width / 2.0 + mouse_x;
-    const double mouse_world_y = top + view_model_.height / 2.0 + mouse_y;
-    const maptiles::GeoBox box = MapViewBox(view_model_);
+    const MapGeometry geometry(view_model_);
+    const double mouse_screen_x = view_model_.width / 2.0 + mouse_x;
+    const double mouse_screen_y = view_model_.height / 2.0 + mouse_y;
+    const maptiles::GeoBox &box = geometry.ViewBox();
     double nearest = kHoverPx * kHoverPx;
     for (const openrider::sdk::OverviewTrack &track : model.tracks) {
         if (!shown.count(track.id) || track.east < box.west || track.west > box.east || track.north < box.south ||
@@ -386,8 +438,9 @@ void MapViewController::UpdateHover(const AppModel &model, double mouse_x, doubl
             continue;
         for (size_t i = 0; i < track.lat.size(); ++i) {
             double x, y;
-            maptiles::LonlatToWorld(track.lon[i], track.lat[i], zoom, layer->tile_size, x, y);
-            const double distance2 = (x - mouse_world_x) * (x - mouse_world_x) + (y - mouse_world_y) * (y - mouse_world_y);
+            if (!geometry.ToScreen(track.lon[i], track.lat[i], x, y))
+                continue;
+            const double distance2 = (x - mouse_screen_x) * (x - mouse_screen_x) + (y - mouse_screen_y) * (y - mouse_screen_y);
             if (distance2 < nearest) {
                 nearest = distance2;
                 view_model_.hovered_track = track.id;
@@ -402,23 +455,24 @@ void MapViewController::UpdateHover(const AppModel &model, double mouse_x, doubl
 // distance, being drawn on top.
 void MapViewController::UpdateSegmentHover(const AppModel &model, double mouse_x, double mouse_y)
 {
-    const MapLayerInfo *layer = view_model_.Layer();
-    double left, top;
-    MapOrigin(view_model_, left, top);
-    const int zoom = view_model_.Camera().zoom;
-    const double mouse_world_x = left + view_model_.width / 2.0 + mouse_x;
-    const double mouse_world_y = top + view_model_.height / 2.0 + mouse_y;
+    const MapGeometry geometry(view_model_);
+    const double mouse_screen_x = view_model_.width / 2.0 + mouse_x;
+    const double mouse_screen_y = view_model_.height / 2.0 + mouse_y;
     double nearest = kHoverPx * kHoverPx;
     bool nearest_shared = false;
     for (size_t g = 0; g < model.segment_groups.size(); ++g)
         for (const openrider::sdk::NetworkSegment &segment : model.segment_groups[g].network.segments) {
             double previous_x = 0.0, previous_y = 0.0;
+            bool previous = false;
             for (size_t i = 0; i < segment.lat.size(); ++i) {
                 double x, y;
-                maptiles::LonlatToWorld(segment.lon[i], segment.lat[i], zoom, layer->tile_size, x, y);
-                if (i > 0) {
+                if (!geometry.ToScreen(segment.lon[i], segment.lat[i], x, y)) {
+                    previous = false;
+                    continue;
+                }
+                if (previous) {
                     const double distance2 =
-                        Distance2ToSegment(mouse_world_x, mouse_world_y, previous_x, previous_y, x, y);
+                        Distance2ToSegment(mouse_screen_x, mouse_screen_y, previous_x, previous_y, x, y);
                     const bool better = distance2 < nearest || (distance2 <= nearest && segment.Shared() && !nearest_shared);
                     if (better) {
                         nearest = distance2;
@@ -429,6 +483,7 @@ void MapViewController::UpdateSegmentHover(const AppModel &model, double mouse_x
                 }
                 previous_x = x;
                 previous_y = y;
+                previous = true;
             }
         }
 }
@@ -446,26 +501,27 @@ void MapViewController::Handle(const Intent &intent, const AppModel &model, Inte
         break;
     case IntentKind::MapPan:
         if (layer) {
-            double x, y;
-            maptiles::LonlatToWorld(camera.lon, camera.lat, camera.zoom, layer->tile_size, x, y);
-            maptiles::WorldToLonlat(x - intent.x, y - intent.y, camera.zoom, layer->tile_size, camera.lon,
-                                    camera.lat);
+            // The new centre: the point now `delta` pixels from it.
+            const MapGeometry geometry(view_model_);
+            double lon, lat;
+            if (geometry.ToLonlat(view_model_.width / 2.0 - intent.x, view_model_.height / 2.0 - intent.y, lon, lat)) {
+                camera.lon = lon;
+                camera.lat = lat;
+            }
         }
         break;
+    // @impl 0f87-6ad8-552c-4753
     case IntentKind::MapZoom:
         if (layer) {
-            const int zoom = std::clamp(camera.zoom + intent.i, layer->min_zoom, MaxViewZoom(layer));
+            // Relative steps: zooming by z levels scales the map by 2^z,
+            // whatever the latitude and the current level.
+            const double zoom = std::clamp(camera.zoom + intent.z, static_cast<double>(layer->min_zoom),
+                                           static_cast<double>(MaxViewZoom(layer)));
             if (zoom != camera.zoom) {
-                // Keep the point under the mouse fixed: scale the mouse's
-                // world position to the new zoom and put the centre back at
-                // the same offset from it.
-                double centre_x, centre_y;
-                maptiles::LonlatToWorld(camera.lon, camera.lat, camera.zoom, layer->tile_size, centre_x, centre_y);
-                const double scale = std::pow(2.0, zoom - camera.zoom);
-                const double mouse_x = centre_x + intent.x, mouse_y = centre_y + intent.y;
-                maptiles::WorldToLonlat(mouse_x * scale - intent.x, mouse_y * scale - intent.y, zoom,
-                                        layer->tile_size, camera.lon, camera.lat);
-                camera.zoom = zoom;
+                // Keep the point under the mouse fixed.
+                const MapGeometry geometry(view_model_);
+                camera = geometry.ZoomedAt(camera, zoom, view_model_.width / 2.0 + intent.x,
+                                           view_model_.height / 2.0 + intent.y);
             }
         }
         break;
@@ -496,6 +552,11 @@ void MapViewController::Handle(const Intent &intent, const AppModel &model, Inte
             out.PushText(IntentKind::ReportError, "Cannot open the map layer: " + error);
         break;
     }
+    case IntentKind::SetMapCrs:
+        for (const reproj::Crs &crs : view_model_.display_choices)
+            if (crs.epsg == intent.i)
+                SetDisplay(crs);
+        break;
     case IntentKind::SetTrackStyle:
         view_model_.track_style = std::clamp(intent.i, 0, 5);
         break;

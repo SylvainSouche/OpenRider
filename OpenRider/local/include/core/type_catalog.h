@@ -51,6 +51,8 @@ public:
     /// itself if none.
     std::string KeyLabel(const std::string &key, const std::string &lang) const;
 
+    /// The label of `type` in language `lang` ("fr", else English): its
+    /// key's, else its sport's for a type without a tag, else the key itself.
     std::string Label(const ActivityType &type, const std::string &lang) const;
 
     /// Icon glyph (UTF-8) for the type, falling back to its sport's, then a

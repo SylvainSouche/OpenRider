@@ -14,7 +14,7 @@ namespace gpx {
 /// A GPX file's track.
 struct GpxFile {
     std::string name;              ///< the track's (else the file's metadata) name, "" if none
-    std::string type;              ///< the track's <type>, "" if none
+    std::string type;              ///< the track's \<type\>, "" if none
     double start_epoch_s = 0.0;    ///< time of the first point, seconds since 1970 UTC; NaN if none
     std::vector<or_point> points;  ///< every track point, in file order; t_s from the first point
 };
@@ -24,7 +24,7 @@ struct GpxFile {
 /// unreadable.
 double ParseTime(const std::string &text);
 
-/// The track of GPX `text`: its <trkpt> (lat, lon, ele, time, and the
+/// The track of GPX `text`: its \<trkpt\> (lat, lon, ele, time, and the
 /// heart rate, cadence, speed and temperature of Garmin's and similar
 /// extensions, whatever their namespace prefix). Missing values are NaN;
 /// distance is cumulated along the positions.
