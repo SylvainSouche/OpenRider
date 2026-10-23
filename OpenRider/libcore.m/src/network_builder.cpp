@@ -26,10 +26,10 @@ void NetworkBuilder::Stop()
 
 // @impl 0f87-6acd-dc0b-a958
 void NetworkBuilder::Start(std::vector<TrackGroup> groups, const or_segments_vtable *plugin,
-                           std::vector<double> values, const or_input_vtable *input, void *handle)
+                           std::vector<double> values, const InputSet *inputs)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    request_ = Request{std::move(groups), plugin, std::move(values), input, handle};
+    request_ = Request{std::move(groups), plugin, std::move(values), inputs};
     pending_ = true;
     result_ready_ = false;  // an older result is superseded
     ++generation_;          // the running build drops out at its next group
@@ -72,17 +72,7 @@ bool NetworkBuilder::Points(const Request &request, const std::string &id, const
     auto found = points_.find(id);
     if (found == points_.end()) {
         std::vector<or_point> loaded;
-        char error[256] = "";
-        auto append = [](void *user, const or_point *point) -> int {
-            static_cast<std::vector<or_point> *>(user)->push_back(*point);
-            return 0;
-        };
-        int rc = 1;
-        if (request.input && request.input->load_points)
-            CallPlugin(request.input, [&] {
-                rc = request.input->load_points(request.handle, id.c_str(), append, &loaded, error, sizeof error);
-            });
-        if (rc != 0)
+        if (!request.inputs || !request.inputs->LoadPoints(id, loaded).Ok())
             return false;
         found = points_.emplace(id, std::move(loaded)).first;
     }

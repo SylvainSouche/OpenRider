@@ -112,6 +112,14 @@ struct AppModel {
     std::vector<FilterState> filters;  ///< every filter plugin, in load order
     /// @}
 
+    /// @name Importing files (one after the other)
+    /// @{
+    bool can_import = false;               ///< a source takes imported files
+    std::vector<std::string> import_queue;  ///< files still to import
+    int importing = -1;                    ///< outing of the file being imported (asked OK/Cancel), -1 = none
+    std::string importing_file;            ///< that file, as chosen
+    /// @}
+
     std::vector<std::string> errors;  ///< oldest first, shown one at a time
     std::string status;               ///< what is going on, for the status bar
     bool quit = false;                ///< the application is to end

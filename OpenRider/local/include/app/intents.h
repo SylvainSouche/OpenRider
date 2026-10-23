@@ -32,6 +32,11 @@ enum class IntentKind {
     SetFilterParam,      ///< i: filter index, j: parameter index, x: value
     ResetFilterParams,   ///< i: filter index
     ReloadOverview,      ///< the overview tracks again (filters changed)
+    SetOutingType,       ///< i: outing index, text: type key "sport/sub_sport" (an unconfirmed outing stays so)
+    ConfirmOutingTypes,  ///< every unconfirmed outing's type settled and remembered
+    ImportFiles,         ///< ids: paths of files to import, one after the other
+    ImportAccept,        ///< the file being imported is kept, its type settled
+    ImportCancel,        ///< the file being imported is dropped
     DismissError,        ///< drops the error shown
     ReportError,         ///< text
     Quit,                ///< ends the application
@@ -43,11 +48,12 @@ enum class IntentKind {
     // MapViewController
     MapViewport,         ///< x, y: map region size in pixels
     MapPan,              ///< x, y: pixels dragged
-    MapZoom,             ///< i: +1/-1, x, y: mouse offset from the map centre
+    MapZoom,             ///< z: levels to zoom by (fractional, + in), x, y: mouse offset from the map centre (kept fixed)
     MapMouse,            ///< x, y: mouse offset from the map centre; i: 1 inside, 0 outside
     MapClick,            ///< a click (no drag) on the map
     MapDoubleClick,      ///< a double click on the map
     SelectLayer,         ///< i: layer index
+    SetMapCrs,           ///< i: EPSG code of the display coordinate system
     SetTrackStyle,       ///< i: track style index
     SetTrackColour,      ///< x: packed RGBA as a double (0..2^32)
 
@@ -88,6 +94,7 @@ struct Intent {
     int j = 0;                     ///< second integer argument
     double x = 0.0;                ///< first real argument (pixels, values)
     double y = 0.0;                ///< second real argument
+    double z = 0.0;                ///< third real argument
     std::string text;              ///< text argument
     std::vector<std::string> ids;  ///< outing ids argument
     openrider::sdk::SeriesSpec spec;         ///< graph specification argument

@@ -104,11 +104,11 @@ openrider::sdk::Status TileCache::Put(const std::string &layer, int z, int x, in
         over_maximum = !total_known_ || total_ > max_bytes_;
     }
     if (over_maximum)
-        Evict();
+        Evict(path);
     return openrider::sdk::Status::Success();
 }
 
-void TileCache::Evict()
+void TileCache::Evict(const std::string &keep)
 {
     std::unique_lock<std::mutex> evicting(evict_mutex_, std::try_to_lock);
     if (!evicting.owns_lock())
@@ -128,7 +128,16 @@ void TileCache::Evict()
         size_of[entry.path] = entry.size;
         total += entry.size;
     }
-    for (const std::string &victim : LruVictims(entries, max_bytes_))
+    // The kept tile stays: the others make room around it.
+    uint64_t room = max_bytes_;
+    std::vector<CacheEntry> candidates;
+    for (const CacheEntry &entry : entries) {
+        if (!keep.empty() && entry.path == keep)
+            room = entry.size < room ? room - entry.size : 0;
+        else
+            candidates.push_back(entry);
+    }
+    for (const std::string &victim : LruVictims(candidates, room))
         if (std::remove(victim.c_str()) == 0)
             total -= size_of[victim];
     std::lock_guard<std::mutex> lock(mutex_);

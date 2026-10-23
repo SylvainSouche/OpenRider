@@ -5,7 +5,7 @@
 # C naming and is excluded.
 # @impl 0f87-6acd-d7ea-1602
 Checks: '-*,readability-identifier-naming'
-HeaderFilterRegex: '.*/local/include/(core|maptiles|app)/.*|.*/openrider\.m/src/.*\.h'
+HeaderFilterRegex: '.*/local/include/(core|maptiles|app|reproj)/.*|.*/(openrider|tiles_wmts)\.m/src/.*\.h'
 CheckOptions:
   readability-identifier-naming.NamespaceCase: lower_case
   readability-identifier-naming.ClassCase: CamelCase

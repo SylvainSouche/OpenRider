@@ -9,10 +9,14 @@
 #include <openrider/sdk/route_ranges.h>
 #include <openrider/sdk/segment_exchange.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <thread>
 
 namespace {
@@ -89,6 +93,44 @@ void FreeSegments(or_segment_network *network) { openrider::sdk::FreeExportedNet
 const or_filter_param kSegmentParams[] = {{"width", "Width", 8.0, 1.0, 50.0}};
 const or_segments_vtable kSegments = {sizeof(or_segments_vtable), "fake", "Fake", 1, kSegmentParams, FakeSegments, FreeSegments};
 
+// A GPX folder of one outing, on the fake points, whose type is to be
+// confirmed.
+int FakeGpxList(void *, or_outing_cb cb, void *user, char *, size_t)
+{
+    or_outing o{};
+    std::snprintf(o.id, sizeof o.id, "gpx:x");
+    std::snprintf(o.name, sizeof o.name, "Walk");
+    std::snprintf(o.start_local, sizeof o.start_local, "2026-07-01 08:00:00");
+    std::snprintf(o.source_type, sizeof o.source_type, "hike");
+    cb(user, &o, 0, 1);
+    return 0;
+}
+const or_input_vtable kGpx = {sizeof(or_input_vtable), nullptr, nullptr, FakeGpxList, FakePoints};
+
+// A folder source: one outing per file, the file holding its start time
+// ("YYYY-MM-DD HH:MM:SS"); the handle is the folder's path.
+int FolderList(void *handle, or_outing_cb cb, void *user, char *, size_t)
+{
+    const std::string dir = *static_cast<const std::string *>(handle);
+    std::vector<std::string> names;
+    for (const auto &entry : std::filesystem::directory_iterator(dir))
+        names.push_back(entry.path().filename().string());
+    std::sort(names.begin(), names.end());
+    for (size_t i = 0; i < names.size(); ++i) {
+        std::ifstream in(dir + "/" + names[i]);
+        std::string start;
+        std::getline(in, start);
+        or_outing o{};
+        std::snprintf(o.id, sizeof o.id, "f:%s", names[i].c_str());
+        std::snprintf(o.name, sizeof o.name, "%s", names[i].c_str());
+        std::snprintf(o.start_local, sizeof o.start_local, "%s", start.c_str());
+        std::snprintf(o.source_type, sizeof o.source_type, "hike");
+        cb(user, &o, i, names.size());
+    }
+    return 0;
+}
+const or_input_vtable kFolder = {sizeof(or_input_vtable), nullptr, nullptr, FolderList, FakePoints};
+
 struct Fixture {
     app::AppModel model;
     app::AppController app{model};
@@ -100,14 +142,24 @@ struct Fixture {
     app::Controllers c{model, app, main, list, map, outing, comparison};
     app::Intents intents;
 
-    Fixture()
+    // `types_file` given: a GPX source too, the settled types kept there.
+    // `folder` given: a folder source taking imports instead.
+    std::string folder;
+    explicit Fixture(const std::string &types_file = "", const std::string &import_folder = "") : folder(import_folder)
     {
-        app.SetInput(&kInput, nullptr, "fake");
+        app.AddInput(&kInput, nullptr, "fake", "garmin_connect");
+        if (!types_file.empty())
+            app.SetOutingTypesFile(types_file);
+        if (!folder.empty())
+            app.AddInput(&kFolder, &folder, "folder", "gpx", true, folder);
+        else if (!types_file.empty())
+            app.AddInput(&kGpx, nullptr, "gpx", "gpx", true);
         app.AddFilter(&kHalf);
         app.AddSegmentMethod(&kSegments);
         app.Start();
-        for (int i = 0; i < 500 && (model.outings.size() < 3 || model.scanning || model.tracks_loading ||
-                                    model.tracks.size() < 3);
+        const size_t expected = types_file.empty() || !import_folder.empty() ? 3 : 4;
+        for (int i = 0; i < 500 && (model.outings.size() < expected || model.scanning || model.tracks_loading ||
+                                    model.tracks.size() < expected);
              ++i) {
             app::Step(c, intents);
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -310,6 +362,79 @@ ATF_TEST_CASE_BODY(small_parameter_change_rebuilds)
     ATF_REQUIRE(g_segment_builds.load() > builds);
 }
 
+// A GPX outing comes unconfirmed; its type is changed, then confirmed and
+// remembered: the next start finds it settled.
+ATF_TEST_CASE_WITHOUT_HEAD(gpx_types_confirmed_and_remembered);
+ATF_TEST_CASE_BODY(gpx_types_confirmed_and_remembered)
+{
+    char dir[] = "/tmp/openrider-types-XXXXXX";
+    const std::string file = std::string(mkdtemp(dir)) + "/outing_types.json";
+    {
+        Fixture f(file);
+        ATF_REQUIRE_EQ(f.model.outings.size(), 4u);
+        const size_t gpx = 3;
+        ATF_REQUIRE_EQ(std::string(f.model.outings[gpx].raw.id), "gpx:x");
+        ATF_REQUIRE(!f.model.outings[gpx].confirmed);
+        ATF_REQUIRE(f.model.outings[0].confirmed);
+        app::Intent set{app::IntentKind::SetOutingType};
+        set.i = static_cast<int>(gpx);
+        set.text = "walking/generic";
+        f.Send(set);
+        ATF_REQUIRE_EQ(f.model.outings[gpx].type.Key(), "walking/generic");
+        ATF_REQUIRE(!f.model.outings[gpx].confirmed);  // still to be confirmed
+        f.Send(app::IntentKind::ConfirmOutingTypes);
+        ATF_REQUIRE(f.model.outings[gpx].confirmed);
+    }
+    Fixture again(file);
+    ATF_REQUIRE(again.model.outings[3].confirmed);
+    ATF_REQUIRE_EQ(again.model.outings[3].type.Key(), "walking/generic");
+}
+
+// Files imported one after the other: copied into the folder and read back;
+// kept with the type chosen, refused when the library has the outing
+// already, dropped on cancel.
+ATF_TEST_CASE_WITHOUT_HEAD(files_imported_one_by_one);
+ATF_TEST_CASE_BODY(files_imported_one_by_one)
+{
+    char base[] = "/tmp/openrider-import-XXXXXX";
+    const std::string root = mkdtemp(base), folder = root + "/gpx", outside = root + "/chosen";
+    std::filesystem::create_directories(folder);
+    std::filesystem::create_directories(outside);
+    std::ofstream(outside + "/a.gpx") << "2026-08-01 07:00:00\n";
+    std::ofstream(outside + "/b.gpx") << "2026-01-10 10:00:20\n";  // the first fake outing again
+    std::ofstream(outside + "/c.gpx") << "2026-08-02 07:00:00\n";
+    Fixture f(root + "/types.json", folder);
+    ATF_REQUIRE_EQ(f.model.outings.size(), 3u);
+    ATF_REQUIRE(f.model.can_import);
+    app::Intent import{app::IntentKind::ImportFiles};
+    import.ids = {outside + "/a.gpx", outside + "/b.gpx", outside + "/c.gpx"};
+    f.Send(import);
+    ATF_REQUIRE_EQ(f.model.importing, 3);  // a, asked about
+    ATF_REQUIRE_EQ(std::string(f.model.outings[3].raw.id), "f:a.gpx");
+    ATF_REQUIRE(std::filesystem::exists(folder + "/a.gpx"));
+    app::Intent set{app::IntentKind::SetOutingType};
+    set.i = 3;
+    set.text = "walking/generic";
+    f.Send(set);
+    f.Send(app::IntentKind::ImportAccept);
+    // b is the library's first outing again: refused; c is asked about.
+    ATF_REQUIRE_EQ(f.model.errors.size(), 1u);
+    ATF_REQUIRE(f.model.errors[0].find("already") != std::string::npos);
+    ATF_REQUIRE(!std::filesystem::exists(folder + "/b.gpx"));
+    ATF_REQUIRE_EQ(f.model.importing, 4);
+    ATF_REQUIRE_EQ(std::string(f.model.outings[4].raw.id), "f:c.gpx");
+    f.Send(app::IntentKind::ImportCancel);
+    ATF_REQUIRE_EQ(f.model.importing, -1);
+    ATF_REQUIRE_EQ(f.model.outings.size(), 4u);  // a kept, c dropped
+    ATF_REQUIRE(!std::filesystem::exists(folder + "/c.gpx"));
+    ATF_REQUIRE(f.model.outings[3].confirmed);
+    ATF_REQUIRE_EQ(f.model.outings[3].type.Key(), "walking/generic");
+    std::ifstream types(root + "/types.json");
+    std::stringstream saved;
+    saved << types.rdbuf();
+    ATF_REQUIRE(saved.str().find("f:a.gpx") != std::string::npos);
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
     ATF_ADD_TEST_CASE(tcs, segment_comparison);
@@ -319,6 +444,8 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, selecting_loads_points_and_stats);
     ATF_ADD_TEST_CASE(tcs, filters_are_non_destructive);
     ATF_ADD_TEST_CASE(tcs, filters_reload_the_overview);
+    ATF_ADD_TEST_CASE(tcs, gpx_types_confirmed_and_remembered);
+    ATF_ADD_TEST_CASE(tcs, files_imported_one_by_one);
     ATF_ADD_TEST_CASE(tcs, query_drives_list_and_map_filters);
     ATF_ADD_TEST_CASE(tcs, errors_queue_and_quit);
 }

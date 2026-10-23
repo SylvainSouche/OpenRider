@@ -162,7 +162,7 @@ PluginLoad LoadPlugin(const std::string &path, uint32_t kind)
     }
     auto entry = reinterpret_cast<or_plugin_entry_fn>(LibrarySymbol(h, OR_PLUGIN_ENTRY_SYMBOL));
     if (!entry) {
-        load.stage = PluginStage::kEntry;
+        load.stage = PluginStage::Entry;
         load.problem = "no " OR_PLUGIN_ENTRY_SYMBOL " entry point";
         CloseLibrary(h);
         return load;
@@ -170,11 +170,11 @@ PluginLoad LoadPlugin(const std::string &path, uint32_t kind)
     const or_plugin_info *info = entry();
     load.problem = PluginCheck(info, kind);
     if (!load.problem.empty()) {
-        load.stage = PluginStage::kDescriptor;
+        load.stage = PluginStage::Descriptor;
         CloseLibrary(h);
         return load;
     }
-    load.stage = PluginStage::kAccepted;
+    load.stage = PluginStage::Accepted;
     load.plugin = LoadedPlugin{path, info, h};
     return load;
 }
@@ -186,7 +186,7 @@ PluginScan LoadPlugins(const std::vector<std::string> &roots, uint32_t kind)
     for (const std::string &root : roots) {
         for (const std::string &path : LibrariesIn(root + "/" + PluginKindDir(kind))) {
             PluginLoad load = LoadPlugin(path, kind);
-            if (load.stage != PluginStage::kAccepted) {
+            if (load.stage != PluginStage::Accepted) {
                 scan.problems.push_back(path + ": " + load.problem);
                 continue;
             }

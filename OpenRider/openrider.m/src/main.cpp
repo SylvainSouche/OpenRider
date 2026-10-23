@@ -18,6 +18,7 @@
 #include "core/plugin_thread.h"
 #include "core/plugins.h"
 
+#include <algorithm>
 #include <cstdio>
 
 namespace {
@@ -42,13 +43,17 @@ void GlfwError(int code, const char *text)
 }
 
 // Plugins found on disk become the controllers' services.
-void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::Intents &out, void *&input_handle,
-                      const or_input_vtable *&input)
+void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::Intents &out)
 {
     const std::vector<std::string> roots = {core::BundledPluginsDir(), core::UserPluginsDir()};
     const std::string share = core::BundledShareDir();
     ctl.LoadTypes(ReadFile(share + "/types/labels.json"), "garmin_connect",
                    ReadFile(share + "/types/garmin_connect.json"));
+    // GPX files: Garmin Connect's own exports use its type keys; other
+    // applications' names on top.
+    ctl.LoadTypeSource("gpx", ReadFile(share + "/types/garmin_connect.json"));
+    ctl.LoadTypeSource("gpx", ReadFile(share + "/types/gpx.json"));
+    ctl.SetOutingTypesFile(core::UserSupportDir() + "/outing_types.json");
 
     const core::PluginScan filters = core::LoadPlugins(roots, OR_PLUGIN_FILTER);
     for (const core::LoadedPlugin &p : filters.loaded) {
@@ -67,21 +72,52 @@ void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::
         out.PushText(app::IntentKind::ReportError, "Plugin refused: " + p);
     for (const std::string &p : inputs.problems)
         out.PushText(app::IntentKind::ReportError, "Plugin refused: " + p);
-    if (inputs.loaded.empty()) {
-        out.PushText(app::IntentKind::ReportError, "No input plugin found in " + roots[0] + "/input");
-    } else {
-        const core::LoadedPlugin &p = inputs.loaded.front();
-        input = static_cast<const or_input_vtable *>(p.info->vtable);
-        char err[512] = "";
-        core::CallPlugin(input, [&] { input_handle = input->open(nullptr, err, sizeof err); });
-        if (!input_handle) {
-            out.PushText(app::IntentKind::ReportError, std::string("Cannot open ") + p.info->name + ": " + err);
-            input = nullptr;
-        } else {
-            core::LogLine("input plugin %s %s (%s)", p.info->name, p.info->version, p.path.c_str());
-            ctl.SetInput(input, input_handle, p.info->name);
-            ctl.Start();
+    // Every input source, GarminDB first (it wins over duplicates): how each
+    // is opened, its type table, whether its types are to be confirmed.
+    struct InputSetup {
+        std::string config, types;
+        bool confirm_types;
+        std::string import_dir;
+    };
+    auto setup = [](const std::string &name) {
+        if (name == "gpx") {
+            const std::string dir = core::UserSupportDir() + "/gpx";
+            core::MakeDirs(dir);
+            return InputSetup{"{\"dir\":\"" + dir + "\"}", "gpx", true, dir};
         }
+        return InputSetup{"", name == "garmindb" ? "garmin_connect" : name, false, ""};
+    };
+    std::vector<core::LoadedPlugin> ordered = inputs.loaded;
+    std::stable_sort(ordered.begin(), ordered.end(), [](const core::LoadedPlugin &a, const core::LoadedPlugin &b) {
+        return std::string(a.info->name) == "garmindb" && std::string(b.info->name) != "garmindb";
+    });
+    bool opened = false;
+    for (const core::LoadedPlugin &p : ordered) {
+        const auto *input = static_cast<const or_input_vtable *>(p.info->vtable);
+        const InputSetup how = setup(p.info->name);
+        char err[512] = "";
+        void *handle = nullptr;
+        core::CallPlugin(input, [&] { handle = input->open(how.config.empty() ? nullptr : how.config.c_str(), err, sizeof err); });
+        if (!handle) {
+            out.PushText(app::IntentKind::ReportError, std::string("Cannot open ") + p.info->name + ": " + err);
+            continue;
+        }
+        core::LogLine("input plugin %s %s (%s)", p.info->name, p.info->version, p.path.c_str());
+        ctl.AddInput(input, handle, p.info->name, how.types, how.confirm_types, how.import_dir);
+        opened = true;
+    }
+    if (inputs.loaded.empty())
+        out.PushText(app::IntentKind::ReportError, "No input plugin found in " + roots[0] + "/input");
+    if (opened)
+        ctl.Start();
+    // Coordinate systems: those shipped, then the user's own (optional).
+    for (const std::string &p : map.LoadCrs(share + "/crs.txt"))
+        out.PushText(app::IntentKind::ReportError, "Coordinate systems: " + p);
+    const std::string user_crs = core::UserSupportDir() + "/crs.txt";
+    if (FILE *file = std::fopen(user_crs.c_str(), "r")) {
+        std::fclose(file);
+        for (const std::string &p : map.LoadCrs(user_crs))
+            out.PushText(app::IntentKind::ReportError, "Coordinate systems: " + p);
     }
     for (const std::string &p : map.LoadLayers({share + "/layers", core::UserSupportDir() + "/layers"}, roots,
                                                 core::UserCacheDir() + "/tiles", "opentopomap"))
@@ -131,9 +167,7 @@ int main()
         app::ComparisonViewController comparison_vc;
         app::Controllers controllers{model, app_ctl, main_vc, list_vc, map_vc, outing_vc, comparison_vc};
         app::Intents intents;
-        const or_input_vtable *input = nullptr;
-        void *input_handle = nullptr;
-        ConnectServices(app_ctl, map_vc, intents, input_handle, input);
+        ConnectServices(app_ctl, map_vc, intents);
         ui::TextureMirror textures;
 
         while (!glfwWindowShouldClose(window) && !model.quit) {
@@ -160,8 +194,7 @@ int main()
         // Background work stops before the services it uses go away.
         app_ctl.Shutdown();
         map_vc.Shutdown();
-        if (input && input_handle)
-            core::CallPlugin(input, [&] { input->close(input_handle); });
+        app_ctl.CloseInputs();
         core::LogLine("OpenRider exiting");
     }
 

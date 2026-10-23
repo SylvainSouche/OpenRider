@@ -1,0 +1,12 @@
+{
+  "id": "kartverket_topo",
+  "name": "Kartverket Topo (Norway)",
+  "protocol": "wmts",
+  "capabilities": "https://cache.kartverket.no/v1/wmts/1.0.0/WMTSCapabilities.xml",
+  "layers": ["topo"],
+  "min_zoom": 0,
+  "max_zoom": 18,
+  "tile_size": 256,
+  "extent": [3.7765, 57.6411, 31.9867, 71.5664],
+  "attribution": "© Kartverket (CC BY 4.0)"
+}

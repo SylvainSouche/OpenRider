@@ -26,3 +26,5 @@ application's Help → About dialog; keep both in sync.
 | [GarminDB](https://github.com/tcgoetz/GarminDB) output | GPL-2.0 (program); read as data only, not linked | activity input |
 | [OpenTopoMap](https://opentopomap.org) | CC-BY-SA | default map layer — attribution shown on the map: "Map data: © OpenStreetMap contributors, SRTM \| Map representation: © OpenTopoMap (CC-BY-SA)" |
 | [IGN SCAN 25 Touristique](https://geoservices.ign.fr) via the Géoplateforme WMTS | IGN terms (to be verified) | optional map layer — attribution shown on the map: "© IGN — SCAN 25® Touristique (Géoplateforme)" |
+| [Kartverket Topo](https://www.kartverket.no/api-og-data/kartgrunnlag-fastlands-norge) via Kartverket's open WMTS cache (`cache.kartverket.no`) | CC BY 4.0 | optional map layer for Norway — attribution shown on the map: "© Kartverket (CC BY 4.0)" |
+<!-- @impl 0f87-6ad8-592a-f21b -->

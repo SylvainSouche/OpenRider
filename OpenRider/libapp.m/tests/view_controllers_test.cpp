@@ -80,16 +80,22 @@ ATF_TEST_CASE_BODY(hover_finds_the_point)
     c.Tick(m);
     c.Handle(Intent(app::IntentKind::GraphHover, 0, 2.5), m);  // 2.5 min on the time axis
     ATF_REQUIRE_EQ(c.ViewModel().hover_index, 150);
-    // Histogram: the bar holding x = 2.5 min starts at minute 2 (point 120).
+    ATF_REQUIRE_EQ(c.ViewModel().hover_end_index, -1);  // a curve: one point
+    // Histogram: the bar holding x = 2.2 min starts at minute 2 (point 120).
     app::Intent spec = Intent(app::IntentKind::SetGraphSpec, 0);
     spec.spec.kind = openrider::sdk::SeriesKind::VerticalSpeed;
     spec.spec.type = openrider::sdk::GraphType::Histogram;
     c.Handle(spec, m);
-    c.Handle(Intent(app::IntentKind::GraphHover, 0, 2.5), m);
+    c.Handle(Intent(app::IntentKind::GraphHover, 0, 2.2), m);
     ATF_REQUIRE_EQ(c.ViewModel().hover_index, 120);
+    // The whole bar is hovered (up to the next bar's first point), the
+    // cursor at its centre.
+    ATF_REQUIRE_EQ(c.ViewModel().hover_end_index, 180);
+    ATF_REQUIRE(std::fabs(c.ViewModel().hover_x - 2.5) < 1e-9);
     // A new outing clears the hover.
     c.Tick(ModelWithPoints("b"));
     ATF_REQUIRE_EQ(c.ViewModel().hover_index, -1);
+    ATF_REQUIRE_EQ(c.ViewModel().hover_end_index, -1);
 }
 
 ATF_INIT_TEST_CASES(tcs)

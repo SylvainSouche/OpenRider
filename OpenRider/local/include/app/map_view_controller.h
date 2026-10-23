@@ -7,6 +7,8 @@
 
 #include "maptiles/tile_cache.h"
 #include "maptiles/tile_fetcher.h"
+#include "maptiles/tile_grid.h"
+#include "reproj/crs_registry.h"
 
 #include <openrider/tiles.h>
 
@@ -29,8 +31,14 @@ constexpr int kMaxTileZoom = 24;
 struct MapCamera {
     double lon = 6.63;               ///< view centre, WGS84 longitude
     double lat = 45.94;              ///< view centre, WGS84 latitude
-    int zoom = 3;                    ///< view zoom level
+    double zoom = 3.0;               ///< view zoom level, fractional (2^zoom scale)
     bool fitted = false;             ///< fitted once to its content
+};
+
+/// A tile grid of a layer and its coordinate system.
+struct MapGrid {
+    maptiles::TileGrid tiles;  ///< levels and tile addressing
+    reproj::Crs crs;           ///< the grid's system
 };
 
 /// A map layer as offered to the user.
@@ -43,6 +51,7 @@ struct MapLayerInfo {
     int min_zoom = 0;     ///< first zoom level served
     int max_zoom = 18;    ///< last zoom level served
     int tile_size = 256;  ///< tile width and height, pixels
+    std::vector<MapGrid> grids;  ///< tile grids, known once the layer is opened
 };
 
 /// A decoded tile ready to draw.
@@ -66,6 +75,8 @@ struct MapViewModel {
     MapCamera comparison;              ///< camera of the segment comparison
     float width = 0.0f;                ///< viewport width, pixels
     float height = 0.0f;               ///< viewport height, pixels
+    reproj::Crs display;               ///< display coordinate system (Web Mercator by default)
+    std::vector<reproj::Crs> display_choices;  ///< Web Mercator and the systems native to the layers on offer
 
     std::map<maptiles::TileKey, MapTile> tiles;  ///< decoded, ready to draw
     size_t tile_errors = 0;    ///< tiles that failed so far
@@ -124,11 +135,21 @@ public:
     void AddPlugin(const or_tiles_vtable *tiles_vtable) { plugins_.push_back(tiles_vtable); }
 
     /// Adds a layer definition: "" when added, else why not (no protocol
-    /// accepts it, or its zoom levels lie outside 0..kMaxTileZoom).
+    /// accepts it, or its zoom levels lie outside 0..kMaxTileZoom). Its
+    /// grids are learnt now (WMTS: capabilities, cached), so set the cache
+    /// directory and load the coordinate systems first.
     std::string AddLayer(const std::string &json);
 
     /// Sets the tile cache root.
     void SetCacheDir(const std::string &dir) { cache_dir_ = dir; }
+
+    /// Adds coordinate system definitions (see reproj::CrsRegistry).
+    /// @return problems found, one message each
+    std::vector<std::string> LoadCrs(const std::string &path);
+
+    /// Adds one coordinate system definition line (tests).
+    /// @return "" or why it was refused
+    std::string AddCrs(const std::string &line);
 
     /// Shows layer `index`.
     /// @return "" or why the layer cannot be opened
@@ -179,7 +200,29 @@ private:
     /// Overview: pushes SetVisibleIds when the tracks in view change.
     void PublishVisible(const AppModel &model, Intents &out);
 
+    /// Shows the map in `crs`, every camera keeping its ground scale.
+    void SetDisplay(const reproj::Crs &crs);
+
+    /// Keeps `camera`'s view within the current layer's extent, and within
+    /// the display system's area of use when it is a national one: zoomed
+    /// in at least until the view fits, each side stopped at the edge it
+    /// meets. Nothing for a world-wide layer in Web Mercator.
+    void KeepInExtent(MapCamera &camera) const;
+
+    /// The projections offered: Web Mercator, then the systems native to a
+    /// layer on offer in the view (MapOfferedLayers), the shown layer's
+    /// first; the current display always among them.
+    /// @param model the model, read-only (the offered layers follow the
+    ///        selected outing)
+    void UpdateDisplayChoices(const AppModel &model);
+
+    /// Before showing the box (WGS84 degrees): a layer whose extent does not
+    /// hold it gives way to the default layer, then a national display
+    /// whose (widened) area does not hold it to Web Mercator.
+    void ShowContent(double west, double south, double east, double north);
+
     MapViewModel view_model_;                       ///< changed only here
+    reproj::CrsRegistry registry_;                  ///< coordinate systems known
     std::vector<const or_tiles_vtable *> plugins_;  ///< tiles protocols
     const or_tiles_vtable *tiles_vtable_ = nullptr; ///< protocol of the open layer
     void *layer_ = nullptr;                         ///< open layer handle
@@ -191,6 +234,7 @@ private:
     unsigned long generation_ = 0;       ///< last MapTile::generation given
     bool unavailable_reported_ = false;  ///< the unavailable service was reported
     std::vector<std::string> last_visible_;  ///< last published SetVisibleIds
+    int default_layer_ = -1;                 ///< LoadLayers()' default, -1 = the first world-wide layer
 };
 
 } // namespace app

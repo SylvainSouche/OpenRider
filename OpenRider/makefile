@@ -8,6 +8,6 @@ PREREQS=OpenRiderDependencies
 DOCS=yes
 # Also document the framework-local and app-private headers, and have
 # Doxygen report anything left undocumented.
-DOC_INPUT_EXTRA=local/include openrider.m/src
+DOC_INPUT_EXTRA=local/include openrider.m/src libreproj.m/src tiles_wmts.m/src tiles_xyz.m/src filter_jitter.m/src input_garmindb.m/src input_gpx.m/include input_gpx.m/src segments_heatmap.m/include segments_heatmap.m/src segments_matching.m/include segments_matching.m/src
 DOC_WARN_IF_UNDOCUMENTED=YES
 .include "mk.framework.mk"

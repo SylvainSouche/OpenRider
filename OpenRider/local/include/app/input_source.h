@@ -1,6 +1,8 @@
 /// @file
-/// The input plugin the model's outings come from.
+/// The input sources the model's outings come from.
 #pragma once
+
+#include "core/input_set.h"
 
 #include <openrider/input.h>
 #include <openrider/sdk/result.h>
@@ -10,32 +12,34 @@
 
 namespace app {
 
-/// The input plugin and its open handle, shared by the domains reading
-/// outings (library, selected outing, comparison).
+/// The open input sources (GarminDB, a GPX folder...), shared by the
+/// domains reading outings (library, selected outing, segments,
+/// comparison).
 class InputSource {
 public:
-    /// Sets the plugin (from main, or a fake in tests).
-    /// @param vtable the plugin's vtable
-    /// @param handle its open handle; must stay open while the source is used
-    void Set(const or_input_vtable *vtable, void *handle);
+    /// Adds an open source (from main, or a fake in tests); the earlier
+    /// ones win over the later ones for duplicate outings.
+    void Add(core::InputSet::Source source) { set_.Add(std::move(source)); }
 
-    /// An input plugin is set.
-    bool Ready() const { return vtable_ != nullptr; }
+    /// At least one source is open.
+    bool Ready() const { return !set_.Empty(); }
 
-    /// The plugin's vtable, null until Set().
-    const or_input_vtable *Vtable() const { return vtable_; }
+    /// The sources, and which one each outing comes from.
+    core::InputSet &Set() { return set_; }
 
-    /// The plugin's open handle.
-    void *Handle() const { return handle_; }
+    /// The sources, read-only.
+    const core::InputSet &Set() const { return set_; }
 
     /// Loads every recorded point of outing `id` into `points` (replacing
-    /// them).
+    /// them), from the outing's source.
     /// @return the plugin's error, if any
-    openrider::sdk::Status LoadPoints(const std::string &id, std::vector<or_point> &points) const;
+    openrider::sdk::Status LoadPoints(const std::string &id, std::vector<or_point> &points) const
+    {
+        return set_.LoadPoints(id, points);
+    }
 
 private:
-    const or_input_vtable *vtable_ = nullptr;  ///< the plugin
-    void *handle_ = nullptr;                   ///< its open handle
+    core::InputSet set_;  ///< the sources
 };
 
 } // namespace app

@@ -41,11 +41,23 @@ public:
     /// @param source_json content of that table
     void LoadTypes(const std::string &labels_json, const std::string &source, const std::string &source_json);
 
-    /// Sets the input plugin (from main, or a fake in tests).
+    /// Adds a further source type table (e.g. "gpx") to the catalog.
+    void LoadTypeSource(const std::string &source, const std::string &source_json);
+
+    /// Where the types the user settles for outings are kept (read now).
+    void SetOutingTypesFile(const std::string &path);
+
+    /// Adds an open input source (GarminDB, a GPX folder...); the first
+    /// added wins over the later ones for duplicate outings.
     /// @param input the plugin's vtable
-    /// @param handle its open handle; must stay open until Shutdown()
-    /// @param name shown in the status bar
-    void SetInput(const or_input_vtable *input, void *handle, std::string name);
+    /// @param handle its open handle; must stay open while the controller runs
+    /// @param name the plugin's name, shown in the status
+    /// @param types the type table its source types resolve with (e.g. "garmin_connect")
+    /// @param confirm_types its outings' types are to be confirmed by the user
+    /// @param import_dir the folder its outings are files in, where imported
+    ///        files are copied ("" if it takes no import)
+    void AddInput(const or_input_vtable *input, void *handle, std::string name, std::string types,
+                  bool confirm_types = false, std::string import_dir = "");
 
     /// Adds a filter plugin, disabled, with its default parameters.
     void AddFilter(const or_filter_vtable *filter);
@@ -56,6 +68,9 @@ public:
 
     /// Begins scanning outings.
     void Start();
+
+    /// Closes every input source; after Shutdown(), before exit.
+    void CloseInputs();
 
     /// Moves every domain's background progress into the model.
     /// @param out receives follow-up intents

@@ -35,6 +35,17 @@ int FakePoints(void *, const char *id, or_point_cb cb, void *user, char *err, si
 }
 const or_input_vtable kInput = {sizeof(or_input_vtable), nullptr, nullptr, nullptr, FakePoints};
 
+// The fake input as the only source.
+const core::InputSet &Inputs()
+{
+    static core::InputSet *inputs = [] {
+        auto *set = new core::InputSet;
+        set->Add({&kInput, nullptr, "fake", "", false});
+        return set;
+    }();
+    return *inputs;
+}
+
 // Segments plugin: one shared segment along the first track, followed by
 // every track.
 int FakeBuild(const or_segment_track *tracks, size_t count, const double *, or_segment_cancel_cb, void *,
@@ -80,7 +91,7 @@ ATF_TEST_CASE_BODY(builds_one_network_per_group)
 {
     std::vector<core::TrackGroup> groups = {{"running", {"a", "b"}}, {"cycling", {"c", "d"}}};
     core::NetworkBuilder builder;
-    builder.Start(groups, &kFake, {8.0}, &kInput, nullptr);
+    builder.Start(groups, &kFake, {8.0}, &Inputs());
     const std::vector<core::SegmentGroup> result = Wait(builder);
     ATF_REQUIRE_EQ(result.size(), 2u);
     ATF_REQUIRE_EQ(result[0].sport, "running");
@@ -97,8 +108,8 @@ ATF_TEST_CASE_WITHOUT_HEAD(restart_replaces_the_build);
 ATF_TEST_CASE_BODY(restart_replaces_the_build)
 {
     core::NetworkBuilder builder;
-    builder.Start({{"running", {"a", "b"}}}, &kFake, {8.0}, &kInput, nullptr);
-    builder.Start({{"hiking", {"c", "d"}}}, &kFake, {8.0}, &kInput, nullptr);
+    builder.Start({{"running", {"a", "b"}}}, &kFake, {8.0}, &Inputs());
+    builder.Start({{"hiking", {"c", "d"}}}, &kFake, {8.0}, &Inputs());
     const std::vector<core::SegmentGroup> result = Wait(builder);
     ATF_REQUIRE_EQ(result.size(), 1u);
     ATF_REQUIRE_EQ(result[0].sport, "hiking");
@@ -109,7 +120,7 @@ ATF_TEST_CASE_BODY(many_requests_coalesce)
 {
     core::NetworkBuilder builder;
     for (int width = 1; width <= 50; ++width)  // like a slider being dragged
-        builder.Start({{"running", {"a", "b"}}}, &kFake, {double(width)}, &kInput, nullptr);
+        builder.Start({{"running", {"a", "b"}}}, &kFake, {double(width)}, &Inputs());
     ATF_REQUIRE_EQ(Wait(builder).size(), 1u);
     for (int i = 0; i < 1000 && builder.Building(); ++i)
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -124,7 +135,7 @@ ATF_TEST_CASE_BODY(outings_without_positions_left_out)
 {
     core::NetworkBuilder builder;
     builder.Start({{"running", {"a", "indoor", "b"}}, {"rowing", {"c", "indoor"}}, {"hiking", {"d", "missing"}}},
-                  &kFake, {8.0}, &kInput, nullptr);
+                  &kFake, {8.0}, &Inputs());
     const std::vector<core::SegmentGroup> result = Wait(builder);
     ATF_REQUIRE_EQ(result.size(), 1u);
     ATF_REQUIRE_EQ(result[0].network.routes.size(), 2u);

@@ -1,9 +1,9 @@
 {
   "id": "ign_scan25",
   "name": "IGN SCAN 25 Touristique",
-  "protocol": "xyz",
-  "url": "https://data.geopf.fr/private/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN25TOUR&STYLE=normal&TILEMATRIXSET=PM_6_16&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/jpeg",
-  "crs": "EPSG:3857",
+  "protocol": "wmts",
+  "capabilities": "https://data.geopf.fr/private/wmts?SERVICE=WMTS&REQUEST=GetCapabilities",
+  "layers": ["GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN25TOUR", "GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN25TOUR.L93"],
   "min_zoom": 6,
   "max_zoom": 16,
   "tile_size": 256,

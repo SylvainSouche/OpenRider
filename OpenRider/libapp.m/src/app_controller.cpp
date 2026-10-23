@@ -28,17 +28,30 @@ void AppController::LoadTypes(const std::string &labels_json, const std::string 
         ReportError(model_, status.error);
 }
 
-void AppController::SetInput(const or_input_vtable *input, void *handle, std::string name)
+void AppController::AddInput(const or_input_vtable *input, void *handle, std::string name, std::string types,
+                             bool confirm_types, std::string import_dir)
 {
-    input_.Set(input, handle);
-    model_.input_name = std::move(name);
+    model_.input_name += (model_.input_name.empty() ? "" : " + ") + name;
+    model_.can_import = model_.can_import || !import_dir.empty();
+    input_.Add({input, handle, std::move(name), std::move(types), confirm_types, std::move(import_dir)});
 }
+
+void AppController::LoadTypeSource(const std::string &source, const std::string &source_json)
+{
+    const openrider::sdk::Status status = model_.types.LoadSource(source, source_json);
+    if (!status.Ok())
+        ReportError(model_, status.error);
+}
+
+void AppController::SetOutingTypesFile(const std::string &path) { library_.SetTypesFile(path); }
 
 void AppController::AddFilter(const or_filter_vtable *filter) { outing_.AddFilter(filter); }
 
 void AppController::AddSegmentMethod(const or_segments_vtable *method) { segments_.AddMethod(method); }
 
-void AppController::Start() { library_.Start("garmin_connect"); }
+void AppController::Start() { library_.Start(); }
+
+void AppController::CloseInputs() { input_.Set().CloseAll(); }
 
 void AppController::Tick(Intents &out)
 {

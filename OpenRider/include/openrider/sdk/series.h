@@ -37,7 +37,7 @@ struct SeriesSpec {
     GraphType type = GraphType::Curve;                   ///< curve or histogram
     double vspeed_window_s = 60.0;                       ///< vertical speed window (s): 30, 60 or 300
     VSpeedUnit vspeed_unit = VSpeedUnit::MetresPerHour;  ///< vertical speed unit
-    double grade_window_m = 100.0;                       ///< grade window (m): 100 or 1000
+    double grade_window_m = 100.0;                       ///< grade window (m): 100, 500 or 1000
 };
 
 /// A series ready to plot.

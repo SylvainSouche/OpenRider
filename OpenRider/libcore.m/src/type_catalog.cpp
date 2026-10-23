@@ -102,6 +102,23 @@ ActivityType TypeCatalog::Resolve(const std::string &source, const std::string &
                         fit_sub_sport.empty() ? "generic" : fit_sub_sport, ""};
 }
 
+std::vector<std::string> TypeCatalog::LabelledKeys() const
+{
+    std::vector<std::string> keys;
+    for (const auto &entry : labels_)
+        keys.push_back(entry.first);
+    return keys;  // std::map: sorted
+}
+
+std::string TypeCatalog::KeyLabel(const std::string &key, const std::string &lang) const
+{
+    const auto it = labels_.find(key);
+    if (it == labels_.end())
+        return key;
+    const std::string &label = lang == "fr" && !it->second.fr.empty() ? it->second.fr : it->second.en;
+    return label.empty() ? key : label;
+}
+
 std::string TypeCatalog::Label(const ActivityType &type, const std::string &lang) const
 {
     auto pick = [&](const TypeLabel &label) { return lang == "fr" && !label.fr.empty() ? label.fr : label.en; };

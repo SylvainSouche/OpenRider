@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 
 namespace maptiles {
 
@@ -37,9 +38,9 @@ const or_tile_layer *LayerOf(const or_tiles_vtable *tiles_vtable, void *layer)
 
 } // namespace
 
-TileFetcher::TileFetcher(const or_tiles_vtable *tiles_vtable, void *layer, TileCache *cache,
-                         std::string user_agent, int workers)
-    : tiles_vtable_(tiles_vtable), layer_(layer), layer_info_(LayerOf(tiles_vtable, layer)),
+TileFetcher::TileFetcher(const or_tiles_vtable *tiles_vtable, void *layer, std::vector<TileGrid> grids,
+                         TileCache *cache, std::string user_agent, int workers)
+    : tiles_vtable_(tiles_vtable), layer_(layer), layer_info_(LayerOf(tiles_vtable, layer)), grids_(std::move(grids)),
       cache_(cache), user_agent_(std::move(user_agent)), service_(layer_info_->server_count)
 {
     std::call_once(g_curl_init, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
@@ -94,6 +95,13 @@ bool TileFetcher::Unavailable() const
     return service_.Unavailable();
 }
 
+std::string TileFetcher::CacheNameOf(const TileKey &key) const
+{
+    return key.grid >= 0 && key.grid < static_cast<int>(grids_.size())
+               ? CacheName(layer_info_->id, grids_[static_cast<size_t>(key.grid)])
+               : std::string(layer_info_->id);
+}
+
 // @impl 0f87-6acd-2f33-f327
 bool TileFetcher::FetchNetwork(void *curl, const TileKey &key, std::string &bytes, bool &missing)
 {
@@ -120,8 +128,13 @@ bool TileFetcher::FetchNetwork(void *curl, const TileKey &key, std::string &byte
 
     char url[2048];
     int rc = 0;
+    if (key.grid < 0 || key.grid >= static_cast<int>(grids_.size()))
+        return false;
+    const bool xyz = grids_[static_cast<size_t>(key.grid)].xyz;
     core::CallPlugin(tiles_vtable_, [&] {
-        rc = tiles_vtable_->tile_url(layer_, static_cast<size_t>(server), key.z, key.x, key.y, url, sizeof url);
+        rc = xyz ? tiles_vtable_->tile_url(layer_, static_cast<size_t>(server), key.z, key.x, key.y, url, sizeof url)
+                 : tiles_vtable_->grid_tile_url(layer_, static_cast<size_t>(server), static_cast<size_t>(key.grid),
+                                                static_cast<size_t>(key.z), key.x, key.y, url, sizeof url);
     });
     if (rc != 0)
         return false;
@@ -151,14 +164,17 @@ bool TileFetcher::FetchNetwork(void *curl, const TileKey &key, std::string &byte
     curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &status);
     curl_slist_free_all(headers);
 
-    const bool downloaded = code == CURLE_OK && status == 200 && !bytes.empty();
-    missing = code == CURLE_OK && (status == 404 || status == 204);  // no tile there: not a fault
+    // A local tile set (file://) has no HTTP status; a missing file is a
+    // missing tile.
+    const bool local = std::strncmp(url, "file://", 7) == 0;
+    const bool downloaded = code == CURLE_OK && (status == 200 || (local && status == 0)) && !bytes.empty();
+    missing = (code == CURLE_OK && (status == 404 || status == 204)) || (local && code == CURLE_FILE_COULDNT_READ_FILE);  // no tile there: not a fault
     {
         std::lock_guard<std::mutex> lock(service_mutex_);
         service_.Report(static_cast<size_t>(server), downloaded || missing, NowS());
     }
     if (downloaded)
-        cache_->Put(layer_info_->id, key.z, key.x, key.y, bytes);
+        cache_->Put(CacheNameOf(key), key.z, key.x, key.y, bytes);
     return downloaded;
 }
 
@@ -177,7 +193,7 @@ void TileFetcher::Worker()
         }
         std::string bytes;
         bool missing = false;
-        bool have_bytes = cache_->Get(layer_info_->id, key.z, key.x, key.y, bytes);
+        bool have_bytes = cache_->Get(CacheNameOf(key), key.z, key.x, key.y, bytes);
         if (!have_bytes && curl)
             have_bytes = FetchNetwork(curl, key, bytes, missing);
         ReadyTile ready;

@@ -5,6 +5,7 @@
 #include "maptiles/decode.h"
 #include "maptiles/service_state.h"
 #include "maptiles/tile_cache.h"
+#include "maptiles/tile_grid.h"
 
 #include <openrider/tiles.h>
 
@@ -25,15 +26,17 @@ constexpr int kFetchWorkers = 4;
 /// Most requests kept waiting; older ones are dropped first.
 constexpr size_t kMaxPending = 256;
 
-/// Address of a tile: zoom `z`, column `x`, row `y` (XYZ scheme).
+/// Address of a tile: level `z` of grid `grid`, column `x`, row `y` (for
+/// a plain XYZ layer's grid, the XYZ zoom, column and row).
 struct TileKey {
-    int z = 0;  ///< zoom level
-    int x = 0;  ///< column, from the west
-    int y = 0;  ///< row, from the north
-    /// Orders by zoom, then column, then row.
-    bool operator<(const TileKey &o) const { return std::tie(z, x, y) < std::tie(o.z, o.x, o.y); }
-    /// Same zoom, column and row.
-    bool operator==(const TileKey &o) const { return z == o.z && x == o.x && y == o.y; }
+    int z = 0;     ///< level, an index into the grid's levels
+    int x = 0;     ///< column, from the west
+    int y = 0;     ///< row, from the north
+    int grid = 0;  ///< index into the layer's grids (see GridsOf)
+    /// Orders by grid, level, column, then row.
+    bool operator<(const TileKey &o) const { return std::tie(grid, z, x, y) < std::tie(o.grid, o.z, o.x, o.y); }
+    /// Same grid, level, column and row.
+    bool operator==(const TileKey &o) const { return grid == o.grid && z == o.z && x == o.x && y == o.y; }
 };
 
 /// A requested tile, decoded and ready for the GUI.
@@ -52,10 +55,11 @@ public:
     /// Starts the workers.
     /// @param tiles_vtable the tiles plugin's vtable
     /// @param layer the plugin's open layer handle; must outlive the fetcher
+    /// @param grids the layer's grids (GridsOf), which TileKey::grid indexes
     /// @param cache disk cache; must outlive the fetcher
     /// @param user_agent HTTP User-Agent sent to the service
     /// @param workers number of worker threads (connections)
-    TileFetcher(const or_tiles_vtable *tiles_vtable, void *layer, TileCache *cache,
+    TileFetcher(const or_tiles_vtable *tiles_vtable, void *layer, std::vector<TileGrid> grids, TileCache *cache,
                 std::string user_agent, int workers = kFetchWorkers);
 
     /// Stops and joins the workers; tiles in flight are discarded.
@@ -80,6 +84,9 @@ private:
     /// Worker thread body: serves requests until stopped.
     void Worker();
 
+    /// Cache directory name of `key`'s grid.
+    std::string CacheNameOf(const TileKey &key) const;
+
     /// Downloads `key` politely and caches it.
     /// @param curl the worker's CURL easy handle
     /// @param key the tile
@@ -91,6 +98,7 @@ private:
     const or_tiles_vtable *tiles_vtable_;  ///< tiles plugin
     void *layer_;                          ///< its open layer
     const or_tile_layer *layer_info_;      ///< the layer's description
+    std::vector<TileGrid> grids_;          ///< the layer's grids
     TileCache *cache_;                     ///< disk cache
     std::string user_agent_;               ///< HTTP User-Agent
 

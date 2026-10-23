@@ -6,16 +6,26 @@
 
 #include <GLFW/glfw3.h>
 
-#include "maptiles/mercator.h"
 #include "maptiles/screen.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <limits>
+#include <utility>
 
 namespace ui {
 
 namespace {
+
+/// Zoom levels per mouse-wheel notch: x1.19 (2^0.25) each.
+constexpr double kWheelZoomStep = 0.25;
+/// Zoom levels per click on the "+" and "-" buttons: x1.41 each.
+constexpr double kButtonZoomStep = 0.5;
+/// Height of the zoom gauge between the buttons, pixels.
+constexpr float kZoomGaugeHeight = 110.0f;
+/// Gap between the zoom control and the map's edges, pixels.
+constexpr float kZoomControlMargin = 12.0f;
 
 // Points closer than 1.5 px to the last drawn one are skipped: sub-pixel
 // GPS zigzags would otherwise become miter spikes on a thick line.
@@ -48,39 +58,55 @@ ImU32 Gradient(double position)
 
 // Where and how the map is drawn this frame.
 struct Frame {
-    ImVec2 origin, end;                 // map region on screen
-    double left = 0.0, top = 0.0;       // world-pixel origin of the region
-    int zoom = 0, tile_size = 256;      // view zoom and the layer's tile size
+    ImVec2 origin, end;                         // map region on screen
+    const app::MapGeometry *geometry = nullptr; // display system, scale, viewport
     ImDrawList *draw_list = nullptr;
-    // Screen position of a WGS84 point.
+    // Screen position of a WGS84 point (NaN where the display system cannot
+    // show it: nothing is drawn there).
     ImVec2 At(double lon, double lat) const
     {
         double x, y;
-        maptiles::LonlatToWorld(lon, lat, zoom, tile_size, x, y);
-        return ImVec2(static_cast<float>(origin.x + x - left), static_cast<float>(origin.y + y - top));
+        if (!geometry->ToScreen(lon, lat, x, y))
+            return ImVec2(std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::quiet_NaN());
+        return ImVec2(static_cast<float>(origin.x + x), static_cast<float>(origin.y + y));
     }
 };
 
+// The tiles of the grid SourceGrid() picks, each drawn as a mesh of
+// textured triangles warped from its grid's system into the display's
+// (one quad when they are the same): the GPU does the resampling.
 // @impl 0f87-6acd-5daf-1652
+// @impl 0f87-6ada-53d7-171a
 void DrawTiles(const app::MapViewModel &view_model, TextureMirror &textures, const Frame &frame)
 {
-    const app::MapLayerInfo *layer = view_model.Layer();
-    const int tile_zoom = std::clamp(std::min(frame.zoom, layer->max_zoom), 0, app::kMaxTileZoom);
-    const double tile_px = layer->tile_size * std::pow(2.0, frame.zoom - tile_zoom);  // enlarged past the last level
-    const int tiles_across = 1 << tile_zoom;
-    const double width = frame.end.x - frame.origin.x, height = frame.end.y - frame.origin.y;
-    for (int row = std::max(0, static_cast<int>(std::floor(frame.top / tile_px)));
-         row <= std::min(tiles_across - 1, static_cast<int>(std::floor((frame.top + height) / tile_px))); ++row)
-        for (int column = static_cast<int>(std::floor(frame.left / tile_px)); column <= static_cast<int>(std::floor((frame.left + width) / tile_px));
-             ++column) {
-            const maptiles::TileKey key{tile_zoom, ((column % tiles_across) + tiles_across) % tiles_across, row};
-            auto decoded = view_model.tiles.find(key);
-            if (decoded == view_model.tiles.end())
-                continue;
-            const ImVec2 top_left(static_cast<float>(frame.origin.x + column * tile_px - frame.left), static_cast<float>(frame.origin.y + row * tile_px - frame.top));
-            const ImVec2 bottom_right(static_cast<float>(top_left.x + tile_px), static_cast<float>(top_left.y + tile_px));
-            frame.draw_list->AddImage(static_cast<ImTextureID>(textures.Texture(key, decoded->second)), top_left, bottom_right);
+    const app::MapGeometry &geometry = *frame.geometry;
+    const int grid = app::SourceGrid(view_model, geometry);
+    if (grid < 0)
+        return;
+    const reproj::Transformer to_display(view_model.Layer()->grids[static_cast<size_t>(grid)].crs, geometry.Display());
+    // A quarter of a screen pixel, in display units.
+    const double tolerance = 0.25 * geometry.Resolution();
+    for (const app::VisibleTile &tile : app::VisibleTiles(view_model, geometry, grid)) {
+        auto decoded = view_model.tiles.find(tile.key);
+        if (decoded == view_model.tiles.end())
+            continue;
+        const reproj::WarpMesh mesh = reproj::BuildWarpMesh(to_display, tile.extent, tolerance, 32);
+        if (mesh.indices.empty())
+            continue;
+        frame.draw_list->PushTexture(static_cast<ImTextureID>(textures.Texture(tile.key, decoded->second)));
+        frame.draw_list->PrimReserve(static_cast<int>(mesh.indices.size()), static_cast<int>(mesh.vertices.size()));
+        const unsigned int base = frame.draw_list->_VtxCurrentIdx;  // after PrimReserve: it may start a new block
+        for (const reproj::MeshVertex &vertex : mesh.vertices) {
+            double x = 0.0, y = 0.0;
+            if (std::isfinite(vertex.x))
+                geometry.DisplayToScreen(vertex.x, vertex.y, x, y);
+            frame.draw_list->PrimWriteVtx(ImVec2(static_cast<float>(frame.origin.x + x), static_cast<float>(frame.origin.y + y)),
+                                          ImVec2(vertex.u, vertex.v), IM_COL32_WHITE);
         }
+        for (uint32_t index : mesh.indices)
+            frame.draw_list->PrimWriteIdx(static_cast<ImDrawIdx>(base + index));
+        frame.draw_list->PopTexture();
+    }
 }
 
 // Overview: the outings passing the list's type and date filters, each in
@@ -92,7 +118,7 @@ void DrawOverviewTracks(const app::AppModel &model, const app::MapViewModel &vie
     std::map<std::string, size_t> listed;
     for (size_t i : core::SelectOutings(model.outings, model.MapFilter(), core::SortKey::Date, true))
         listed[model.outings[i].raw.id] = i;
-    const maptiles::GeoBox box = app::MapViewBox(view_model);
+    const maptiles::GeoBox &box = frame.geometry->ViewBox();
     std::vector<ImVec2> hovered;
     for (const openrider::sdk::OverviewTrack &track : model.tracks) {
         const auto listed_index = listed.find(track.id);
@@ -228,7 +254,9 @@ void DrawComparedPassages(const app::AppModel &model, const app::ComparisonViewM
 }
 
 // Outing: one colour, or coloured per segment by the chosen series, with a
-// legend; the point hovered in the graphs marked.
+// legend; the point hovered in the graphs marked, or the hovered
+// histogram bar's section of the route.
+// @impl 0f87-6ad9-af16-ead5
 // @impl 0f87-6acd-32ed-0d05
 void DrawOutingTrack(const app::AppModel &model, const ViewModels &view_models, const Frame &frame)
 {
@@ -294,11 +322,79 @@ void DrawOutingTrack(const app::AppModel &model, const ViewModels &view_models, 
             frame.draw_list->AddPolyline(run.data(), static_cast<int>(run.size()), view_models.map.track_colour, ImDrawFlags_None, 3.0f);
     }
     const int hovered = view_models.outing.hover_index;
-    if (hovered >= 0 && static_cast<size_t>(hovered) < points.size() && !std::isnan(points[static_cast<size_t>(hovered)].lat)) {
+    const int hovered_end = std::min(view_models.outing.hover_end_index, static_cast<int>(points.size()) - 1);
+    if (hovered >= 0 && hovered_end > hovered) {
+        // A histogram bar: its section of the route, outlined.
+        std::vector<ImVec2> section;
+        for (size_t i = static_cast<size_t>(hovered); i <= static_cast<size_t>(hovered_end); ++i)
+            if (!std::isnan(points[i].lat) && !std::isnan(points[i].lon))
+                section.push_back(line[i]);
+        if (section.size() > 1) {
+            frame.draw_list->AddPolyline(section.data(), static_cast<int>(section.size()), IM_COL32(20, 20, 20, 255),
+                                         ImDrawFlags_None, 9.0f);
+            frame.draw_list->AddPolyline(section.data(), static_cast<int>(section.size()), IM_COL32(255, 160, 0, 255),
+                                         ImDrawFlags_None, 5.0f);
+        }
+    } else if (hovered >= 0 && static_cast<size_t>(hovered) < points.size() && !std::isnan(points[static_cast<size_t>(hovered)].lat)) {
         const ImVec2 centre = line[static_cast<size_t>(hovered)];
         frame.draw_list->AddCircleFilled(centre, 7.0f, IM_COL32(255, 255, 255, 255));
         frame.draw_list->AddCircleFilled(centre, 5.0f, IM_COL32(20, 20, 20, 255));
     }
+}
+
+// Zoom control over the map's top-right corner (the track legend takes the
+// top-left one): "+" above "-", joined by a
+// gauge showing the zoom within the layer's range (feedback only; the
+// gauge is left out on a short map).
+// @impl 0f87-6ad8-552c-4753
+void DrawZoomControl(const app::MapViewModel &view_model, const Frame &frame, app::Intents &out)
+{
+    const app::MapLayerInfo *layer = view_model.Layer();
+    const float button = ImGui::GetFrameHeight() + 4.0f;
+    const float map_height = frame.end.y - frame.origin.y;
+    const float gauge = std::min(kZoomGaugeHeight, map_height - 2.0f * button - 4.0f * kZoomControlMargin);
+    const bool with_gauge = gauge >= 40.0f;
+    const float height = 2.0f * button + (with_gauge ? gauge : 4.0f);
+    const ImVec2 corner(frame.end.x - kZoomControlMargin - button, frame.origin.y + kZoomControlMargin);
+    const float centre_x = corner.x + button / 2.0f;
+    // Panel: a rounded card with a light border.
+    frame.draw_list->AddRectFilled(corner, ImVec2(corner.x + button, corner.y + height),
+                                   ImGui::GetColorU32(ImGuiCol_WindowBg, 0.9f), button / 2.0f);
+    frame.draw_list->AddRect(corner, ImVec2(corner.x + button, corner.y + height),
+                             ImGui::GetColorU32(ImGuiCol_Border), button / 2.0f);
+    auto zoom_button = [&](const char *label, float y, double step) {
+        ImGui::SetCursorScreenPos(ImVec2(corner.x, y));
+        if (ImGui::Button(label, ImVec2(button, button))) {
+            app::Intent intent(app::IntentKind::MapZoom);
+            intent.z = step;
+            out.Push(std::move(intent));
+        }
+    };
+    ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, button / 2.0f);
+    zoom_button("+##zoom_in", corner.y, kButtonZoomStep);
+    zoom_button("-##zoom_out", corner.y + height - button, -kButtonZoomStep);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+    if (!with_gauge)
+        return;
+    // Gauge: a track with a tick per whole level and a knob at the zoom,
+    // the highest level at the top.
+    const float top = corner.y + button + 6.0f, bottom = corner.y + button + gauge - 6.0f;
+    const int min_zoom = layer->min_zoom, max_zoom = app::MaxViewZoom(layer);
+    const ImU32 track = ImGui::GetColorU32(ImGuiCol_TextDisabled);
+    frame.draw_list->AddLine(ImVec2(centre_x, top), ImVec2(centre_x, bottom), track, 2.0f);
+    const float span = static_cast<float>(std::max(1, max_zoom - min_zoom));
+    for (int level = min_zoom; level <= max_zoom; ++level) {
+        const float y = bottom - (bottom - top) * (level - min_zoom) / span;
+        frame.draw_list->AddLine(ImVec2(centre_x - 3.0f, y), ImVec2(centre_x + 3.0f, y), track, 1.0f);
+    }
+    const double zoom = view_model.Camera().zoom;
+    const float knob_y = bottom - (bottom - top) * static_cast<float>(zoom - min_zoom) / span;
+    frame.draw_list->AddCircleFilled(ImVec2(centre_x, knob_y), 5.0f, ImGui::GetColorU32(ImGuiCol_SliderGrabActive));
+    frame.draw_list->AddCircle(ImVec2(centre_x, knob_y), 5.0f, ImGui::GetColorU32(ImGuiCol_WindowBg), 0, 1.5f);
+    if (ImGui::IsMouseHoveringRect(ImVec2(corner.x, top), ImVec2(corner.x + button, bottom)))
+        ImGui::SetTooltip("zoom %.1f", zoom);
 }
 
 } // namespace
@@ -317,6 +413,9 @@ void DrawMapView(const app::AppModel &model, const ViewModels &view_models, Text
     Frame frame;
     frame.origin = ImGui::GetCursorScreenPos();
     frame.end = ImVec2(frame.origin.x + width, frame.origin.y + height);
+    // One group: the map, then the zoom control drawn over it.
+    ImGui::BeginGroup();
+    ImGui::SetNextItemAllowOverlap();  // the zoom control over the map takes the mouse
     ImGui::InvisibleButton("##map", ImVec2(width, height));
     const ImVec2 mouse = ImGui::GetIO().MousePos;
     const double mouse_x = mouse.x - frame.origin.x - width / 2.0, mouse_y = mouse.y - frame.origin.y - height / 2.0;
@@ -326,8 +425,15 @@ void DrawMapView(const app::AppModel &model, const ViewModels &view_models, Text
             out.Push(app::IntentKind::MapPan, 0, 0, delta.x, delta.y);
     }
     const bool hovered = ImGui::IsItemHovered();
-    if (hovered && ImGui::GetIO().MouseWheel != 0.0f)
-        out.Push(app::IntentKind::MapZoom, ImGui::GetIO().MouseWheel > 0.0f ? 1 : -1, 0, mouse_x, mouse_y);
+    if (hovered && ImGui::GetIO().MouseWheel != 0.0f) {
+        // Relative steps: a fraction of a level per notch (trackpads give
+        // fractions of notches), about the point under the mouse.
+        app::Intent zoom(app::IntentKind::MapZoom);
+        zoom.z = ImGui::GetIO().MouseWheel * kWheelZoomStep;
+        zoom.x = mouse_x;
+        zoom.y = mouse_y;
+        out.Push(std::move(zoom));
+    }
     if (hovered || !view_model.hovered_track.empty() || view_model.hovered_segment >= 0)
         out.Push(app::IntentKind::MapMouse, hovered ? 1 : 0, 0, mouse_x, mouse_y);
     const ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
@@ -339,9 +445,8 @@ void DrawMapView(const app::AppModel &model, const ViewModels &view_models, Text
     frame.draw_list = ImGui::GetWindowDrawList();
     frame.draw_list->PushClipRect(frame.origin, frame.end, true);
     frame.draw_list->AddRectFilled(frame.origin, frame.end, IM_COL32(200, 202, 205, 255));
-    app::MapOrigin(view_model, frame.left, frame.top);
-    frame.zoom = view_model.Camera().zoom;
-    frame.tile_size = view_model.Layer()->tile_size;
+    const app::MapGeometry geometry(view_model);
+    frame.geometry = &geometry;
     DrawTiles(view_model, textures, frame);
     if (view_model.mode == app::MapMode::Overview)
         model.show_segments ? DrawSegmentNetworks(model, view_model, frame) : DrawOverviewTracks(model, view_model, frame);
@@ -358,6 +463,8 @@ void DrawMapView(const app::AppModel &model, const ViewModels &view_models, Text
         frame.draw_list->AddText(text_origin, IM_COL32(40, 40, 40, 255), attribution.c_str());
     }
     frame.draw_list->PopClipRect();
+    DrawZoomControl(view_model, frame, out);
+    ImGui::EndGroup();
     textures.Prune(view_model);
 }
 

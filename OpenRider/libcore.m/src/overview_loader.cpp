@@ -1,6 +1,5 @@
 #include "core/overview_loader.h"
 
-#include "core/plugin_thread.h"
 
 namespace core {
 
@@ -14,8 +13,7 @@ void OverviewLoader::Stop()
     loading_ = false;
 }
 
-void OverviewLoader::Start(const or_input_vtable *input, void *handle, std::vector<std::string> ids,
-                           std::vector<TrackFilter> filters)
+void OverviewLoader::Start(const InputSet *inputs, std::vector<std::string> ids, std::vector<TrackFilter> filters)
 {
     stop_ = true;  // a load still running ends at its next outing
     if (worker_.joinable())
@@ -28,7 +26,7 @@ void OverviewLoader::Start(const or_input_vtable *input, void *handle, std::vect
     done_ = 0;
     total_ = ids.size();
     loading_ = true;
-    worker_ = std::thread(&OverviewLoader::Run, this, input, handle, std::move(ids), std::move(filters));
+    worker_ = std::thread(&OverviewLoader::Run, this, inputs, std::move(ids), std::move(filters));
 }
 
 void OverviewLoader::Take(std::vector<openrider::sdk::OverviewTrack> &out)
@@ -39,21 +37,14 @@ void OverviewLoader::Take(std::vector<openrider::sdk::OverviewTrack> &out)
     pending_.clear();
 }
 
-void OverviewLoader::Run(const or_input_vtable *input, void *handle, std::vector<std::string> ids,
-                         std::vector<TrackFilter> filters)
+void OverviewLoader::Run(const InputSet *inputs, std::vector<std::string> ids, std::vector<TrackFilter> filters)
 {
     for (const std::string &id : ids) {
         if (stop_.load())
             break;
         std::vector<or_point> pts;
-        char err[256] = "";
-        auto cb = [](void *user, const or_point *p) -> int {
-            static_cast<std::vector<or_point> *>(user)->push_back(*p);
-            return 0;
-        };
-        int rc = 0;
-        CallPlugin(input, [&] { rc = input->load_points(handle, id.c_str(), cb, &pts, err, sizeof err); });
-        if (rc == 0) {
+        const bool read = inputs->LoadPoints(id, pts).Ok();
+        if (read) {
             FilterPoints(pts, filters);  // a failing filter leaves the points as they are
             openrider::sdk::OverviewTrack t = openrider::sdk::ThinTrack(id, pts, openrider::sdk::kOverviewSpacingM);
             if (!t.lat.empty()) {

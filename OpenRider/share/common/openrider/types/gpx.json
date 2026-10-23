@@ -1,0 +1,23 @@
+{
+  "run":                 {"sport": "running",       "sub_sport": "generic"},
+  "trail_run":           {"sport": "running",       "sub_sport": "trail"},
+  "ride":                {"sport": "cycling",       "sub_sport": "generic"},
+  "bike":                {"sport": "cycling",       "sub_sport": "generic"},
+  "biking":              {"sport": "cycling",       "sub_sport": "generic"},
+  "road_biking":         {"sport": "cycling",       "sub_sport": "road"},
+  "mountain_biking":     {"sport": "cycling",       "sub_sport": "mountain"},
+  "mtb":                 {"sport": "cycling",       "sub_sport": "mountain"},
+  "gravel_ride":         {"sport": "cycling",       "sub_sport": "gravel_cycling"},
+  "hike":                {"sport": "hiking",        "sub_sport": "generic"},
+  "walk":                {"sport": "walking",       "sub_sport": "generic"},
+  "alpine_ski":          {"sport": "alpine_skiing", "sub_sport": "downhill"},
+  "backcountry_ski":     {"sport": "alpine_skiing", "sub_sport": "backcountry"},
+  "nordic_ski":          {"sport": "cross_country_skiing", "sub_sport": "generic"},
+  "1":                   {"sport": "cycling",       "sub_sport": "generic"},
+  "2":                   {"sport": "alpine_skiing", "sub_sport": "downhill"},
+  "3":                   {"sport": "alpine_skiing", "sub_sport": "backcountry"},
+  "4":                   {"sport": "hiking",        "sub_sport": "generic"},
+  "7":                   {"sport": "cross_country_skiing", "sub_sport": "generic"},
+  "9":                   {"sport": "running",       "sub_sport": "generic"},
+  "10":                  {"sport": "walking",       "sub_sport": "generic"}
+}
