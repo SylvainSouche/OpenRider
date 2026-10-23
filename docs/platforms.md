@@ -1,8 +1,7 @@
 # Platforms: build and test matrix
 
 OpenRider is built and its whole test suite run natively on each platform
-below: macOS and Linux on 2026-10-22, the BSDs on 2026-10-20 (before the
-reprojection module, the WMTS plugin and the performance suite). The Linux platforms run in containers and the BSDs in
+below (2026-10-22 and 23). The Linux platforms run in containers and the BSDs in
 QEMU guests, both from the Bmake It cross-platform harness
 (`tests/harness` in Bmake It: `vm.sh` for the guests, the `bmk/*` container
 images).
@@ -15,8 +14,8 @@ images).
 | Debian 13 arm64 (container) | all pass (194) | all pass (194) |
 | Debian 13 amd64 (container, emulated) | all pass (194) | — |
 | Alpine 3.24 (musl) amd64 (container, emulated) | all pass (194) | — |
-| FreeBSD 15.1 arm64 (QEMU guest) | all pass (2026-10-20) | builds; tests cannot link (see below) |
-| NetBSD 10.2 arm64 (QEMU guest) | all pass (2026-10-20) | all pass (2026-10-20) |
+| FreeBSD 15.1 arm64 (QEMU guest) | all pass (194) | builds; tests cannot link (see below) |
+| NetBSD 10.2 arm64 (QEMU guest) | all pass (194) | all pass (194) |
 
 "All pass": every module builds -- dependencies, libraries, the plugins,
 the application -- and every test suite passes: SDK, core, app, map tiles,
@@ -37,7 +36,7 @@ Besides Bmake It, `bmake`, a C++20 compiler, `pkg-config`, ATF and Kyua:
 | macOS (MacPorts) | `bmake glfw curl tiff atf kyua pkgconfig` |
 | Debian / Ubuntu | `bmake libatf-dev kyua pkgconf libglfw3-dev libcurl4-openssl-dev libtiff-dev libgl-dev` |
 | Alpine | `bmake atf-dev kyua pkgconf glfw-dev curl-dev tiff-dev mesa-dev` |
-| FreeBSD | base `make` (bmake), clang and atf; packages `kyua pkgconf tiff glfw curl libglvnd` |
+| FreeBSD | base `make` (bmake), clang, atf and kyua; packages `pkgconf tiff glfw curl libglvnd` |
 | NetBSD | base `make` (bmake), gcc and atf; pkgsrc `pkgconf kyua clang lld tiff curl glfw` |
 
 OpenGL is whatever `libGL` the system provides (Mesa through libglvnd on
@@ -79,7 +78,8 @@ docker run --rm -v ~/stage:/work -w /work/GarminViewer <image> sh -c \
 
 where `<image>` is a `bmk/linux-*` image with the Debian or Alpine packages
 above added (`--platform linux/amd64` for the emulated ones; pass
-`TOOLCHAIN=gcc` to bmake for gcc).
+`TOOLCHAIN=gcc` to bmake for gcc, `TOOLCHAIN=llvm` for clang where it
+is not the default, as on NetBSD).
 
 FreeBSD or NetBSD, in a Bmake It harness guest (one at a time, with the
 container VM stopped):
