@@ -14,6 +14,8 @@
 #include <cmath>
 #include <cstdio>
 #include <dirent.h>
+#include <utility>
+#include <vector>
 
 namespace app {
 
@@ -22,6 +24,9 @@ namespace {
 constexpr size_t kMaxTiles = 256;        // decoded tiles kept (~64 MB)
 constexpr double kRetrySeconds = 30.0;   // before asking again for a missing tile
 constexpr float kHoverPx = 6.0f;         // overview: track under the mouse
+constexpr double kNativeMargin = 12.0;   // degrees a view may go beyond a national system's area, native tiles
+constexpr double kWarpedMargin = 3.0;    // the same, tiles warped into the system
+constexpr const char *kUserAgent = "OpenRider/0.1 (desktop outing viewer; libcurl)";
 
 // Monotonic time (s).
 double NowS()
@@ -104,7 +109,184 @@ void FitCamera(MapCamera &camera, const MapLayerInfo &layer, const reproj::Crs &
     camera.fitted = true;
 }
 
+// Whether `crs` is a national (or regional) system, used only within its
+// area of use: not Web Mercator, not a geographic system.
+bool NationalSystem(const reproj::Crs &crs)
+{
+    return crs.epsg != 3857 && !crs.geographic;
+}
+
+// Whether `layer` covers the whole world (no extent to keep within).
+bool WorldWide(const MapLayerInfo &layer)
+{
+    return layer.extent[2] - layer.extent[0] >= 359.0;
+}
+
+// One edge of a layer's extent, projected into the display system: points
+// along it, in display coordinates.
+using Edge = std::vector<std::pair<double, double>>;
+
+// The four edges of `extent` (west, south, east, north degrees) in `display` (west, east, south,
+// north), densely sampled: an extent given in degrees is curved in most
+// systems (a UTM grid's meridians converge towards its central meridian).
+// @return false when an edge could not be projected
+bool ExtentEdges(const double extent[4], const reproj::Crs &display, Edge edges[4])
+{
+    const reproj::Transformer to_display(reproj::CrsRegistry().Find(4326), display);
+    constexpr int kSteps = 64;
+    const double west = extent[0], south = extent[1], east = extent[2], north = extent[3];
+    for (int k = 0; k <= kSteps; ++k) {
+        const double lat = south + (north - south) * k / kSteps, lon = west + (east - west) * k / kSteps;
+        const double points[4][2] = {{west, lat}, {east, lat}, {lon, south}, {lon, north}};
+        for (int e = 0; e < 4; ++e) {
+            double x, y;
+            if (!to_display.Transform(points[e][0], points[e][1], x, y))
+                return false;
+            edges[e].emplace_back(x, y);
+        }
+    }
+    return true;
+}
+
+// The outermost position, across the band [low, high] of the other
+// coordinate, of an edge: x of a west (outer = min) or east (max) edge
+// across the view's rows, y of a south or north edge across its columns.
+// Where the band misses the edge, its nearest point.
+double EdgeLimit(const Edge &edge, bool vertical_edge, double low, double high, bool outer_is_min)
+{
+    double limit = outer_is_min ? 1e300 : -1e300, nearest = 0.0, nearest_gap = 1e300;
+    for (const auto &[x, y] : edge) {
+        const double along = vertical_edge ? y : x, across = vertical_edge ? x : y;
+        if (along >= low && along <= high)
+            limit = outer_is_min ? std::min(limit, across) : std::max(limit, across);
+        const double gap = along < low ? low - along : along > high ? along - high : 0.0;
+        if (gap < nearest_gap) {
+            nearest_gap = gap;
+            nearest = across;
+        }
+    }
+    return std::fabs(limit) < 1e299 ? limit : nearest;
+}
+
 } // namespace
+
+// @impl 0f87-6adb-151b-0060
+void MapViewController::KeepInExtent(MapCamera &camera) const
+{
+    const MapLayerInfo *layer = view_model_.Layer();
+    const double width = view_model_.width, height = view_model_.height;
+    const reproj::Crs &display = view_model_.display;
+    if (!layer || width <= 0.0 || height <= 0.0)
+        return;
+    // The area to stay in: the layer's extent, within the display system's
+    // own area of use when it is a national one (an extent spanning the
+    // world, IGN's with the overseas territories, means nothing in
+    // Lambert-93) -- widened by kNativeMargin degrees where the provider
+    // publishes tiles in the system (Kartverket uses UTM 33N, whose area is
+    // 12-18 E, for the whole of Norway), by kWarpedMargin where its tiles
+    // are warped into it.
+    const bool national = NationalSystem(display);
+    if (WorldWide(*layer) && !national)
+        return;
+    double extent[4] = {layer->extent[0], layer->extent[1], layer->extent[2], layer->extent[3]};
+    if (national) {
+        const bool native = std::any_of(layer->grids.begin(), layer->grids.end(),
+                                        [&](const MapGrid &grid) { return grid.crs.epsg == display.epsg; });
+        const double margin = native ? kNativeMargin : kWarpedMargin;
+        extent[0] = std::max(extent[0], display.area.x0 - margin);
+        extent[1] = std::max(extent[1], std::max(-89.0, display.area.y0 - margin));
+        extent[2] = std::min(extent[2], display.area.x1 + margin);
+        extent[3] = std::min(extent[3], std::min(89.0, display.area.y1 + margin));
+    }
+    Edge edges[4];
+    if (!(extent[0] < extent[2] && extent[1] < extent[3]) || !ExtentEdges(extent, display, edges))
+        return;
+    const Edge &west = edges[0], &east = edges[1], &south = edges[2], &north = edges[3];
+    // Zoomed out no further than the view fits in the extent's span, at
+    // its widest and tallest.
+    double span_x = 0.0, span_y = 0.0;
+    for (size_t k = 0; k < west.size(); ++k)
+        span_x = std::max(span_x, east[k].first - west[k].first);
+    for (size_t k = 0; k < south.size(); ++k)
+        span_y = std::max(span_y, north[k].second - south[k].second);
+    if (!(span_x > 0.0 && span_y > 0.0))
+        return;
+    camera.zoom = std::max(camera.zoom, ZoomAtResolution(display, std::min(span_x / width, span_y / height)));
+    const double half_width = width / 2.0 * ResolutionAtZoom(display, camera.zoom);
+    const double half_height = height / 2.0 * ResolutionAtZoom(display, camera.zoom);
+    const reproj::Transformer to_display(reproj::CrsRegistry().Find(4326), display);
+    double cx, cy;
+    if (!to_display.Transform(camera.lon, camera.lat, cx, cy)) {
+        cx = (west.front().first + east.front().first) / 2.0;
+        cy = (south.front().second + north.front().second) / 2.0;
+    }
+    // Each side of the view stops at the extent's edge where the view
+    // meets it: the west and east edges across the view's rows, then the
+    // south and north edges across its columns (in Web Mercator, straight
+    // edges: the view stays inside the extent's rectangle).
+    for (int pass = 0; pass < 2; ++pass) {
+        const double x0 = EdgeLimit(west, true, cy - half_height, cy + half_height, true);
+        const double x1 = EdgeLimit(east, true, cy - half_height, cy + half_height, false);
+        cx = x1 - x0 >= 2.0 * half_width ? std::clamp(cx, x0 + half_width, x1 - half_width) : (x0 + x1) / 2.0;
+        const double y0 = EdgeLimit(south, false, cx - half_width, cx + half_width, true);
+        const double y1 = EdgeLimit(north, false, cx - half_width, cx + half_width, false);
+        cy = y1 - y0 >= 2.0 * half_height ? std::clamp(cy, y0 + half_height, y1 - half_height) : (y0 + y1) / 2.0;
+    }
+    double lon, lat;
+    if (to_display.Inverse().Transform(cx, cy, lon, lat)) {
+        camera.lon = lon;
+        camera.lat = lat;
+    }
+}
+
+void MapViewController::UpdateDisplayChoices(const AppModel &model)
+{
+    std::vector<reproj::Crs> choices = {registry_.Find(3857)};
+    auto offered = [&](int epsg) {
+        return std::any_of(choices.begin(), choices.end(), [&](const reproj::Crs &crs) { return crs.epsg == epsg; });
+    };
+    // The systems native to a layer on offer: the shown one's first.
+    std::vector<int> layers = MapOfferedLayers(view_model_, model);
+    std::stable_partition(layers.begin(), layers.end(), [&](int i) { return i == view_model_.current; });
+    for (int i : layers)
+        for (const MapGrid &grid : view_model_.layers[static_cast<size_t>(i)].grids)
+            if (grid.crs.Valid() && !offered(grid.crs.epsg))
+                choices.push_back(grid.crs);
+    if (!offered(view_model_.display.epsg))
+        choices.push_back(view_model_.display);
+    view_model_.display_choices = std::move(choices);
+}
+
+void MapViewController::ShowContent(double west, double south, double east, double north)
+{
+    // A layer whose extent does not hold the box gives way to the default
+    // one...
+    const MapLayerInfo *layer = view_model_.Layer();
+    if (layer && !WorldWide(*layer) &&
+        !(west >= layer->extent[0] && east <= layer->extent[2] && south >= layer->extent[1] && north <= layer->extent[3])) {
+        int fallback = default_layer_;
+        for (size_t i = 0; fallback < 0 && i < view_model_.layers.size(); ++i)
+            if (WorldWide(view_model_.layers[i]))
+                fallback = static_cast<int>(i);
+        if (fallback >= 0 && fallback != view_model_.current) {
+            core::LogLine("map content outside %s: showing %s", layer->name.c_str(),
+                          view_model_.layers[static_cast<size_t>(fallback)].name.c_str());
+            Select(fallback);
+        }
+    }
+    // ...then a national display shows only its own area (widened as in
+    // KeepInExtent, for the layer now shown): elsewhere, Web Mercator.
+    if (NationalSystem(view_model_.display)) {
+        const MapLayerInfo *shown = view_model_.Layer();
+        const bool native = shown && std::any_of(shown->grids.begin(), shown->grids.end(), [&](const MapGrid &grid) {
+            return grid.crs.epsg == view_model_.display.epsg;
+        });
+        const double margin = native ? kNativeMargin : kWarpedMargin;
+        const reproj::Box &area = view_model_.display.area;
+        if (west < area.x0 - margin || east > area.x1 + margin || south < area.y0 - margin || north > area.y1 + margin)
+            SetDisplay(registry_.Find(3857));
+    }
+}
 
 MapViewController::MapViewController()
 {
@@ -163,6 +345,12 @@ std::string MapViewController::AddLayer(const std::string &json)
         info.min_zoom = layer->min_zoom;
         info.max_zoom = layer->max_zoom;
         info.tile_size = layer->tile_size;
+        // Its grids, so that their systems can be offered before it is
+        // shown (WMTS capabilities: from the cache, downloaded weekly at
+        // most). A layer whose capabilities cannot be had yet offers none.
+        if (maptiles::ProvideCapabilities(tiles_vtable, handle, cache_dir_, kUserAgent).empty())
+            for (const maptiles::TileGrid &grid : maptiles::GridsOf(tiles_vtable, handle))
+                info.grids.push_back({grid, registry_.Find(grid.crs)});
         core::CallPlugin(tiles_vtable, [&] { tiles_vtable->close(handle); });
         if (info.min_zoom < 0 || info.max_zoom > kMaxTileZoom || info.min_zoom > info.max_zoom || info.tile_size <= 0)
             return "zoom levels " + std::to_string(info.min_zoom) + ".." + std::to_string(info.max_zoom) +
@@ -206,6 +394,7 @@ std::vector<std::string> MapViewController::LoadLayers(const std::vector<std::st
     for (size_t i = 0; i < view_model_.layers.size(); ++i)
         if (view_model_.layers[i].id == default_id)
             initial = static_cast<int>(i);
+    default_layer_ = initial;
     const std::string error = Select(initial);
     if (!error.empty())
         problems.push_back("Cannot open the map layer: " + error);
@@ -235,7 +424,7 @@ std::string MapViewController::Select(int index)
     if (!layer_)
         return why.empty() ? "no tiles plugin accepts it" : why;
     // The grids: a WMTS layer learns them from the service's capabilities.
-    const std::string user_agent = "OpenRider/0.1 (desktop outing viewer; libcurl)";
+    const std::string user_agent = kUserAgent;
     if (const std::string error = maptiles::ProvideCapabilities(tiles_vtable_, layer_, cache_dir_, user_agent);
         !error.empty()) {
         core::CallPlugin(tiles_vtable_, [&] { tiles_vtable_->close(layer_); });
@@ -245,20 +434,13 @@ std::string MapViewController::Select(int index)
     std::vector<maptiles::TileGrid> tile_grids = maptiles::GridsOf(tiles_vtable_, layer_);
     MapLayerInfo &opened = view_model_.layers[static_cast<size_t>(index)];
     opened.grids.clear();
-    view_model_.display_choices = {registry_.Find(3857)};
     for (const maptiles::TileGrid &grid : tile_grids) {
         MapGrid map_grid{grid, registry_.Find(grid.crs)};
         if (!map_grid.crs.Valid())
             core::LogLine("map layer %s: grid %s in %s, an unknown coordinate system", opened.name.c_str(),
                           grid.id.c_str(), grid.crs.c_str());
-        else if (std::none_of(view_model_.display_choices.begin(), view_model_.display_choices.end(),
-                              [&](const reproj::Crs &crs) { return crs.epsg == map_grid.crs.epsg; }))
-            view_model_.display_choices.push_back(map_grid.crs);
         opened.grids.push_back(std::move(map_grid));
     }
-    if (std::none_of(view_model_.display_choices.begin(), view_model_.display_choices.end(),
-                     [&](const reproj::Crs &crs) { return crs.epsg == view_model_.display.epsg; }))
-        SetDisplay(registry_.Find(3857));
     cache_ = std::make_unique<maptiles::TileCache>(cache_dir_, maptiles::kDefaultCacheBytes);
     fetcher_ = std::make_unique<maptiles::TileFetcher>(tiles_vtable_, layer_, std::move(tile_grids), cache_.get(),
                                                        user_agent);
@@ -266,8 +448,17 @@ std::string MapViewController::Select(int index)
     view_model_.tiles.clear();
     retry_after_.clear();
     unavailable_reported_ = false;
-    for (MapCamera *camera : {&view_model_.overview, &view_model_.outing})
+    for (MapCamera *camera : {&view_model_.overview, &view_model_.outing, &view_model_.comparison})
         camera->zoom = std::clamp(camera->zoom, static_cast<double>(info.min_zoom), static_cast<double>(MaxViewZoom(&info)));
+    // The shown camera is kept in the layer's extent; the others when
+    // shown (Tick).
+    KeepInExtent(view_model_.mode == MapMode::Overview ? view_model_.overview
+                 : view_model_.mode == MapMode::Outing ? view_model_.outing
+                                                       : view_model_.comparison);
+    // The projections on offer at once, from the view alone; each Tick
+    // refines them with the selected outing's track.
+    static const AppModel kViewOnly;
+    UpdateDisplayChoices(kViewOnly);
     core::LogLine("map layer %s", info.name.c_str());
     return "";
 }
@@ -283,9 +474,13 @@ void MapViewController::FitOuting(const AppModel &model)
         south = std::min(south, point.lat);
         north = std::max(north, point.lat);
     }
-    if (west <= east && view_model_.Layer())
+    if (west <= east)
+        ShowContent(west, south, east, north);
+    if (west <= east && view_model_.Layer()) {
         FitCamera(view_model_.outing, *view_model_.Layer(), view_model_.display, west, south, east, north, view_model_.width,
                   view_model_.height);
+        KeepInExtent(view_model_.outing);
+    }
     view_model_.fitted_outing = model.points_id;
 }
 
@@ -305,9 +500,13 @@ void MapViewController::FitComparison(const AppModel &model)
     for (const ComparedRun &run : model.comparison.runs)
         for (const or_point &point : run.points)
             extend(point.lon, point.lat);
-    if (west <= east && view_model_.Layer())
+    if (west <= east)
+        ShowContent(west, south, east, north);
+    if (west <= east && view_model_.Layer()) {
         FitCamera(view_model_.comparison, *view_model_.Layer(), view_model_.display, west, south, east, north, view_model_.width,
                   view_model_.height);
+        KeepInExtent(view_model_.comparison);
+    }
     view_model_.fitted_comparison = model.comparison.generation;
 }
 
@@ -320,9 +519,13 @@ void MapViewController::FitOverview(const AppModel &model)
         south = std::min(south, track.south);
         north = std::max(north, track.north);
     }
-    if (west <= east && view_model_.Layer())
+    if (west <= east)
+        ShowContent(west, south, east, north);
+    if (west <= east && view_model_.Layer()) {
         FitCamera(view_model_.overview, *view_model_.Layer(), view_model_.display, west, south, east, north, view_model_.width,
                   view_model_.height);
+        KeepInExtent(view_model_.overview);
+    }
 }
 
 // Requests the tiles covering the view, from the grid SourceGrid() picks.
@@ -376,6 +579,17 @@ void MapViewController::Tick(const AppModel &model, Intents &out)
     if (view_model_.mode == MapMode::Overview && !view_model_.overview.fitted && !model.tracks_loading &&
         !model.tracks.empty())
         FitOverview(model);
+    // The shown camera: a layer or a national display that cannot show its
+    // centre gives way (the default layer, Web Mercator); then kept inside,
+    // and the projections offered follow the view.
+    {
+        MapCamera &camera = view_model_.mode == MapMode::Overview ? view_model_.overview
+                            : view_model_.mode == MapMode::Outing ? view_model_.outing
+                                                                  : view_model_.comparison;
+        ShowContent(camera.lon, camera.lat, camera.lon, camera.lat);
+        KeepInExtent(camera);
+        UpdateDisplayChoices(model);
+    }
 
     // Tiles arrived since the last frame; a missing one is asked again later.
     for (maptiles::ReadyTile &ready : fetcher_->TakeReady()) {
@@ -498,6 +712,7 @@ void MapViewController::Handle(const Intent &intent, const AppModel &model, Inte
     case IntentKind::MapViewport:
         view_model_.width = static_cast<float>(intent.x);
         view_model_.height = static_cast<float>(intent.y);
+        KeepInExtent(camera);
         break;
     case IntentKind::MapPan:
         if (layer) {
@@ -508,6 +723,7 @@ void MapViewController::Handle(const Intent &intent, const AppModel &model, Inte
                 camera.lon = lon;
                 camera.lat = lat;
             }
+            KeepInExtent(camera);
         }
         break;
     // @impl 0f87-6ad8-552c-4753
@@ -522,6 +738,7 @@ void MapViewController::Handle(const Intent &intent, const AppModel &model, Inte
                 const MapGeometry geometry(view_model_);
                 camera = geometry.ZoomedAt(camera, zoom, view_model_.width / 2.0 + intent.x,
                                            view_model_.height / 2.0 + intent.y);
+                KeepInExtent(camera);
             }
         }
         break;
@@ -556,6 +773,7 @@ void MapViewController::Handle(const Intent &intent, const AppModel &model, Inte
         for (const reproj::Crs &crs : view_model_.display_choices)
             if (crs.epsg == intent.i)
                 SetDisplay(crs);
+        KeepInExtent(camera);
         break;
     case IntentKind::SetTrackStyle:
         view_model_.track_style = std::clamp(intent.i, 0, 5);

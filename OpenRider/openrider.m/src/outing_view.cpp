@@ -29,16 +29,24 @@ void DrawBackgroundCombo(const app::AppModel &model, const app::MapViewModel &vi
                 out.Push(app::IntentKind::SelectLayer, i);
         ImGui::EndCombo();
     }
-    // The display projection: Web Mercator, or a system the layer's
-    // provider publishes its tiles in.
+    // The display projection: Web Mercator, a system the layer's provider
+    // publishes its tiles in (marked: shown as published), or a national
+    // system covering the view (the tiles warped into it).
     // @impl 0f87-6ada-53d7-171a
-    auto label = [](const reproj::Crs &crs) {
-        return (crs.epsg == 3857 ? std::string("Web Mercator") : crs.name) + " (" + crs.Id() + ")";
+    auto label = [&view_model](const reproj::Crs &crs) {
+        std::string text = (crs.epsg == 3857 ? std::string("Web Mercator") : crs.name) + " (" + crs.Id() + ")";
+        if (const app::MapLayerInfo *layer = view_model.Layer(); layer && crs.epsg != 3857)
+            for (const app::MapGrid &grid : layer->grids)
+                if (grid.crs.epsg == crs.epsg) {
+                    text += " - native tiles";
+                    break;
+                }
+        return text;
     };
     ImGui::SameLine();
     ImGui::TextUnformatted("Projection:");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(260.0f);
+    ImGui::SetNextItemWidth(300.0f);
     ImGui::BeginDisabled(view_model.display_choices.size() < 2);
     if (ImGui::BeginCombo("##projection", label(view_model.display).c_str())) {
         for (const reproj::Crs &crs : view_model.display_choices)

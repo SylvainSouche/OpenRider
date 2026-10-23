@@ -323,6 +323,12 @@
     "status": "confirmed",
     "type": "req"
   },
+  "any-layer-local-system": {
+    "active": true,
+    "id": "0f87-6adb-2a2d-a206",
+    "status": "confirmed",
+    "type": "req"
+  },
   "app-icon": {
     "active": true,
     "id": "0f87-6acc-edc9-27b0",
@@ -899,6 +905,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-keep-in-extent": {
+    "active": true,
+    "id": "0f87-6adb-151b-3c6b",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-keep-stationary-rule": {
     "active": true,
     "id": "0f87-6acd-3745-685f",
@@ -921,6 +933,12 @@
     "active": true,
     "id": "0f87-6ada-53d7-7d99",
     "status": "recorded",
+    "type": "dec"
+  },
+  "dec-local-systems-any-layer": {
+    "active": false,
+    "id": "0f87-6adb-2a2d-6254",
+    "status": "superseded",
     "type": "dec"
   },
   "dec-log-files": {
@@ -950,6 +968,12 @@
   "dec-moving-time-from-raw": {
     "active": true,
     "id": "0f87-6acd-d8c6-0017",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-native-systems-offered": {
+    "active": true,
+    "id": "0f87-6adb-56f6-1243",
     "status": "recorded",
     "type": "dec"
   },
@@ -1937,6 +1961,12 @@
     "status": "asserted",
     "type": "impl"
   },
+  "impl-keep-in-extent": {
+    "active": true,
+    "id": "0f87-6adb-151b-0060",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-layer-choice": {
     "active": true,
     "id": "0f87-6acd-3542-dba2",
@@ -2540,6 +2570,12 @@
   "map-projection-from-wmts": {
     "active": true,
     "id": "0f87-6ada-53d7-4506",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "map-stay-in-extent": {
+    "active": true,
+    "id": "0f87-6adb-151b-b4d4",
     "status": "confirmed",
     "type": "req"
   },

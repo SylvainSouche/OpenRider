@@ -13,10 +13,17 @@ coordinate system it is shown in.
   provider also publishes its map in a national grid that covers the view
   (Kartverket in UTM over Norway, IGN in Lambert-93 over France), the tiles
   come from that grid and are reprojected to Web Mercator.
-- The other entries are the coordinate systems the provider declares:
-  Kartverket Topo offers ETRS89 / UTM 32N, 33N and 35N; IGN SCAN 25 offers
-  Lambert-93. In one of them, the provider's tiles are shown as published.
-  A layer published in Web Mercator only (OpenTopoMap) has no other entry.
+- The other entries are the coordinate systems native to a layer offered
+  in **Background** for the view: Kartverket's ETRS89 / UTM 32N, 33N and 35N
+  over Norway, IGN's Lambert-93 over France — the shown layer's first, marked
+  **native tiles** when it is the one publishing them. Any layer can be shown
+  in them, OpenTopoMap included: tiles that are not native are reprojected.
+- A layer with an extent keeps the view inside it (you cannot pan or zoom
+  out of Kartverket's Norway). In a national system the view also stays
+  near that system's own area: within 12° of it where the tiles are native
+  (Kartverket uses UTM 33N for the whole of Norway), within 3° where they are
+  reprojected. Selecting an outing outside the layer's extent shows the
+  default world map; outside the national system's area, Web Mercator.
 - Switching keeps the scale on the ground. Near the polar circle the zoom
   figure changes noticeably — Web Mercator stretches the map by 1/cos(latitude),
   2.7 times at 68° N — while the map on screen keeps its size.
