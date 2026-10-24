@@ -10,3 +10,7 @@ distfiles/
 OpenRider/docs/
 compile_commands.json
 .bmake-it/
+# Fetched test data (bmake fetch-test-data) and personal test data.
+/testdata/cc-gpx/
+/testdata/cc-gpx-scale/
+/test_data/

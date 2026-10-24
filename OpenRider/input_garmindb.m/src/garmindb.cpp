@@ -146,7 +146,11 @@ std::string ConfigBaseDir(const char *config)
         cJSON_Delete(root);
     }
     if (dir.empty()) {
+        // GarminDB's own default: HealthData in the home directory
+        // (Windows: the profile, HOME being usually unset there).
         const char *home = std::getenv("HOME");
+        if (!home || !*home)
+            home = std::getenv("USERPROFILE");
         dir = std::string(home ? home : "") + "/HealthData";
     }
     return dir;

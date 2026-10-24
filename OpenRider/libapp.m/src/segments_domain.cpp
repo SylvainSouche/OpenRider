@@ -90,6 +90,8 @@ void SegmentsDomain::Update()
             if (!shown.count(i))
                 continue;
             const core::Outing &outing = model_.outings[i];
+            if (!outing.Timed())
+                continue;  // a route: no speeds or rests to find segments with
             core::TrackGroup &group = groups[outing.type.sport];
             group.sport = outing.type.sport;
             group.ids.push_back(outing.raw.id);

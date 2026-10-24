@@ -82,6 +82,14 @@ int GridUrl(void *, size_t, size_t, size_t level, int column, int row, char *url
 }
 const or_tiles_vtable kGrids = {sizeof(or_tiles_vtable), "grids", Open, Close, Layer, XyzUrl,
                                 CapabilitiesUrl, SetCapabilities, GridCount, Grid, GridUrl};
+// The same grids, served by a host refusing connections (port 9, closed).
+int RefusedUrl(void *, size_t, size_t, size_t level, int column, int row, char *url, size_t len)
+{
+    std::snprintf(url, len, "http://127.0.0.1:9/%zu/%d/%d.png", level, column, row);
+    return 0;
+}
+const or_tiles_vtable kRefused = {sizeof(or_tiles_vtable), "refused", Open, Close, Layer, XyzUrl,
+                                  CapabilitiesUrl, SetCapabilities, GridCount, Grid, RefusedUrl};
 const or_tiles_vtable kXyz = {offsetof(or_tiles_vtable, capabilities_url), "xyz", Open, Close, Layer, XyzUrl,
                               nullptr, nullptr, nullptr, nullptr, nullptr};
 
@@ -169,8 +177,33 @@ ATF_TEST_CASE_BODY(fetches_by_grid)
     ATF_REQUIRE(cache.Get("layer@utm", 1, 2, 3, bytes));
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(unreachable_service);
+ATF_TEST_CASE_BODY(unreachable_service)
+{
+    // Every download fails: each tile counts as an error (not as missing),
+    // and after three the service is unavailable. The delay between
+    // attempts grows (100 ms, then x2 + 500 ms), so this takes about 3 s.
+    g_ready = true;
+    maptiles::TileCache cache(TemporaryDirectory(), 1 << 20);
+    maptiles::TileFetcher fetcher(&kRefused, &g_info, maptiles::GridsOf(&kRefused, &g_info), &cache, "test", 1);
+    for (int column = 0; column < 3; ++column)
+        fetcher.Request(maptiles::TileKey{0, column, 0, 0});
+    size_t ready = 0;
+    for (int i = 0; i < 300 && ready < 3; ++i) {
+        for (const maptiles::ReadyTile &tile : fetcher.TakeReady()) {
+            ATF_REQUIRE(tile.image.rgba.empty());
+            ++ready;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+    ATF_REQUIRE_EQ(ready, 3u);
+    ATF_REQUIRE_EQ(fetcher.Errors(), 3u);
+    ATF_REQUIRE(fetcher.Unavailable());
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, unreachable_service);
     ATF_ADD_TEST_CASE(tcs, web_mercator_grid_of_a_plain_layer);
     ATF_ADD_TEST_CASE(tcs, capabilities_then_grids);
     ATF_ADD_TEST_CASE(tcs, fetches_by_grid);
