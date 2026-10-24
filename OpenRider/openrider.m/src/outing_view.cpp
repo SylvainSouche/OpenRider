@@ -65,6 +65,8 @@ void DrawStatistics(const app::AppModel &model, const app::OutingViewModel &view
     const core::Outing &outing = *model.SelectedOuting();
     ImGui::Text("%s", outing.raw.name);
     ImGui::TextDisabled("%s  -  %s", outing.raw.start_local, model.types.Label(outing.type, model.lang).c_str());
+    if (!outing.Timed())
+        ImGui::TextColored(ImVec4(0.85f, 0.45f, 0.0f, 1.0f), "%s", kNoTimesWarning);
     const bool filtered = model.AnyFilterOn();
     if (filtered) {
         ImGui::TextDisabled("Statistics computed from the filtered points");
@@ -378,7 +380,7 @@ void DrawOutingView(const app::AppModel &model, const ViewModels &view_models, T
     DrawGraphControls(view_models.outing.graphs, view_models.outing.xaxis,
                       {app::IntentKind::SetXAxis, app::IntentKind::AddGraph, app::IntentKind::RemoveGraph,
                        app::IntentKind::SetGraphSpec},
-                      out);
+                      out, view_models.outing.timed);
     DrawGraphs(model, view_models.outing, ImGui::GetContentRegionAvail().y, out);
 }
 

@@ -14,6 +14,10 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#if defined(__FreeBSD__) || defined(__NetBSD__)
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#endif
 #endif
 
 namespace core {
@@ -26,6 +30,18 @@ std::string Home()
     const char *h = std::getenv("HOME");
     return h ? h : "";
 }
+
+#ifndef __APPLE__
+/// An XDG base directory: `variable` when set to an absolute path (the
+/// specification ignores relative ones), else `~/<fallback>`.
+std::string XdgDir(const char *variable, const char *fallback)
+{
+    const char *value = std::getenv(variable);
+    if (value && value[0] == '/')
+        return value;
+    return Home() + "/" + fallback;
+}
+#endif
 #else
 /// The value of environment variable `name`, with '/' separators; empty when unset.
 std::string EnvDir(const char *name)
@@ -68,6 +84,18 @@ std::string ExecutableDir()
         if (c == '\\')
             c = '/';
     return Parent(path);
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+    // No /proc by default: the kernel's record of the process's path.
+#if defined(__FreeBSD__)
+    int name[] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
+#else
+    int name[] = {CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME};
+#endif
+    char buf[PATH_MAX];
+    size_t size = sizeof buf;
+    if (sysctl(name, 4, buf, &size, nullptr, 0) != 0 || size == 0)
+        return ".";
+    return Parent(buf);
 #else
     char buf[PATH_MAX];
     const ssize_t n = readlink("/proc/self/exe", buf, sizeof buf - 1);
@@ -86,11 +114,17 @@ std::string UserSupportDir() { return EnvDir("APPDATA") + "/OpenRider"; }
 std::string UserPluginsDir() { return UserSupportDir() + "/plugins"; }
 std::string UserLogsDir() { return EnvDir("LOCALAPPDATA") + "/OpenRider/Logs"; }
 std::string UserCacheDir() { return EnvDir("LOCALAPPDATA") + "/OpenRider/Cache"; }
-#else
+#elif defined(__APPLE__)
 std::string UserSupportDir() { return Home() + "/Library/Application Support/OpenRider"; }
 std::string UserPluginsDir() { return UserSupportDir() + "/plugins"; }
 std::string UserLogsDir() { return Home() + "/Library/Logs/OpenRider"; }
 std::string UserCacheDir() { return Home() + "/Library/Caches/OpenRider"; }
+#else
+// @impl 0f87-6adb-701e-a77c
+std::string UserSupportDir() { return XdgDir("XDG_DATA_HOME", ".local/share") + "/OpenRider"; }
+std::string UserPluginsDir() { return UserSupportDir() + "/plugins"; }
+std::string UserLogsDir() { return XdgDir("XDG_STATE_HOME", ".local/state") + "/OpenRider/logs"; }
+std::string UserCacheDir() { return XdgDir("XDG_CACHE_HOME", ".cache") + "/OpenRider"; }
 #endif
 
 bool MakeDirs(const std::string &path)

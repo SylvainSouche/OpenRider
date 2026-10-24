@@ -29,12 +29,17 @@ plugins() {
     done
 }
 
-# A shared library every system has, exporting no openrider_plugin.
+# A shared library every system has, exporting no openrider_plugin: the
+# target's C library -- under QEMU_LD_PREFIX (the sysroot) when a cross
+# build's tests run in an emulator, the host's being another architecture.
 system_library() {
     case $(uname) in
     Darwin) echo /usr/lib/libSystem.B.dylib ;;
     CYGWIN* | MINGW* | MSYS*) echo "$(cygpath -m "$SYSTEMROOT")/System32/version.dll" ;;
-    *) ls /lib/*/libc.so.* /lib64/libc.so.* /lib/libc.so.* /usr/lib/libc.so.* 2>/dev/null | head -n 1 ;;
+    *)
+        root=${QEMU_LD_PREFIX:-}
+        ls "$root"/lib/*/libc.so.* "$root"/lib64/libc.so.* "$root"/lib/libc.so.* "$root"/usr/lib/libc.so.* 2>/dev/null | head -n 1
+        ;;
     esac
 }
 

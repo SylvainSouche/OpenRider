@@ -14,6 +14,11 @@ void OutingViewController::Tick(const AppModel &model)
         view_model_.hover_index = -1;
         view_model_.hover_end_index = -1;
     }
+    // An outing without times (a route) has graphs along the distance only.
+    const core::Outing *outing = model.SelectedOuting();
+    view_model_.timed = !outing || outing->Timed();
+    if (!view_model_.timed)
+        view_model_.xaxis = openrider::sdk::XAxis::Distance;
 }
 
 // @impl 0f87-6acd-32ed-0184
@@ -22,6 +27,8 @@ void OutingViewController::Handle(const Intent &intent, const AppModel &model)
     const int graph_count = static_cast<int>(view_model_.graphs.size());
     switch (intent.kind) {
     case IntentKind::SetXAxis:
+        if (!view_model_.timed && static_cast<openrider::sdk::XAxis>(intent.i) == openrider::sdk::XAxis::Time)
+            break;
         view_model_.xaxis = static_cast<openrider::sdk::XAxis>(intent.i);
         view_model_.hover_index = -1;
         view_model_.hover_end_index = -1;

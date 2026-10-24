@@ -1,7 +1,7 @@
 # Platforms: build and test matrix
 
 OpenRider is built and its whole test suite run natively on each platform
-below (2026-10-22 and 23). The Linux platforms run in containers and the BSDs in
+below (2026-10-23), built with Bmake It at its pull request #17. The Linux platforms run in containers and the BSDs in
 QEMU guests, both from the Bmake It cross-platform harness
 (`tests/harness` in Bmake It: `vm.sh` for the guests, the `bmk/*` container
 images).
@@ -10,22 +10,24 @@ images).
 
 | Platform | clang | gcc |
 |---|---|---|
-| macOS 15 arm64 (host, MacPorts) | all pass (194 tests) | — |
-| Debian 13 arm64 (container) | all pass (194) | all pass (194) |
-| Debian 13 amd64 (container, emulated) | all pass (194) | — |
-| Alpine 3.24 (musl) amd64 (container, emulated) | all pass (194) | — |
-| FreeBSD 15.1 arm64 (QEMU guest) | all pass (194) | builds; tests cannot link (see below) |
-| NetBSD 10.2 arm64 (QEMU guest) | all pass (194) | all pass (194) |
+| macOS 15 arm64 (host, MacPorts) | all pass (200 tests) | — |
+| Debian 13 arm64 (container) | all pass (200) | all pass (200) |
+| Debian 13 amd64 (container, emulated) | all pass (200) | — |
+| Alpine 3.24 (musl) amd64 (container, emulated) | all pass (200) | — |
+| FreeBSD 15.1 arm64 (QEMU guest) | all pass (200) | builds; tests cannot link (see below) |
+| NetBSD 10.2 arm64 (QEMU guest) | all pass (200) | all pass (200) |
 
 "All pass": every module builds -- dependencies, libraries, the plugins,
 the application -- and every test suite passes: SDK, core, app, map tiles,
 reprojection, each plugin, plugin checks, and the performance suite
 (`perf.tst`: budgets in units of a calibration run on the same machine, so
-they hold under emulation too); 15 suites, 194 tests.
+they hold under emulation too); 15 suites, 200 tests.
 
-Not covered: Windows (built with mingw-w64 elsewhere; no Windows guest),
-FreeBSD and NetBSD amd64 (no guest on an arm64 host), and running the GUI
-itself on Linux or the BSDs (no display in the containers and guests).
+Not covered: Windows (last built with mingw-w64 at the Windows port,
+2026-10-15; not rebuilt since, no Windows machine or guest here), FreeBSD
+and NetBSD amd64 (no guest on an arm64 host), and running the GUI itself on
+Linux or the BSDs (no display in the containers and guests). What needs a
+real machine is listed in [`todo.md`](../todo.md).
 
 ## What each platform needs
 
@@ -78,8 +80,8 @@ docker run --rm -v ~/stage:/work -w /work/GarminViewer <image> sh -c \
 
 where `<image>` is a `bmk/linux-*` image with the Debian or Alpine packages
 above added (`--platform linux/amd64` for the emulated ones; pass
-`TOOLCHAIN=gcc` to bmake for gcc, `TOOLCHAIN=llvm` for clang where it
-is not the default, as on NetBSD).
+`TOOLCHAIN=gcc` to bmake for gcc; clang is Bmake It's default toolchain,
+named `llvm`, on every platform).
 
 FreeBSD or NetBSD, in a Bmake It harness guest (one at a time, with the
 container VM stopped):
@@ -102,8 +104,23 @@ sh $H/vm.sh down freebsd_arm64     # keeps the installed packages; `reset` drops
 - **NetBSD and Bmake It**: Bmake It reads a framework's `PREREQS` by running a
   command named `bmake`; NetBSD installs bmake as `make` only, so the
   prerequisites read empty and the build cannot find the dependencies'
-  headers. Until Bmake It calls `${MAKE}` there, give the guest a `bmake`:
-  `ln -s /usr/bin/make /usr/pkg/bin/bmake`.
-- **Linux file times** are too coarse to order files written within a few
-  milliseconds; the tile cache therefore never evicts the tile it has just
-  written (found by the Linux runs).
+  headers. Fixed in Bmake It's pull request #17 (it runs `${MAKE}`): the
+  NetBSD cells above ran with it and no `bmake` command at all. With an older
+  Bmake It, give the guest a `bmake`: `ln -s /usr/bin/make /usr/pkg/bin/bmake`
+  (lost whenever the guest's run overlay is recreated).
+
+## Design notes
+
+- **Tile cache order**: the cache evicts the least recently used tiles by
+  file time. File times are read to the nanosecond, but some file systems
+  (Linux's coarse timestamps, some container mounts) give files written
+  within a few milliseconds the same time; their relative order is then
+  arbitrary, which does not matter for eviction. The one guarantee that
+  matters is kept explicitly: the tile just written is never among the
+  victims (`TileCache::Evict(keep)`, found by the Linux runs).
+- **User files**: macOS keeps them in `~/Library` (Application Support,
+  Caches, Logs), Windows in `%APPDATA%` and `%LOCALAPPDATA%`, Linux and the
+  BSDs in the XDG base directories: `$XDG_DATA_HOME/OpenRider` (default
+  `~/.local/share/OpenRider`) for layers, `crs.txt`, GPX files and plugins,
+  `$XDG_CACHE_HOME/OpenRider` (`~/.cache/OpenRider`) for tiles,
+  `$XDG_STATE_HOME/OpenRider/logs` (`~/.local/state/OpenRider/logs`) for logs.

@@ -46,6 +46,12 @@ void DrawOutingView(const app::AppModel &model, const ViewModels &view_models, T
 void DrawComparisonView(const app::AppModel &model, const ViewModels &view_models, TextureMirror &textures,
                         app::Intents &out);
 
+/// Shown with an outing whose source has no times (a GPX route).
+inline constexpr const char *kNoTimesWarning =
+    "No times in this file: it is a route (an activity exported as a route keeps the line, not the clock). "
+    "Distance, elevation and the map are shown; duration, speeds, the time axis and segments are not. "
+    "Its date comes from the file (metadata, name, else modification date).";
+
 /// The intents graph controls push: they belong to the panel showing them.
 struct GraphIntents {
     app::IntentKind set_xaxis;  ///< i: openrider::sdk::XAxis
@@ -55,9 +61,10 @@ struct GraphIntents {
 };
 
 /// The x axis choice, an "add graph" button and one row of controls per
-/// graph (series, type, window/unit, remove).
+/// graph (series, type, window/unit, remove); without times (`timed`
+/// false: a route), the time axis is greyed out.
 void DrawGraphControls(const std::vector<openrider::sdk::SeriesSpec> &graphs, openrider::sdk::XAxis xaxis, const GraphIntents &intents,
-                       app::Intents &out);
+                       app::Intents &out, bool timed = true);
 
 /// The map, `width` x `height` pixels at the cursor: tiles, tracks,
 /// attribution; mouse actions reported as intents.

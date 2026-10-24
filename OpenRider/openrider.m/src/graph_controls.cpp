@@ -7,7 +7,7 @@
 namespace ui {
 
 void DrawGraphControls(const std::vector<openrider::sdk::SeriesSpec> &graphs, openrider::sdk::XAxis xaxis, const GraphIntents &intents,
-                       app::Intents &out)
+                       app::Intents &out, bool timed)
 {
     static const openrider::sdk::SeriesKind kinds[] = {openrider::sdk::SeriesKind::Altitude,    openrider::sdk::SeriesKind::Speed,
                                              openrider::sdk::SeriesKind::HeartRate,   openrider::sdk::SeriesKind::Cadence,
@@ -15,7 +15,13 @@ void DrawGraphControls(const std::vector<openrider::sdk::SeriesSpec> &graphs, op
                                              openrider::sdk::SeriesKind::Grade};
     ImGui::TextUnformatted("X axis:");
     ImGui::SameLine();
-    if (ImGui::RadioButton("Time", xaxis == openrider::sdk::XAxis::Time))
+    // Without times (a route), the time axis is not offered.
+    ImGui::BeginDisabled(!timed);
+    const bool time_clicked = ImGui::RadioButton("Time", xaxis == openrider::sdk::XAxis::Time);
+    ImGui::EndDisabled();
+    if (!timed && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("No times in this outing (a route)");
+    if (time_clicked)
         out.Push(intents.set_xaxis, static_cast<int>(openrider::sdk::XAxis::Time));
     ImGui::SameLine();
     if (ImGui::RadioButton("Distance", xaxis == openrider::sdk::XAxis::Distance))
