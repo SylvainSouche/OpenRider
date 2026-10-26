@@ -335,6 +335,7 @@ std::string MapViewController::AddLayer(const std::string &json)
         core::CallPlugin(tiles_vtable, [&] { handle = tiles_vtable->open(info.json.c_str(), error, sizeof error); });
         if (!handle)
             continue;
+		
         const or_tile_layer *layer = nullptr;
         core::CallPlugin(tiles_vtable, [&] { layer = tiles_vtable->layer(handle); });
         info.id = layer->id;
@@ -352,9 +353,15 @@ std::string MapViewController::AddLayer(const std::string &json)
             for (const maptiles::TileGrid &grid : maptiles::GridsOf(tiles_vtable, handle))
                 info.grids.push_back({grid, registry_.Find(grid.crs)});
         core::CallPlugin(tiles_vtable, [&] { tiles_vtable->close(handle); });
+		
+		
         if (info.min_zoom < 0 || info.max_zoom > kMaxTileZoom || info.min_zoom > info.max_zoom || info.tile_size <= 0)
+		{
+			core::LogLine("Zoom Level Problem %s", info.name.c_str());	
             return "zoom levels " + std::to_string(info.min_zoom) + ".." + std::to_string(info.max_zoom) +
                    " outside 0.." + std::to_string(kMaxTileZoom) + ", or no tile size";
+		}
+		core::LogLine("Add Layer to view model %s", info.name.c_str());		   
         view_model_.layers.push_back(info);
         return "";
     }
@@ -378,14 +385,18 @@ std::vector<std::string> MapViewController::LoadLayers(const std::vector<std::st
     std::vector<std::string> problems;
     cache_dir_ = cache_dir;
     const core::PluginScan scan = core::LoadPlugins(plugin_roots, OR_PLUGIN_TILES);
+	
     for (const std::string &problem : scan.problems)
         problems.push_back("Plugin refused: " + problem);
+	
     for (const core::LoadedPlugin &plugin : scan.loaded)
         plugins_.push_back(static_cast<const or_tiles_vtable *>(plugin.info->vtable));
+	
     for (const std::string &dir : dirs)
         for (const std::string &path : JsonFiles(dir))
             if (const std::string why = AddLayer(ReadText(path)); !why.empty())
                 problems.push_back("map layer " + path + ": " + why);
+		
     if (view_model_.layers.empty()) {
         problems.push_back("No map layer found");
         return problems;

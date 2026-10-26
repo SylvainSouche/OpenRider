@@ -150,6 +150,7 @@ bool TileFetcher::FetchNetwork(void *curl, const TileKey &key, std::string &byte
             headers = curl_slist_append(headers, extra.substr(start, end - start).c_str());
     }
     bytes.clear();
+	curl_easy_setopt(handle, CURLOPT_SSL_OPTIONS, (long)CURLSSLOPT_NATIVE_CA);
     curl_easy_setopt(handle, CURLOPT_URL, url);
     curl_easy_setopt(handle, CURLOPT_USERAGENT, user_agent_.c_str());
     curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
