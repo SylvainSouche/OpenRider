@@ -39,7 +39,8 @@ than 60° of longitude from a UTM zone's central meridian) is not drawn in it.
 
 Each layer is a JSON file in `share/openrider/layers/` (shipped) or in the
 user's `layers/` directory (`~/Library/Application Support/OpenRider/layers`
-on macOS). Two protocols are built in.
+on macOS, `~/.local/share/OpenRider/layers` on Linux and the BSDs,
+`%APPDATA%\OpenRider\layers` on Windows). Two protocols are built in.
 
 **`xyz`** — tiles addressed by a URL template in Web Mercator:
 

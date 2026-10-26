@@ -85,7 +85,10 @@ void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::
             core::MakeDirs(dir);
             return InputSetup{"{\"dir\":\"" + dir + "\"}", "gpx", true, dir};
         }
-        return InputSetup{"", name == "garmindb" ? "garmin_connect" : name, false, ""};
+        // GarminDB: its directory from garmindb.json in the user folder
+        // ({"base_dir": "..."}), else the plugin's default (~/HealthData).
+        const std::string config = name == "garmindb" ? ReadFile(core::UserSupportDir() + "/garmindb.json") : "";
+        return InputSetup{config, name == "garmindb" ? "garmin_connect" : name, false, ""};
     };
     std::vector<core::LoadedPlugin> ordered = inputs.loaded;
     std::stable_sort(ordered.begin(), ordered.end(), [](const core::LoadedPlugin &a, const core::LoadedPlugin &b) {

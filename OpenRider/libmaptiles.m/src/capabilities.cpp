@@ -1,5 +1,6 @@
 #include "maptiles/capabilities.h"
 
+#include "core/paths.h"
 #include "core/plugin_thread.h"
 #include "maptiles/tile_grid.h"
 
@@ -38,7 +39,7 @@ bool ReadFile(const std::string &path, std::string &text)
 // Writes `text` to `path` atomically, creating its directory.
 void WriteFile(const std::string &directory, const std::string &path, const std::string &text)
 {
-    mkdir(directory.c_str(), 0755);
+    core::MakeDirs(directory);
     const std::string temporary = path + ".tmp";
     if (FILE *file = std::fopen(temporary.c_str(), "wb")) {
         const bool written = std::fwrite(text.data(), 1, text.size(), file) == text.size();
@@ -110,7 +111,6 @@ std::string ProvideCapabilities(const or_tiles_vtable *tiles_vtable, void *layer
     if (!(fresh && ReadFile(path, document))) {
         document.clear();
         if (Download(url, extra_headers, user_agent, document)) {
-            mkdir(cache_dir.c_str(), 0755);
             WriteFile(directory, path, document);
         } else if (!(cached && ReadFile(path, document))) {
             return "cannot download " + url;

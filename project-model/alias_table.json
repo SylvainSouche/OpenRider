@@ -785,6 +785,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-fetched-test-data": {
+    "active": true,
+    "id": "0f87-6adc-466b-ce99",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-filter-api": {
     "active": true,
     "id": "0f87-6acc-e9e8-a807",
@@ -830,6 +836,12 @@
   "dec-gpx-input": {
     "active": true,
     "id": "0f87-6ad7-2407-6ee2",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-gpx-routes": {
+    "active": true,
+    "id": "0f87-6adb-a588-a2a3",
     "status": "recorded",
     "type": "dec"
   },
@@ -1220,6 +1232,12 @@
   "dec-restrained-cpp": {
     "active": true,
     "id": "0f87-6acc-ea44-75e5",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-review-fixes-1": {
+    "active": true,
+    "id": "0f87-6adb-701e-1d86",
     "status": "recorded",
     "type": "dec"
   },
@@ -1655,6 +1673,18 @@
     "status": "confirmed",
     "type": "req"
   },
+  "gpx-corpus-test": {
+    "active": true,
+    "id": "0f87-6adc-466b-e603",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "gpx-routes-untimed": {
+    "active": true,
+    "id": "0f87-6adb-a588-1d2e",
+    "status": "confirmed",
+    "type": "req"
+  },
   "graph-computed-series": {
     "active": true,
     "id": "0f87-6acd-0221-657c",
@@ -1847,6 +1877,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-fetched-test-data": {
+    "active": true,
+    "id": "0f87-6adc-466b-8604",
+    "status": "asserted",
+    "type": "impl"
+  },
   "impl-file-per-class": {
     "active": true,
     "id": "0f87-6acd-d7ea-421f",
@@ -1874,6 +1910,12 @@
   "impl-gpx-plugin": {
     "active": true,
     "id": "0f87-6ad7-26b7-05d6",
+    "status": "asserted",
+    "type": "impl"
+  },
+  "impl-gpx-routes": {
+    "active": true,
+    "id": "0f87-6adb-a588-1e2c",
     "status": "asserted",
     "type": "impl"
   },
@@ -2168,6 +2210,12 @@
   "impl-rests": {
     "active": true,
     "id": "0f87-6acf-972e-b67d",
+    "status": "asserted",
+    "type": "impl"
+  },
+  "impl-review-fixes-1": {
+    "active": true,
+    "id": "0f87-6adb-701e-a77c",
     "status": "asserted",
     "type": "impl"
   },
@@ -3190,6 +3238,12 @@
     "id": "0f87-6ada-5814-dc4b",
     "status": "confirmed",
     "type": "nreq"
+  },
+  "platform-conventions": {
+    "active": true,
+    "id": "0f87-6adb-7029-8385",
+    "status": "confirmed",
+    "type": "req"
   },
   "plugin-api-version": {
     "active": true,

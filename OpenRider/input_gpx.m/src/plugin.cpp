@@ -11,6 +11,7 @@
 #include <cJSON.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cctype>
 #include <cmath>
 #include <cstdint>
@@ -113,7 +114,21 @@ or_outing Summary(const std::string &id, const std::string &path, const gpx::Gpx
     or_outing o{};
     CopyStr(o.id, sizeof o.id, id);
     CopyStr(o.name, sizeof o.name, file.name.empty() ? std::filesystem::path(path).stem().string() : file.name);
-    CopyStr(o.start_local, sizeof o.start_local, gpx::LocalTime(file.start_epoch_s));
+    // A file without times (a route) is dated by its metadata or its name
+    // (ParseGpx), else by a timestamp in the file's name, else by the
+    // file's own modification time.
+    double start = file.start_epoch_s;
+    if (std::isnan(start))
+        start = gpx::TimeInName(std::filesystem::path(path).stem().string());
+    if (std::isnan(start)) {
+        std::error_code ec;
+        const auto written = std::filesystem::last_write_time(path, ec);
+        if (!ec)
+            start = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(
+                                            std::chrono::file_clock::to_sys(written).time_since_epoch())
+                                            .count());
+    }
+    CopyStr(o.start_local, sizeof o.start_local, gpx::LocalTime(start));
     // The type as type tables key it: lower case, words joined by '_'.
     std::string type;
     for (char c : file.type)
@@ -155,6 +170,10 @@ or_outing Summary(const std::string &id, const std::string &path, const gpx::Gpx
     o.min_temp_c = temp_min;
     o.max_temp_c = temp_max;
     o.calories = o.aerobic_te = o.anaerobic_te = nan;
+    // No times (a route): nothing measured against the clock (input.h:
+    // duration_s NaN says so).
+    if (!file.timed)
+        o.duration_s = o.moving_s = o.avg_speed_ms = o.max_speed_ms = nan;
     return o;
 }
 
@@ -174,7 +193,7 @@ int GpxList(void *handle, or_outing_cb cb, void *user, char *err, size_t errlen)
     for (const auto &[id, path] : files) {
         const gpx::GpxFile file = gpx::ParseGpx(ReadFile(path));
         if (file.points.empty())
-            continue;  // a route or waypoints only: no outing
+            continue;  // waypoints only: no outing
         const or_outing outing = Summary(id, path, file);
         if (cb(user, &outing, index++, files.size()) != 0)
             break;

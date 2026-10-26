@@ -4,6 +4,7 @@
 #include <openrider/sdk/stats.h>
 
 #include <cmath>
+#include <vector>
 
 namespace {
 
@@ -137,8 +138,31 @@ ATF_TEST_CASE_BODY(ascent_with_hysteresis)
     ATF_REQUIRE_EQ(st.max_alt_m, 1021.0);
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(stats_without_times);
+ATF_TEST_CASE_BODY(stats_without_times)
+{
+    // A route: positions and altitudes, no times. Distance and elevation
+    // are computed; nothing measured against the clock is invented.
+    std::vector<or_point> route;
+    for (int i = 0; i < 50; ++i) {
+        or_point p{};
+        p.lat = 45.0 + i * 0.001;
+        p.lon = 6.0;
+        p.alt_m = 100.0 + (i < 25 ? i * 4.0 : (49 - i) * 4.0);
+        p.t_s = p.speed_ms = p.hr = p.cadence = p.temp_c = std::nan("");
+        p.dist_m = i * 111.19;
+        route.push_back(p);
+    }
+    const openrider::sdk::ComputedStats s = openrider::sdk::ComputeStats(route, openrider::sdk::MotionParams{});
+    ATF_REQUIRE(std::fabs(s.distance_m - 49 * 111.19) < 5.0);
+    ATF_REQUIRE(s.ascent_m > 80.0 && s.descent_m > 80.0);
+    ATF_REQUIRE(std::isnan(s.duration_s) && std::isnan(s.moving_s));
+    ATF_REQUIRE(std::isnan(s.avg_speed_ms) && std::isnan(s.moving_speed_ms) && std::isnan(s.max_speed_ms));
+}
+
 ATF_INIT_TEST_CASES(tcs)
 {
+    ATF_ADD_TEST_CASE(tcs, stats_without_times);
     ATF_ADD_TEST_CASE(tcs, percentile_ignores_nan);
     ATF_ADD_TEST_CASE(tcs, window_scales_with_activity);
     ATF_ADD_TEST_CASE(tcs, pause_is_not_moving);
