@@ -14,3 +14,6 @@ compile_commands.json
 /testdata/cc-gpx/
 /testdata/cc-gpx-scale/
 /test_data/
+
+# Local model backups: personal, never in the public repository.
+/project-model-backup.tar.gz
