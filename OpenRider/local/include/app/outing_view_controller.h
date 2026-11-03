@@ -21,6 +21,7 @@ struct OutingViewModel {
     int hover_end_index = -1;      ///< a hovered histogram bar's last point, -1 = a single point
     double hover_x = 0.0;          ///< its x value (cursor line; a bar's centre)
     bool stats_computed = false;   ///< statistics source when no filter is on: computed, not Garmin's
+    bool timed = true;             ///< the selected outing has times (a route has none: distance axis only)
 };
 
 /// Owns the OutingViewModel and changes it in response to graph intents.

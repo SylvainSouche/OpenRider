@@ -3,6 +3,8 @@
 #include "file_dialog.h"
 #include "views.h"
 
+#include "app/credits.h"
+
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -18,10 +20,15 @@ void DrawMenuBar(const app::AppModel &model, app::Intents &out)
     if (ImGui::BeginMenu("File")) {
         if (ImGui::MenuItem("Import GPX...", nullptr, false, model.can_import && model.importing < 0 && !model.scanning)) {
             // The system's browser; the files are then imported one by one.
-            app::Intent import{app::IntentKind::ImportFiles};
-            import.ids = ChooseFiles("Import GPX files", ".gpx");
-            if (!import.ids.empty())
-                out.Push(std::move(import));
+            // Without one, say what to install rather than do nothing.
+            if (const std::string missing = FileBrowserMissing(); !missing.empty()) {
+                out.PushText(app::IntentKind::ReportError, missing);
+            } else {
+                app::Intent import{app::IntentKind::ImportFiles};
+                import.ids = ChooseFiles("Import GPX files", ".gpx");
+                if (!import.ids.empty())
+                    out.Push(std::move(import));
+            }
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Quit", "Cmd+Q"))
@@ -68,18 +75,11 @@ void DrawAbout(const app::MainViewModel &view_model, app::Intents &out)
     ImGui::TextUnformatted("BSD-3-Clause, (c) 2026 Sylvain Souche");
     ImGui::Separator();
     ImGui::TextUnformatted("Credits:");
-    ImGui::BulletText("Dear ImGui (MIT) -- Omar Cornut and contributors");
-    ImGui::BulletText("ImPlot (MIT) -- Evan Pezent");
-    ImGui::BulletText("GLFW (zlib) -- Marcus Geelnard, Camilla Loewy");
-    ImGui::BulletText("cJSON (MIT) -- Dave Gamble and contributors");
-    ImGui::BulletText("SQLite (public domain)");
-    ImGui::BulletText("stb_image (public domain / MIT) -- Sean Barrett");
-    ImGui::BulletText("libcurl (curl licence) -- Daniel Stenberg and contributors");
-    ImGui::BulletText("libtiff (libtiff licence) -- Sam Leffler, Silicon Graphics");
-    ImGui::BulletText("Phosphor icons (MIT) -- Phosphor Icons");
-    ImGui::BulletText("Data: GarminDB output (read only)");
-    ImGui::BulletText("Maps: OpenTopoMap (CC-BY-SA), map data OpenStreetMap contributors, SRTM;");
-    ImGui::BulletText("      IGN SCAN 25 Touristique (Geoplateforme)");
+    for (const app::Credit &credit : app::kLibraryCredits)
+        ImGui::BulletText("%s (%s)%s%s", credit.name, credit.licence, *credit.by ? " -- " : "", credit.by);
+    ImGui::TextUnformatted("Data:");
+    for (const app::Credit &credit : app::kDataCredits)
+        ImGui::BulletText("%s (%s)%s%s", credit.name, credit.licence, *credit.by ? " -- " : "", credit.by);
     if (ImGui::Button("Close")) {
         out.Push(app::IntentKind::ShowAbout, 0);
         ImGui::CloseCurrentPopup();
@@ -220,8 +220,16 @@ void DrawImportPopup(const app::AppModel &model, app::Intents &out)
     }
     ImGui::Separator();
     ImGui::Text("%s", outing.raw.name);
-    ImGui::TextDisabled("%s  -  %.2f km  -  %.0f min", std::string(outing.raw.start_local).substr(0, 16).c_str(),
-                        outing.raw.distance_m / 1000.0, outing.raw.duration_s / 60.0);
+    if (outing.Timed())
+        ImGui::TextDisabled("%s  -  %.2f km  -  %.0f min", std::string(outing.raw.start_local).substr(0, 16).c_str(),
+                            outing.raw.distance_m / 1000.0, outing.raw.duration_s / 60.0);
+    else {
+        ImGui::TextDisabled("%s  -  %.2f km", std::string(outing.raw.start_local).substr(0, 16).c_str(),
+                            outing.raw.distance_m / 1000.0);
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + 420.0f);
+        ImGui::TextColored(ImVec4(0.85f, 0.45f, 0.0f, 1.0f), "%s", kNoTimesWarning);
+        ImGui::PopTextWrapPos();
+    }
     const TypeChoices choices = Choices(model);
     ImGui::PushID(static_cast<int>(i));
     ImGui::TextUnformatted("Category");

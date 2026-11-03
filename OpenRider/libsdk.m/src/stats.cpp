@@ -62,6 +62,11 @@ ComputedStats ComputeStats(const std::vector<or_point> &points, const MotionPara
     if (std::isinf(s.min_alt_m)) {
         s.min_alt_m = s.max_alt_m = std::numeric_limits<double>::quiet_NaN();
     }
+    // Points without times (a route): nothing measured against the clock.
+    if (std::isnan(s.duration_s)) {
+        s.moving_s = s.avg_speed_ms = s.moving_speed_ms = s.max_speed_ms = std::numeric_limits<double>::quiet_NaN();
+        return s;
+    }
     s.avg_speed_ms = s.duration_s > 0.0 ? s.distance_m / s.duration_s : 0.0;
     s.moving_speed_ms = s.moving_s > 0.0 ? s.distance_m / s.moving_s : 0.0;
     for (double v : MovingAverageSpeed(points, motion.speed_window_s))

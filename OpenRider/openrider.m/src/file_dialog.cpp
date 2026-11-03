@@ -4,55 +4,17 @@
 #include <cctype>
 #include <cstdio>
 
-#ifdef _WIN32
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
+#if defined(_WIN32)
 #include <windows.h>
 #include <commdlg.h>
+#include <cwchar>
 #endif
 
 namespace ui {
 
 namespace {
 
-#ifdef _WIN32
-// The files picked in the standard Windows Open dialog, with '/' separators;
-// empty if cancelled. Several may be picked.
-std::vector<std::string> OpenDialogFiles(const std::string &prompt, const std::string &extension)
-{
-    // Filter: "GPX files (*.gpx)\0*.gpx\0\0".
-    const std::string pattern = "*" + extension;
-    std::string filter = prompt + " (" + pattern + ")";
-    filter.push_back('\0');
-    filter += pattern;
-    filter.push_back('\0');
-    filter.push_back('\0');
-    std::vector<char> buffer(64 * 1024, '\0');
-    OPENFILENAMEA dialog{};
-    dialog.lStructSize = sizeof dialog;
-    dialog.lpstrFilter = filter.c_str();
-    dialog.lpstrFile = buffer.data();
-    dialog.nMaxFile = static_cast<DWORD>(buffer.size());
-    dialog.lpstrTitle = prompt.c_str();
-    dialog.Flags = OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
-    std::vector<std::string> files;
-    if (!GetOpenFileNameA(&dialog))
-        return files;
-    // One file: its full path. Several: the directory, then each name, every
-    // string ended by '\0' and the list by an empty one.
-    std::vector<std::string> parts;
-    for (const char *at = buffer.data(); *at; at += parts.back().size() + 1)
-        parts.emplace_back(at);
-    if (parts.size() == 1)
-        files.push_back(parts[0]);
-    else
-        for (size_t i = 1; i < parts.size(); ++i)
-            files.push_back(parts[0] + "/" + parts[i]);
-    for (std::string &file : files)
-        std::replace(file.begin(), file.end(), '\\', '/');
-    return files;
-}
-#else
+#if !defined(_WIN32)
 // The output lines of `command` (run by the shell).
 std::vector<std::string> Lines(const std::string &command)
 {
@@ -75,6 +37,7 @@ std::vector<std::string> Lines(const std::string &command)
     }
     return lines;
 }
+
 #endif
 
 bool EndsWith(std::string text, std::string suffix)
@@ -89,15 +52,65 @@ bool EndsWith(std::string text, std::string suffix)
 
 } // namespace
 
+// @impl 0f87-6adb-701e-a77c
+#if defined(_WIN32)
+// The Windows open-file dialog, several files allowed: the folder, then
+// each file's name, separated by NULs (a single file: its full path).
 std::vector<std::string> ChooseFiles(const std::string &prompt, const std::string &extension)
 {
-#if defined(_WIN32)
+    auto wide = [](const std::string &text) {
+        std::wstring out(static_cast<size_t>(MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, nullptr, 0)), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, out.data(), static_cast<int>(out.size()));
+        out.resize(out.size() - 1);
+        return out;
+    };
+    auto narrow = [](const std::wstring &text) {
+        std::string out(static_cast<size_t>(WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, nullptr, 0, nullptr, nullptr)), '\0');
+        WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, out.data(), static_cast<int>(out.size()), nullptr, nullptr);
+        out.resize(out.size() - 1);
+        return out;
+    };
+    // Filter: "GPX files (*.gpx)\0*.gpx\0\0".
+    const std::wstring pattern = L"*" + wide(extension);
+    std::wstring filter = pattern + L" files";
+    filter.push_back(L'\0');
+    filter += pattern;
+    filter.push_back(L'\0');
+    filter.push_back(L'\0');
+    const std::wstring title = wide(prompt);
+    std::vector<wchar_t> buffer(65536, L'\0');
+    OPENFILENAMEW dialog{};
+    dialog.lStructSize = sizeof dialog;
+    dialog.lpstrFilter = filter.c_str();
+    dialog.lpstrFile = buffer.data();
+    dialog.nMaxFile = static_cast<DWORD>(buffer.size());
+    dialog.lpstrTitle = title.c_str();
+    dialog.Flags = OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
     std::vector<std::string> files;
-    for (const std::string &file : OpenDialogFiles(prompt, extension))
+    if (!GetOpenFileNameW(&dialog))
+        return files;  // cancelled
+    std::vector<std::wstring> parts;
+    for (const wchar_t *part = buffer.data(); *part; part += wcslen(part) + 1)
+        parts.emplace_back(part);
+    if (parts.size() == 1)
+        files.push_back(narrow(parts[0]));
+    else
+        for (size_t k = 1; k < parts.size(); ++k)
+            files.push_back(narrow(parts[0] + L"\\" + parts[k]));
+    std::vector<std::string> kept;
+    for (const std::string &file : files)
         if (EndsWith(file, extension))
-            files.push_back(file);
-    return files;
+            kept.push_back(file);
+    return kept;
+}
+
+std::string FileBrowserMissing()
+{
+    return "";
+}
 #else
+std::vector<std::string> ChooseFiles(const std::string &prompt, const std::string &extension)
+{
 #if defined(__APPLE__)
     // AppleScript's standard dialog; a cancel ends the script with an
     // error, so nothing is printed. The prompt carries no quotes.
@@ -105,20 +118,31 @@ std::vector<std::string> ChooseFiles(const std::string &prompt, const std::strin
                                 "\" with multiple selections allowed' -e 'set out to \"\"' "
                                 "-e 'repeat with f in chosen' -e 'set out to out & POSIX path of f & linefeed' "
                                 "-e 'end repeat' -e 'return out' 2>/dev/null";
-#elif defined(__linux__)
-    const std::string command = "zenity --file-selection --multiple --separator='\\n' --title='" + prompt +
-                                "' --file-filter='*" + extension + "' 2>/dev/null";
 #else
-    const std::string command;
+    // Linux and the BSDs: zenity (GNOME, and most desktops), else kdialog
+    // (KDE). A cancel prints nothing.
+    const std::string command =
+        "if command -v zenity >/dev/null 2>&1; then zenity --file-selection --multiple --separator='\n' --title='" +
+        prompt + "' --file-filter='*" + extension + "' 2>/dev/null; else kdialog --title '" + prompt +
+        "' --getopenfilename --multiple --separate-output \"$HOME\" '*" + extension + "' 2>/dev/null; fi";
 #endif
     std::vector<std::string> files;
-    if (command.empty())
-        return files;
     for (const std::string &line : Lines(command))
         if (EndsWith(line, extension))
             files.push_back(line);
     return files;
+}
+
+std::string FileBrowserMissing()
+{
+#if defined(__APPLE__)
+    return "";
+#else
+    return Lines("command -v zenity || command -v kdialog").empty()
+               ? "No file browser found: install zenity (or kdialog) to import files."
+               : "";
 #endif
 }
+#endif
 
 } // namespace ui

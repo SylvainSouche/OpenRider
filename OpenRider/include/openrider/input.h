@@ -26,7 +26,9 @@ struct or_outing {
     char fit_sport[32];        /**< FIT sport recorded by the device */
     char fit_sub_sport[32];    /**< FIT sub_sport recorded by the device */
     char source_type[48];      /**< source's own type key (Garmin Connect typeKey), "" if none */
-    double duration_s;         /**< elapsed time */
+    double duration_s;         /**< elapsed time; NaN when the source has no times
+                                    (a GPX route): the points' t_s are NaN too, and
+                                    nothing measured against the clock is known */
     double moving_s;           /**< moving time */
     double distance_m;         /**< distance */
     double ascent_m;           /**< total ascent (D+) */

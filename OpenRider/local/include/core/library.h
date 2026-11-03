@@ -11,6 +11,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <cmath>
 #include <string>
 #include <thread>
 #include <vector>
@@ -23,6 +24,10 @@ struct Outing {
     ActivityType type;      ///< resolved type
     size_t source = 0;      ///< index of its source in the InputSet
     bool confirmed = true;  ///< its type is settled (else the user is asked to confirm it)
+
+    /// Whether the source recorded times: a GPX route has none (its
+    /// duration is NaN), so nothing is measured against the clock.
+    bool Timed() const { return !std::isnan(raw.duration_s); }
 };
 
 /// The outings of one source, as a scan reads them.

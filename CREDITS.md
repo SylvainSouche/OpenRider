@@ -3,7 +3,8 @@
 OpenRider is distributed under the BSD-3-Clause licence (see `LICENSE`).
 It builds on the following third-party components and data sources. Full
 licence texts are in `licenses/`. The same list is shown in the
-application's Help → About dialog; keep both in sync.
+application's Help → About dialog, from `app/credits.h`; a test
+(`libapp.m/tests/credits_test.cpp`) fails when the two differ.
 
 ## Libraries and assets
 
@@ -27,4 +28,5 @@ application's Help → About dialog; keep both in sync.
 | [OpenTopoMap](https://opentopomap.org) | CC-BY-SA | default map layer — attribution shown on the map: "Map data: © OpenStreetMap contributors, SRTM \| Map representation: © OpenTopoMap (CC-BY-SA)" |
 | [IGN SCAN 25 Touristique](https://geoservices.ign.fr) via the Géoplateforme WMTS | IGN terms (to be verified) | optional map layer — attribution shown on the map: "© IGN — SCAN 25® Touristique (Géoplateforme)" |
 | [Kartverket Topo](https://www.kartverket.no/api-og-data/kartgrunnlag-fastlands-norge) via Kartverket's open WMTS cache (`cache.kartverket.no`) | CC BY 4.0 | optional map layer for Norway — attribution shown on the map: "© Kartverket (CC BY 4.0)" |
+| [EPSG Geodetic Parameter Dataset](https://epsg.org) — IOGP | EPSG terms of use (to be verified) | the coordinate systems of `share/openrider/crs.txt`: names, areas of use and parameters, as PROJ 9.7's database carries them |
 <!-- @impl 0f87-6ad8-592a-f21b -->

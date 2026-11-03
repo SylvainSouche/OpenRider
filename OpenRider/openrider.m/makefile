@@ -11,3 +11,8 @@ LIBS=app core maptiles implot imgui glfw
 _OPENGL_LIBS != pkg-config --libs gl 2>/dev/null || echo -lGL
 LDFLAGS += ${_OPENGL_LIBS}
 .endif
+
+# The open-file dialog (file_dialog.cpp) on Windows.
+.if ${TARGET} == "win"
+LDFLAGS += -lcomdlg32
+.endif

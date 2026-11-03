@@ -14,7 +14,8 @@ namespace openrider::sdk {
 /// Statistics of an outing computed from its points.
 struct ComputedStats {
     double distance_m = 0.0;       ///< along the track
-    double duration_s = 0.0;       ///< first to last point
+    double duration_s = 0.0;       ///< first to last point; NaN when the points have no times
+                                   ///< (a route), and then the other times and speeds are NaN too
     double moving_s = 0.0;         ///< outside not-moving stretches
     double ascent_m = 0.0;         ///< D+, with hysteresis
     double descent_m = 0.0;        ///< D-, with hysteresis
