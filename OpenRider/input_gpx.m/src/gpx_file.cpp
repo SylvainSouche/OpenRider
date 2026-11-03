@@ -63,6 +63,30 @@ double Attribute(const std::string &text, size_t from, size_t to, const char *na
 
 double Number(const std::string &value) { return value.empty() ? kNaN : std::strtod(value.c_str(), nullptr); }
 
+// Seconds since the epoch of a broken-down UTC time (timegm is POSIX;
+// Windows has _mkgmtime).
+std::time_t TimeFromUtc(std::tm &tm)
+{
+#ifdef _WIN32
+    return _mkgmtime(&tm);
+#else
+    return timegm(&tm);
+#endif
+}
+
+// `t` broken down into local time, thread-safely (localtime_r is POSIX;
+// Windows has localtime_s, with its arguments swapped).
+std::tm BrokenDownLocal(std::time_t t)
+{
+    std::tm tm{};
+#ifdef _WIN32
+    localtime_s(&tm, &t);
+#else
+    localtime_r(&t, &tm);
+#endif
+    return tm;
+}
+
 } // namespace
 
 double ParseTime(const std::string &text)
@@ -79,7 +103,7 @@ double ParseTime(const std::string &text)
     tm.tm_hour = hour;
     tm.tm_min = minute;
     tm.tm_sec = 0;
-    double epoch = static_cast<double>(timegm(&tm)) + second;
+    double epoch = static_cast<double>(TimeFromUtc(tm)) + second;
     const char *zone = text.c_str() + consumed;
     int zh = 0, zm = 0;
     if ((*zone == '+' || *zone == '-') && std::sscanf(zone + 1, "%d:%d", &zh, &zm) >= 1)
@@ -92,8 +116,7 @@ std::string LocalTime(double epoch_s)
     if (std::isnan(epoch_s))
         return "";
     const std::time_t t = static_cast<std::time_t>(std::floor(epoch_s));
-    std::tm tm{};
-    localtime_r(&t, &tm);
+    const std::tm tm = BrokenDownLocal(t);
     char text[24];
     std::strftime(text, sizeof text, "%Y-%m-%d %H:%M:%S", &tm);
     return text;

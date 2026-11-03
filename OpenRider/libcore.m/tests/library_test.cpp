@@ -3,6 +3,7 @@
 #include "core/file_import.h"
 #include "core/library.h"
 #include "core/outing_selection.h"
+#include "testing/temp_dir.h"
 
 #include <chrono>
 #include <cmath>
@@ -199,8 +200,7 @@ ATF_TEST_CASE_BODY(scan_of_several_sources)
 ATF_TEST_CASE_WITHOUT_HEAD(copies_into_folder_without_overwriting);
 ATF_TEST_CASE_BODY(copies_into_folder_without_overwriting)
 {
-    char base[] = "/tmp/openrider-copy-XXXXXX";
-    const std::string root = mkdtemp(base);
+    const std::string root = testing::TempDir("copy");
     std::filesystem::create_directories(root + "/to");
     std::ofstream(root + "/run.gpx") << "x";
     std::string error;

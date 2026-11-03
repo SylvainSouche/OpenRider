@@ -4,5 +4,5 @@ LIB=app
 LIBS=core maptiles reproj
 TESTS_CXX=app_controller_test view_controllers_test map_view_controller_test model_domains_test map_geometry_test credits_test
 # credits_test reads the workspace's CREDITS.md.
-CXXFLAGS+=-DOPENRIDER_CREDITS_FILE=\"${.CURDIR}/../../CREDITS.md\"
+CXXFLAGS+=-DOPENRIDER_CREDITS_FILE=\"${NATIVE_CURDIR}/../../CREDITS.md\"
 .include "mk.lib.mk"

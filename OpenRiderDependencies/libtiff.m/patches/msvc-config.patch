@@ -1,0 +1,73 @@
+--- a/libtiff/tif_config.h	1970-01-01 01:00:00.000000000 +0100
++++ b/libtiff/tif_config.h	1970-01-01 01:00:00.000000000 +0100
+@@ -0,0 +1,25 @@
++/* tif_config.h for MSVC output (cl.exe, clang-cl), in place of libtiff's configure. */
++#ifndef _TIF_CONFIG_H_
++#define _TIF_CONFIG_H_
++
++#include "tiffconf.h"
++
++#define HAVE_ASSERT_H 1
++#define HAVE_FCNTL_H 1
++#define HAVE_IO_H 1
++#define HAVE_SYS_TYPES_H 1
++#define HAVE_DECL_OPTARG 0
++#define STRIP_SIZE_DEFAULT 8192
++#define TIFF_MAX_DIR_COUNT 1048576
++#define USE_WIN32_FILEIO 1
++#define WORDS_BIGENDIAN 0
++#define SIZEOF_SIZE_T 8
++#define TIFF_SIZE_FORMAT "zu"
++#define TIFF_SSIZE_FORMAT PRId64
++#define PACKAGE "LibTIFF Software"
++#define PACKAGE_NAME "LibTIFF Software"
++#define PACKAGE_TARNAME "tiff"
++#define PACKAGE_BUGREPORT "tiff@lists.osgeo.org"
++#define PACKAGE_URL ""
++
++#endif /* _TIF_CONFIG_H_ */
+--- a/libtiff/tiffconf.h	1970-01-01 01:00:00.000000000 +0100
++++ b/libtiff/tiffconf.h	1970-01-01 01:00:00.000000000 +0100
+@@ -0,0 +1,42 @@
++/* tiffconf.h for MSVC output (cl.exe, clang-cl), in place of libtiff's configure. */
++#ifndef _TIFFCONF_
++#define _TIFFCONF_
++
++#include <stddef.h>
++#include <stdint.h>
++#include <inttypes.h>
++
++#define TIFF_INT8_T int8_t
++#define TIFF_INT16_T int16_t
++#define TIFF_INT32_T int32_t
++#define TIFF_INT64_T int64_t
++#define TIFF_UINT8_T uint8_t
++#define TIFF_UINT16_T uint16_t
++#define TIFF_UINT32_T uint32_t
++#define TIFF_UINT64_T uint64_t
++#define TIFF_SSIZE_T int64_t
++
++#define HAVE_IEEEFP 1
++#define HOST_FILLORDER FILLORDER_LSB2MSB
++#define HOST_BIGENDIAN 0
++
++#define CCITT_SUPPORT 1
++#define LOGLUV_SUPPORT 1
++#define LZW_SUPPORT 1
++#define NEXT_SUPPORT 1
++#define PACKBITS_SUPPORT 1
++#define THUNDER_SUPPORT 1
++#define STRIPCHOP_DEFAULT TIFF_STRIPCHOP
++#define SUBIFD_SUPPORT 1
++#define DEFAULT_EXTRASAMPLE_AS_ALPHA 1
++#define CHECK_JPEG_YCBCR_SUBSAMPLING 1
++#define MDI_SUPPORT 1
++
++#define COLORIMETRY_SUPPORT
++#define YCBCR_SUPPORT
++#define CMYK_SUPPORT
++#define ICC_SUPPORT
++#define PHOTOSHOP_SUPPORT
++#define IPTC_SUPPORT
++
++#endif /* _TIFFCONF_ */

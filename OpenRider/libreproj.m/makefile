@@ -10,6 +10,7 @@
 LIB=reproj
 LIB_SHARED=NO
 TESTS_CXX=projection_test registry_test transformer_test warp_mesh_test raster_warp_test grid_projector_test
-# The tests check the definitions OpenRider ships.
-CXXFLAGS+=-DREPROJ_CRS_FILE=\"${.CURDIR}/../share/common/openrider/crs.txt\"
+# The tests check the definitions OpenRider ships (native path on Windows:
+# OpenRider/mk/pre.win.mk).
+CXXFLAGS+=-DREPROJ_CRS_FILE=\"${NATIVE_CURDIR}/../share/common/openrider/crs.txt\"
 .include "mk.lib.mk"

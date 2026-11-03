@@ -5,5 +5,9 @@
 # calibration workload, with its memory. Skipped without the tracks.
 TEST_PROG=scale_test
 LIBS=core
-CXXFLAGS+=-DSCALE_DIR=\"${.CURDIR}/../../testdata/cc-gpx-scale\" -DPLUGINS_DIR=\"${.CURDIR}/../../build/${_TARGET_KEY}/plugins\"
+CXXFLAGS+=-DSCALE_DIR=\"${NATIVE_CURDIR}/../../testdata/cc-gpx-scale\" -DPLUGINS_DIR=\"${NATIVE_CURDIR}/../../build/${_TARGET_KEY}/plugins\"
+# Peak memory (GetProcessMemoryInfo) on Windows.
+.if ${TARGET} == "win"
+LDFLAGS+=-lpsapi
+.endif
 .include "mk.tst.mk"

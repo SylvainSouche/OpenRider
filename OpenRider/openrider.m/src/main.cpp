@@ -20,6 +20,8 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 namespace {
 
@@ -130,8 +132,21 @@ void ConnectServices(app::AppController &ctl, app::MapViewController &map, app::
 } // namespace
 
 // @impl 0f87-6acd-23b0-c555
-int main()
+int main(int argc, char **argv)
 {
+    // --frames N: draw N frames, then quit as when the window is closed, and
+    // say so on stdout -- the GUI smoke test (gui.tst), run unattended.
+    long frames_left = -1;
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
+            frames_left = std::strtol(argv[++i], nullptr, 10);
+        } else {
+            std::fprintf(stderr, "usage: openrider [--frames N]\n");
+            return 2;
+        }
+    }
+    const long frames_asked = frames_left;
+
     core::LogOpenSession(core::UserLogsDir());
     core::LogLine("OpenRider starting");
 
@@ -173,7 +188,9 @@ int main()
         ConnectServices(app_ctl, map_vc, intents);
         ui::TextureMirror textures;
 
-        while (!glfwWindowShouldClose(window) && !model.quit) {
+        while (!glfwWindowShouldClose(window) && !model.quit && frames_left != 0) {
+            if (frames_left > 0)
+                --frames_left;
             glfwPollEvents();
             app::Step(controllers, intents);
 
@@ -199,6 +216,10 @@ int main()
         map_vc.Shutdown();
         app_ctl.CloseInputs();
         core::LogLine("OpenRider exiting");
+        if (frames_asked >= 0)
+            std::printf("openrider: %ld frames drawn, OpenGL %s on %s\n", frames_asked - frames_left,
+                        reinterpret_cast<const char *>(glGetString(GL_VERSION)),
+                        reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
     }
 
     ImGui_ImplOpenGL3_Shutdown();

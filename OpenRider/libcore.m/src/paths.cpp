@@ -9,9 +9,14 @@
 #include <mach-o/dyld.h>
 #elif defined(_WIN32)
 #include <direct.h>
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#ifndef S_ISDIR  // MSVC's <sys/stat.h> has only _S_IFDIR
+#define S_ISDIR(mode) (((mode) & _S_IFMT) == _S_IFDIR)
+#endif
 #else
 #include <unistd.h>
 #if defined(__FreeBSD__) || defined(__NetBSD__)

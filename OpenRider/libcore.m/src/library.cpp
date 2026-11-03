@@ -55,6 +55,17 @@ std::string Library::Take(std::vector<Outing> &out)
 
 namespace {
 
+// Seconds since the epoch of a broken-down UTC time (timegm is POSIX;
+// Windows has _mkgmtime).
+std::time_t TimeFromUtc(std::tm &tm)
+{
+#ifdef _WIN32
+    return _mkgmtime(&tm);
+#else
+    return timegm(&tm);
+#endif
+}
+
 // Seconds of a "YYYY-MM-DD HH:MM:SS" time (any fixed zone); NaN if unreadable.
 double Seconds(const char *start)
 {
@@ -64,7 +75,7 @@ double Seconds(const char *start)
         return std::nan("");
     tm.tm_year -= 1900;
     tm.tm_mon -= 1;
-    return static_cast<double>(timegm(&tm));
+    return static_cast<double>(TimeFromUtc(tm));
 }
 
 // `a` and `b` are the same outing recorded twice: started within a minute,

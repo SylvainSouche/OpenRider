@@ -14,9 +14,11 @@ std::string CopyIntoFolder(const std::string &file, const std::string &dir, std:
         error = "no file " + file;
         return "";
     }
-    fs::path target = fs::path(dir) / source.filename();
+    // Joined with '/', as every OpenRider path: fs::path's operator/ would put
+    // '\' on Windows (dir + "\run.gpx"), unlike the rest of the path.
+    fs::path target = dir + "/" + source.filename().string();
     for (int n = 2; fs::exists(target, ec); ++n)
-        target = fs::path(dir) / (source.stem().string() + " (" + std::to_string(n) + ")" + source.extension().string());
+        target = dir + "/" + source.stem().string() + " (" + std::to_string(n) + ")" + source.extension().string();
     if (!fs::copy_file(source, target, ec)) {
         error = "cannot copy " + file + " to " + dir + ": " + ec.message();
         return "";

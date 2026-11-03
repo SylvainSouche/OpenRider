@@ -3,25 +3,40 @@
 
 #include <atomic>
 #include <cstdlib>
+#include <filesystem>
 #include <string>
+#include <system_error>
 #include <sys/stat.h>
 #include <thread>
 #include <vector>
 #include "maptiles/cache_eviction.h"
 #include "maptiles/tile_cache.h"
+#include "testing/temp_dir.h"
 
 namespace {
 
 std::string TempDir()
 {
-    char tmpl[] = "/tmp/openrider-cache-XXXXXX";
-    return mkdtemp(tmpl);
+    return testing::TempDir("cache");
 }
 
 bool Exists(const std::string &p)
 {
     struct stat st;
     return stat(p.c_str(), &st) == 0;
+}
+
+// Files under `root` whose name holds ".tmp" (walked here, not with find:
+// a test's system() has no POSIX shell on Windows).
+int TemporaryFiles(const std::string &root)
+{
+    int count = 0;
+    std::error_code ec;
+    for (auto it = std::filesystem::recursive_directory_iterator(root, ec);
+         !ec && it != std::filesystem::recursive_directory_iterator(); it.increment(ec))
+        if (it->path().filename().string().find(".tmp") != std::string::npos)
+            ++count;
+    return count;
 }
 
 } // namespace
@@ -93,8 +108,7 @@ ATF_TEST_CASE_BODY(concurrent_writers_stay_under_maximum)
                 total += static_cast<uint64_t>(st.st_size);
         }
     ATF_REQUIRE(total <= 1000);
-    const std::string listing = "find " + root + " -name '*.tmp*' | grep -q .";
-    ATF_REQUIRE(std::system(listing.c_str()) != 0);  // no temporary file left
+    ATF_REQUIRE_EQ(TemporaryFiles(root), 0);  // no temporary file left
 }
 
 ATF_INIT_TEST_CASES(tcs)

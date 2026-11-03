@@ -11,5 +11,12 @@ SRCS=src/context.c src/init.c src/input.c src/monitor.c src/platform.c \
      src/win32_module.c src/win32_time.c src/win32_thread.c src/win32_init.c \
      src/win32_joystick.c src/win32_monitor.c src/win32_window.c src/wgl_context.c
 CFLAGS += -D_GLFW_WIN32
+# Cygwin (the runtime the tests run with) does not define _WIN32: GLFW then
+# takes its POSIX thread, timer and module code (platform.h) and polls with
+# poll(); the window, monitor and WGL code stays Win32.
+.if !empty(_TARGET_KEY:M*-cygwin)
+SRCS := ${SRCS:Nsrc/win32_module.c:Nsrc/win32_time.c:Nsrc/win32_thread.c} \
+     src/posix_module.c src/posix_time.c src/posix_thread.c src/posix_poll.c
+.endif
 LIB_SHARED=NO
 WARN=none

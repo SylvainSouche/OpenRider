@@ -5,5 +5,5 @@
 # @impl 0f87-6ada-5814-8a3f
 TEST_PROG=perf_test
 LIBS=app core maptiles reproj
-CXXFLAGS+=-DPERF_CRS_FILE=\"${.CURDIR}/../share/common/openrider/crs.txt\"
+CXXFLAGS+=-DPERF_CRS_FILE=\"${NATIVE_CURDIR}/../share/common/openrider/crs.txt\"
 .include "mk.tst.mk"

@@ -36,7 +36,7 @@ bool ReadFile(const std::string &path, std::string &text)
     return !text.empty();
 }
 
-// Writes `text` to `path` atomically, creating its directory.
+// Writes `text` to `path` atomically, creating its directory and parents.
 void WriteFile(const std::string &directory, const std::string &path, const std::string &text)
 {
     core::MakeDirs(directory);

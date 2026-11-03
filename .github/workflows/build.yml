@@ -2,6 +2,10 @@
 # MacPorts (bmake, clang-22, ATF/Kyua, pkg-config, GLFW, curl, libtiff) and
 # Bmake It, checked out next to the sources in a hidden directory so that
 # the workspace does not take it for a framework.
+#
+# The published tracks are fetched from Common Crawl's archives and cached, so
+# that they are asked of them only when missing. The scaling test (scale.tst)
+# is run locally only: without its tracks it is skipped here.
 name: build
 
 on:
@@ -34,6 +38,15 @@ jobs:
 
       - name: Build
         run: bmake
+
+      - name: Published tracks, cached
+        uses: actions/cache@v4
+        with:
+          path: testdata/cc-gpx
+          key: cc-gpx-${{ hashFiles('testdata/cc-gpx.tsv') }}
+
+      - name: Published tracks
+        run: bmake fetch-test-data
 
       - name: Test
         run: bmake test
