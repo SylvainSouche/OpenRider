@@ -123,10 +123,16 @@ or_outing Summary(const std::string &id, const std::string &path, const gpx::Gpx
     if (std::isnan(start)) {
         std::error_code ec;
         const auto written = std::filesystem::last_write_time(path, ec);
+#ifdef _MSC_VER  // no file_clock::to_sys there: its times count from 1601
+        if (!ec)
+            start = static_cast<double>(
+                std::chrono::duration_cast<std::chrono::seconds>(written.time_since_epoch()).count() - 11644473600);
+#else
         if (!ec)
             start = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(
                                             std::chrono::file_clock::to_sys(written).time_since_epoch())
                                             .count());
+#endif
     }
     CopyStr(o.start_local, sizeof o.start_local, gpx::LocalTime(start));
     // The type as type tables key it: lower case, words joined by '_'.

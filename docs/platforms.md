@@ -16,9 +16,9 @@ images).
 | Alpine 3.24 (musl) amd64 (container, emulated) | all pass (200) | — |
 | FreeBSD 15.1 arm64 (QEMU guest) | all pass (200) | builds; tests cannot link (see below) |
 | NetBSD 10.2 arm64 (QEMU guest) | all pass (200) | all pass (200) |
-| Windows 10 amd64 (host, Cygwin runtime; tests only, see below) | all pass (198, 2026-11-02; GUI test skipped) | all pass (198, 2026-11-02; GUI test skipped) |
-| Windows 10 amd64 (host, mingw-w64 runtime) | all pass (198, 2026-11-02; GUI test included) | all pass (198, 2026-11-02; GUI test included) |
-| Windows 10 amd64 (host, MSVC output from the EWDK) | clang-cl, `TOOLCHAIN=llvm ABI=msvc`: all pass (198, 2026-11-03; GUI test included) | `cl.exe`, `TOOLCHAIN=msvc`: all pass (198, 2026-11-03; GUI test included) |
+| Windows 10 amd64 (host, Cygwin runtime; tests only, see below) | all pass (211, 2026-11-03; GUI test skipped) | all pass (211, 2026-11-03; GUI test skipped) |
+| Windows 10 amd64 (host, mingw-w64 runtime) | all pass (211, 2026-11-03; GUI test included) | all pass (211, 2026-11-03; GUI test included) |
+| Windows 10 amd64 (host, MSVC output from the EWDK) | clang-cl, `TOOLCHAIN=llvm ABI=msvc`: all pass (211, 2026-11-03; GUI test included) | `cl.exe`, `TOOLCHAIN=msvc`: all pass (211, 2026-11-03; GUI test included) |
 
 "All pass": every module builds -- dependencies, libraries, the plugins,
 the application -- and every test suite passes: SDK, core, app, map tiles,
@@ -35,8 +35,10 @@ programs too (Bmake It builds ATF itself). MSVC output is native too: its
 narrower (Known limits). `gui.tst` (`openrider --frames 120`)
 opens the real window for a few seconds wherever a build has a GUI and a
 display: it shows up on the screen of whoever runs `bmake test`, with the user
-directories redirected to the test's own. The other platforms above were last
-run before `gui.tst` and the Windows port's source changes.
+directories redirected to the test's own. The Windows runs had no fetched test
+data, so `gpx_test:published_tracks` and the three `scale_test` cases skipped.
+The other platforms above were last run before `gui.tst` and the Windows port's
+source changes.
 
 Not covered: FreeBSD and NetBSD amd64 (no guest on an arm64 host), and running
 the GUI itself on Linux or the BSDs (no display in the containers and guests).

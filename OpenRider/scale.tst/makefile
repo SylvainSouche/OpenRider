@@ -6,4 +6,8 @@
 TEST_PROG=scale_test
 LIBS=core
 CXXFLAGS+=-DSCALE_DIR=\"${NATIVE_CURDIR}/../../testdata/cc-gpx-scale\" -DPLUGINS_DIR=\"${NATIVE_CURDIR}/../../build/${_TARGET_KEY}/plugins\"
+# Peak memory (GetProcessMemoryInfo) on Windows.
+.if ${TARGET} == "win"
+LDFLAGS+=-lpsapi
+.endif
 .include "mk.tst.mk"

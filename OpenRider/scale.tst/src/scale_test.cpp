@@ -34,16 +34,26 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <dirent.h>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iterator>
 #include <map>
 #include <string>
-#include <sys/resource.h>
 #include <sys/stat.h>
+#include <system_error>
 #include <thread>
 #include <vector>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <psapi.h>
+#else
+#include <sys/resource.h>
+#endif
 
 namespace {
 
@@ -88,12 +98,18 @@ double Calibration()
 // Peak resident memory of the process so far (MB).
 double PeakMegabytes()
 {
+#ifdef _WIN32
+    PROCESS_MEMORY_COUNTERS counters{};
+    GetProcessMemoryInfo(GetCurrentProcess(), &counters, sizeof counters);
+    return counters.PeakWorkingSetSize / 1048576.0;
+#else
     rusage usage{};
     getrusage(RUSAGE_SELF, &usage);
 #ifdef __APPLE__
     return usage.ru_maxrss / 1048576.0;  // bytes
 #else
     return usage.ru_maxrss / 1024.0;     // kilobytes
+#endif
 #endif
 }
 
@@ -111,13 +127,12 @@ void Check(const std::string &name, double milliseconds, double budget, const st
 std::vector<std::string> GpxFiles(const std::string &directory)
 {
     std::vector<std::string> files;
-    if (DIR *dir = opendir(directory.c_str())) {
-        while (dirent *entry = readdir(dir)) {
-            const std::string name = entry->d_name;
-            if (name.size() > 4 && name.compare(name.size() - 4, 4, ".gpx") == 0)
-                files.push_back(directory + "/" + name);
-        }
-        closedir(dir);
+    std::error_code ec;
+    for (auto it = std::filesystem::directory_iterator(directory, ec);
+         !ec && it != std::filesystem::directory_iterator(); it.increment(ec)) {
+        const std::string name = it->path().filename().string();
+        if (name.size() > 4 && name.compare(name.size() - 4, 4, ".gpx") == 0)
+            files.push_back(directory + "/" + name);
     }
     std::sort(files.begin(), files.end());
     return files;
@@ -160,9 +175,15 @@ std::string Derived(const std::string &text, double seconds, double degrees, siz
                 tm.tm_mday = day;
                 tm.tm_hour = hour;
                 tm.tm_min = minute;
+#ifdef _WIN32
+                const std::time_t shifted = _mkgmtime(&tm) + static_cast<std::time_t>(second + seconds);
+                std::tm out_tm{};
+                gmtime_s(&out_tm, &shifted);
+#else
                 const std::time_t shifted = timegm(&tm) + static_cast<std::time_t>(second + seconds);
                 std::tm out_tm{};
                 gmtime_r(&shifted, &out_tm);
+#endif
                 char stamp[32];
                 std::strftime(stamp, sizeof stamp, "%Y-%m-%dT%H:%M:%SZ", &out_tm);
                 out += "<time>";
@@ -213,7 +234,8 @@ void EnsureDerived()
             timed.push_back(path);
     if (timed.empty())
         return;
-    mkdir(derived.c_str(), 0755);
+    std::error_code ignored;
+    std::filesystem::create_directory(derived, ignored);
     for (size_t n = 0; n < wanted; ++n) {
         const size_t round = n / timed.size() + 1;
         const std::string text = Derived(ReadAll(timed[n % timed.size()]), round * 86400.0, round * 0.001, n);
