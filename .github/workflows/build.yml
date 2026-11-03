@@ -3,20 +3,15 @@
 # Bmake It, checked out next to the sources in a hidden directory so that
 # the workspace does not take it for a framework.
 #
-# Test data is fetched from Common Crawl's archives and cached, so that it is
-# asked of them only when it is missing. The published tracks (43) go with
-# every run. The scaling tracks (10,000, 1.9 GB, over an hour to fetch) have a
-# job of their own, outside pull requests, since a pull request's cache would
-# not serve the next one; its weekly run keeps the cache from being evicted.
+# The published tracks are fetched from Common Crawl's archives and cached, so
+# that they are asked of them only when missing. The scaling test (scale.tst)
+# is run locally only: without its tracks it is skipped here.
 name: build
 
 on:
   push:
     branches: [main]
   pull_request:
-  schedule:
-    - cron: '0 4 * * 1'
-  workflow_dispatch:
 
 jobs:
   macos:
@@ -64,75 +59,4 @@ jobs:
           path: |
             build/*/runs/*/test-results.xml
             */build/*/runs/*/test-results.xml
-          if-no-files-found: ignore
-
-  scale:
-    if: github.event_name != 'pull_request'
-    runs-on: macos-15
-    timeout-minutes: 350
-    env:
-      MAKESYSPATH: ${{ github.workspace }}/.bmake-it/mk:/opt/local/share/mk
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Bmake It
-        uses: actions/checkout@v4
-        with:
-          repository: SylvainSouche/bmake-it
-          path: .bmake-it
-
-      - name: MacPorts
-        uses: melusina-org/setup-macports@v1
-
-      - name: Ports
-        run: |
-          sudo port -N install bmake clang-22 atf kyua pkgconfig glfw curl tiff
-          sudo port select --set clang mp-clang-22
-
-      - name: Build
-        run: bmake
-
-      - name: Scaling tracks, cached
-        uses: actions/cache/restore@v4
-        with:
-          path: testdata/cc-gpx-scale
-          key: cc-gpx-scale-${{ hashFiles('testdata/cc-gpx-scale.tsv.gz') }}-${{ github.run_id }}
-          restore-keys: cc-gpx-scale-${{ hashFiles('testdata/cc-gpx-scale.tsv.gz') }}-
-
-      - name: Tracks before fetching
-        id: before
-        run: echo "tracks=$(find testdata/cc-gpx-scale -maxdepth 1 -name '*.gpx' 2>/dev/null | wc -l | tr -d ' ')" >> "$GITHUB_OUTPUT"
-
-      # A track Common Crawl refuses, or running out of time, is no reason to
-      # lose the others: they are saved, and the next run fetches the rest.
-      - name: Scaling tracks
-        continue-on-error: true
-        timeout-minutes: 240
-        run: bmake fetch-scale-data
-
-      - name: Tracks after fetching
-        id: after
-        if: always()
-        run: echo "tracks=$(find testdata/cc-gpx-scale -maxdepth 1 -name '*.gpx' 2>/dev/null | wc -l | tr -d ' ')" >> "$GITHUB_OUTPUT"
-
-      - name: Save the scaling tracks
-        if: always() && steps.after.outputs.tracks != steps.before.outputs.tracks
-        uses: actions/cache/save@v4
-        with:
-          path: testdata/cc-gpx-scale
-          key: cc-gpx-scale-${{ hashFiles('testdata/cc-gpx-scale.tsv.gz') }}-${{ github.run_id }}
-
-      - name: Test
-        working-directory: OpenRider/scale.tst
-        run: bmake test
-
-      - name: Test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: scale-test-results
-          path: |
-            build/*/runs/*/test-results.xml
-            */build/*/runs/*/test-results.xml
-            */*/build/*/runs/*/test-results.xml
           if-no-files-found: ignore
