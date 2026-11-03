@@ -33,8 +33,8 @@ GUI test skips there. The application users get is the native mingw-w64 build
 programs too (Bmake It builds ATF itself). MSVC output is native too: its
 `openrider.exe` imports Windows system DLLs only, and its TIFF decoding is
 narrower (Known limits). `gui.tst` (`openrider --frames 120`)
-opens the real window for a few seconds wherever a build has a GUI and a
-display: it shows up on the screen of whoever runs `bmake test`, with the user
+opens the real window for a few seconds wherever a build has a GUI, a display
+and OpenGL 3.2 (GitHub's macOS runners have none, so it skips in CI): it shows up on the screen of whoever runs `bmake test`, with the user
 directories redirected to the test's own. The Windows runs had no fetched test
 data, so `gpx_test:published_tracks` and the three `scale_test` cases skipped.
 The other platforms above were last run before `gui.tst` and the Windows port's

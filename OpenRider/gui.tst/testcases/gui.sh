@@ -1,7 +1,8 @@
 #!/usr/bin/env atf-sh
 # The application itself, unattended: openrider --frames N opens its window
 # (OpenGL 3.2 core), loads fonts and plugins, draws N frames, then quits as
-# when the window is closed. Needs a desktop session: skipped without one.
+# when the window is closed. Needs a desktop session and OpenGL 3.2: skipped
+# without them.
 
 # Why the GUI cannot run here, or nothing.
 no_gui() {
@@ -43,6 +44,11 @@ starts_draws_and_quits_body() {
     wait $pid
     status=$?
     kill $watchdog 2>/dev/null
+    # No OpenGL 3.2 to be had: GLFW_API_UNAVAILABLE or GLFW_FORMAT_UNAVAILABLE,
+    # as on a CI machine without a GPU.
+    if [ $status -ne 0 ] && grep -q '^GLFW error 6554[25]:' err; then
+        atf_skip "no OpenGL 3.2 here: $(grep '^GLFW error' err | head -n 1)"
+    fi
     [ $status -eq 0 ] || atf_fail "exit status $status: $(cat err out)"
     grep -q '^openrider: 120 frames drawn, OpenGL ' out ||
         atf_fail "no frame summary: $(cat out err)"
