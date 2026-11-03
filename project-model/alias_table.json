@@ -311,6 +311,12 @@
     "status": "accepted",
     "type": "ai"
   },
+  "ai-windows-static-app-libs": {
+    "active": true,
+    "id": "1c06-6ae3-570d-16aa",
+    "status": "proposed",
+    "type": "ai"
+  },
   "ai-workflow-rescan-after": {
     "active": true,
     "id": "0f87-6acc-fa24-4221",
@@ -845,6 +851,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-gui-interactive-tests": {
+    "active": true,
+    "id": "1c06-6ae5-dc65-4d19",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-gui-needs": {
     "active": true,
     "id": "0f87-6acc-e689-b329",
@@ -968,6 +980,12 @@
   "dec-moving-time-from-raw": {
     "active": true,
     "id": "0f87-6acd-d8c6-0017",
+    "status": "recorded",
+    "type": "dec"
+  },
+  "dec-msvc-curl-tiff-from-source": {
+    "active": true,
+    "id": "1c06-6ae8-e804-016e",
     "status": "recorded",
     "type": "dec"
   },
@@ -2021,6 +2039,12 @@
     "status": "verified",
     "type": "impl"
   },
+  "impl-msvc-curl-tiff-from-source": {
+    "active": true,
+    "id": "1c06-6ae9-a602-9d8c",
+    "status": "verified",
+    "type": "impl"
+  },
   "impl-mvc-intents": {
     "active": true,
     "id": "0f87-6acd-ce40-f1bc",
@@ -2120,19 +2144,19 @@
   "impl-plugin-test-tool": {
     "active": true,
     "id": "1c06-6ad1-23a6-133d",
-    "status": "asserted",
+    "status": "verified",
     "type": "impl"
   },
   "impl-plugin-test-tool-docs": {
     "active": true,
     "id": "1c06-6ad1-23a6-b98b",
-    "status": "asserted",
+    "status": "verified",
     "type": "impl"
   },
   "impl-plugin-test-tool-installed": {
     "active": true,
     "id": "1c06-6ad1-23a6-ed18",
-    "status": "asserted",
+    "status": "verified",
     "type": "impl"
   },
   "impl-plugin-thread-safety": {
@@ -2612,6 +2636,12 @@
   "mirror-servers": {
     "active": true,
     "id": "0f87-6acc-ecd4-4491",
+    "status": "confirmed",
+    "type": "req"
+  },
+  "msvc-curl-tiff-from-source": {
+    "active": true,
+    "id": "1c06-6ae8-e804-7de5",
     "status": "confirmed",
     "type": "req"
   },
@@ -3575,6 +3605,18 @@
     "status": "recorded",
     "type": "obs"
   },
+  "q-msvc-curl-tiff": {
+    "active": true,
+    "id": "1c06-6ae8-671c-5837",
+    "status": "recorded",
+    "type": "obs"
+  },
+  "q-msvc-tiff-codecs": {
+    "active": true,
+    "id": "1c06-6ae9-a602-4f45",
+    "status": "recorded",
+    "type": "obs"
+  },
   "q-nice-meaning": {
     "active": true,
     "id": "0f87-6acc-e68a-977f",
@@ -4139,10 +4181,16 @@
     "status": "confirmed",
     "type": "req"
   },
+  "test-gui-smoke": {
+    "active": true,
+    "id": "1c06-6ae5-dc65-8844",
+    "status": "passing",
+    "type": "test"
+  },
   "test-plugin-check-in-harness": {
     "active": true,
     "id": "1c06-6ad1-26b4-df43",
-    "status": "proposed",
+    "status": "passing",
     "type": "test"
   },
   "tiff-libtiff": {

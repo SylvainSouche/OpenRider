@@ -7,9 +7,10 @@
 #include <openrider/segments.h>
 #include <openrider/tiles.h>
 
-#include <dirent.h>
 #ifdef _WIN32
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
@@ -18,6 +19,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <filesystem>
+#include <system_error>
 
 namespace core {
 
@@ -80,13 +83,12 @@ bool IsSharedLibrary(const std::string &name)
 std::vector<std::string> LibrariesIn(const std::string &dir)
 {
     std::vector<std::string> out;
-    if (DIR *d = opendir(dir.c_str())) {
-        while (dirent *e = readdir(d)) {
-            const std::string name = e->d_name;
-            if (name[0] != '.' && IsSharedLibrary(name))
-                out.push_back(dir + "/" + name);
-        }
-        closedir(d);
+    std::error_code ec;
+    for (auto it = std::filesystem::directory_iterator(dir, ec);
+         !ec && it != std::filesystem::directory_iterator(); it.increment(ec)) {
+        const std::string name = it->path().filename().string();
+        if (name[0] != '.' && IsSharedLibrary(name))
+            out.push_back(dir + "/" + name);
     }
     std::sort(out.begin(), out.end());
     return out;

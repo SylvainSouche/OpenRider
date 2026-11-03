@@ -13,7 +13,8 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
-#include <dirent.h>
+#include <filesystem>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -39,13 +40,12 @@ double NowS()
 std::vector<std::string> JsonFiles(const std::string &dir)
 {
     std::vector<std::string> paths;
-    if (DIR *directory = opendir(dir.c_str())) {
-        while (dirent *item = readdir(directory)) {
-            const std::string name = item->d_name;
-            if (name.size() > 5 && name[0] != '.' && name.compare(name.size() - 5, 5, ".json") == 0)
-                paths.push_back(dir + "/" + name);
-        }
-        closedir(directory);
+    std::error_code ec;
+    for (auto it = std::filesystem::directory_iterator(dir, ec);
+         !ec && it != std::filesystem::directory_iterator(); it.increment(ec)) {
+        const std::string name = it->path().filename().string();
+        if (name.size() > 5 && name[0] != '.' && name.compare(name.size() - 5, 5, ".json") == 0)
+            paths.push_back(dir + "/" + name);
     }
     std::sort(paths.begin(), paths.end());
     return paths;

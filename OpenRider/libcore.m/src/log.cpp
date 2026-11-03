@@ -4,8 +4,9 @@
 
 #include <cstdarg>
 #include <cstdio>
-#include <dirent.h>
+#include <filesystem>
 #include <mutex>
+#include <system_error>
 
 namespace core {
 
@@ -21,11 +22,10 @@ constexpr const char *kSuffix = ".log";
 std::vector<std::string> ListDir(const std::string &dir)
 {
     std::vector<std::string> names;
-    if (DIR *d = opendir(dir.c_str())) {
-        while (dirent *e = readdir(d))
-            names.push_back(e->d_name);
-        closedir(d);
-    }
+    std::error_code ec;
+    for (auto it = std::filesystem::directory_iterator(dir, ec);
+         !ec && it != std::filesystem::directory_iterator(); it.increment(ec))
+        names.push_back(it->path().filename().string());
     return names;
 }
 

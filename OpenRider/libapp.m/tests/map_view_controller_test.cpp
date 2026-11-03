@@ -7,6 +7,7 @@
 #include "app/map_geometry.h"
 #include "app/map_view_utils.h"
 #include "maptiles/mercator.h"
+#include "testing/temp_dir.h"
 
 #include <cmath>
 #include <cstdio>
@@ -113,9 +114,8 @@ struct Fixture {
 
     Fixture()
     {
-        char tmpl[] = "/tmp/openrider-mapvc-XXXXXX";
         map.AddPlugin(&kTiles);
-        map.SetCacheDir(mkdtemp(tmpl));
+        map.SetCacheDir(testing::TempDir("mapvc"));
         ATF_REQUIRE_EQ(map.AddLayer("{\"protocol\":\"fake\"}"), "");
         ATF_REQUIRE_EQ(map.Select(0), "");
         for (int i = 0; i < 2; ++i) {
@@ -264,9 +264,8 @@ ATF_TEST_CASE_BODY(local_grid_feeds_the_projections)
     app::MapViewController map;
     app::AppModel model;
     app::Intents out;
-    char tmpl[] = "/tmp/openrider-mapvc-XXXXXX";
     map.AddPlugin(&kGridTiles);
-    map.SetCacheDir(mkdtemp(tmpl));
+    map.SetCacheDir(testing::TempDir("mapvc"));
     ATF_REQUIRE_EQ(map.AddCrs(kUtm33), "");
     ATF_REQUIRE_EQ(map.AddLayer("{\"protocol\":\"grids\"}"), "");
     ATF_REQUIRE_EQ(map.Select(0), "");
@@ -321,10 +320,9 @@ ATF_TEST_CASE_BODY(national_system_pan_and_layer_change)
     app::MapViewController map;
     app::AppModel model;
     app::Intents out;
-    char tmpl[] = "/tmp/openrider-mapvc-XXXXXX";
     map.AddPlugin(&kGridTiles);
     map.AddPlugin(&kTiles);
-    map.SetCacheDir(mkdtemp(tmpl));
+    map.SetCacheDir(testing::TempDir("mapvc"));
     ATF_REQUIRE_EQ(map.AddCrs(kUtm33), "");
     ATF_REQUIRE_EQ(map.AddLayer("{\"protocol\":\"grids\"}"), "");
     ATF_REQUIRE_EQ(map.AddLayer("{\"protocol\":\"fake\"}"), "");
@@ -373,10 +371,9 @@ ATF_TEST_CASE_BODY(view_stays_in_the_layer_extent)
     app::MapViewController map;
     app::AppModel model;
     app::Intents out;
-    char tmpl[] = "/tmp/openrider-mapvc-XXXXXX";
     map.AddPlugin(&kGridTiles);
     map.AddPlugin(&kTiles);
-    map.SetCacheDir(mkdtemp(tmpl));
+    map.SetCacheDir(testing::TempDir("mapvc"));
     ATF_REQUIRE_EQ(map.AddCrs(kUtm33), "");
     ATF_REQUIRE_EQ(map.AddLayer("{\"protocol\":\"grids\"}"), "");
     ATF_REQUIRE_EQ(map.AddLayer("{\"protocol\":\"fake\"}"), "");
@@ -484,10 +481,9 @@ ATF_TEST_CASE_BODY(world_layer_in_a_national_system)
     app::MapViewController map;
     app::AppModel model;
     app::Intents out;
-    char tmpl[] = "/tmp/openrider-mapvc-XXXXXX";
     map.AddPlugin(&kTiles);
     map.AddPlugin(&kGridTiles);
-    map.SetCacheDir(mkdtemp(tmpl));
+    map.SetCacheDir(testing::TempDir("mapvc"));
     ATF_REQUIRE_EQ(map.AddCrs(kUtm33), "");
     ATF_REQUIRE_EQ(map.AddCrs("EPSG:2154 | RGF93 v1 / Lambert-93 | -9.86,41.15,10.38,51.56 | +proj=lcc +lat_0=46.5 "
                               "+lon_0=3 +lat_1=49 +lat_2=44 +x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m"),

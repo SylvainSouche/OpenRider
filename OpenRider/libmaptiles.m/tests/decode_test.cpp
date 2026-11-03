@@ -1,6 +1,7 @@
 #include <atf-c++.hpp>
 
 #include "maptiles/decode.h"
+#include "testing/temp_dir.h"
 
 #include <tiffio.h>
 
@@ -19,9 +20,9 @@ const char kPng[] =
 
 std::string TiffBytes()
 {
-    char path[] = "/tmp/openrider-tiff-XXXXXX";
-    const int fd = mkstemp(path);
-    std::fclose(fdopen(fd, "w"));
+    const std::string dir = testing::TempDir("tiff");
+    const std::string file = dir + "/image.tif";
+    const char *path = file.c_str();
     TIFF *t = TIFFOpen(path, "w");
     const unsigned char row[] = {0, 255, 0, 255, 0, 255};  // 3 green RGB pixels
     TIFFSetField(t, TIFFTAG_IMAGEWIDTH, 3);
@@ -40,6 +41,7 @@ std::string TiffBytes()
         out.append(buf, n);
     std::fclose(f);
     std::remove(path);
+    std::remove(dir.c_str());
     return out;
 }
 

@@ -14,7 +14,13 @@
 #include <string>
 #include <sys/stat.h>
 #include <thread>
+#ifdef _MSC_VER
+#include <sys/utime.h>  // utime() and struct utimbuf, as POSIX names
+#else
 #include <utime.h>
+#endif
+
+#include "testing/temp_dir.h"
 
 namespace {
 
@@ -25,11 +31,11 @@ const char kPng[] =
     "\xf8\xcf\xc0\x00\x42\xff\x01\x0f\xf9\x03\xfd\x85\x11\x99\x76\x00\x00\x00\x00\x49\x45\x4e"
     "\x44\xae\x42\x60\x82";
 
-std::string TemporaryDirectory()
-{
-    char path[] = "/tmp/openrider-grid-XXXXXX";
-    return mkdtemp(path);
-}
+std::string TemporaryDirectory() { return testing::TempDir("grid"); }
+
+// The file:// URL of an absolute path: file:///tmp/x, and on Windows
+// file:///C:/x (a drive path does not start with '/').
+std::string FileUrl(const std::string &path) { return (path[0] == '/' ? "file://" : "file:///") + path; }
 
 void Write(const std::string &path, const std::string &bytes)
 {
@@ -77,7 +83,7 @@ size_t GridCount(void *) { return g_ready ? 1 : 0; }
 const or_tile_grid *Grid(void *, size_t) { return &g_grid; }
 int GridUrl(void *, size_t, size_t, size_t level, int column, int row, char *url, size_t len)
 {
-    std::snprintf(url, len, "file://%s/%zu-%d-%d.png", g_root.c_str(), level, column, row);
+    std::snprintf(url, len, "%s/%zu-%d-%d.png", FileUrl(g_root).c_str(), level, column, row);
     return 0;
 }
 const or_tiles_vtable kGrids = {sizeof(or_tiles_vtable), "grids", Open, Close, Layer, XyzUrl,
@@ -108,7 +114,7 @@ ATF_TEST_CASE_BODY(capabilities_then_grids)
 {
     g_root = TemporaryDirectory();
     const std::string cache = TemporaryDirectory();
-    g_capabilities_url = "file://" + g_root + "/caps.xml";
+    g_capabilities_url = FileUrl(g_root + "/caps.xml");
     Write(g_root + "/caps.xml", "grids");
     g_ready = false;
     ATF_REQUIRE(maptiles::HasGridFunctions(&kGrids));
@@ -127,7 +133,7 @@ ATF_TEST_CASE_BODY(capabilities_then_grids)
     ATF_REQUIRE_EQ(g_received, "grids");
     // A week old: downloaded again.
     const time_t old = std::time(nullptr) - 8 * 24 * 3600;
-    const utimbuf times{old, old};
+    utimbuf times{old, old};  // not const: mingw's utime() takes utimbuf *
     utime((cache + "/layer/capabilities.xml").c_str(), &times);
     ATF_REQUIRE_EQ(maptiles::ProvideCapabilities(&kGrids, &g_info, cache, "test"), "not grids");
     ATF_REQUIRE_EQ(g_received, "changed");

@@ -6,11 +6,14 @@
 #include <openrider/plugin.h>
 
 #include "gpx/gpx_file.h"
+#include "testing/temp_dir.h"
 
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <string>
+#include <system_error>
 #include <vector>
 
 extern "C" const or_plugin_info *openrider_plugin(void);
@@ -37,8 +40,7 @@ const char *const kGarminGpx = R"(<?xml version="1.0" encoding="UTF-8"?>
 
 std::string TempDir()
 {
-    char tmpl[] = "/tmp/openrider-gpx-XXXXXX";
-    return mkdtemp(tmpl);
+    return testing::TempDir("gpx");
 }
 
 void Write(const std::string &path, const std::string &text) { std::ofstream(path) << text; }
@@ -69,7 +71,8 @@ ATF_TEST_CASE_BODY(lists_and_loads_a_folder)
 {
     const std::string dir = TempDir();
     Write(dir + "/trail.gpx", kGarminGpx);
-    std::system(("mkdir -p '" + dir + "/sub'").c_str());
+    std::error_code ec;  // not std::system("mkdir -p"): no POSIX shell on Windows
+    std::filesystem::create_directories(dir + "/sub", ec);
     Write(dir + "/sub/Other.GPX", kGarminGpx);
     Write(dir + "/notes.txt", "not a track");
     Write(dir + "/route.gpx", "<gpx><rte><rtept lat=\"1\" lon=\"2\"/></rte></gpx>");  // no track: no outing

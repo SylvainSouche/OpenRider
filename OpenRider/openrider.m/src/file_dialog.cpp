@@ -4,10 +4,55 @@
 #include <cctype>
 #include <cstdio>
 
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <commdlg.h>
+#endif
+
 namespace ui {
 
 namespace {
 
+#ifdef _WIN32
+// The files picked in the standard Windows Open dialog, with '/' separators;
+// empty if cancelled. Several may be picked.
+std::vector<std::string> OpenDialogFiles(const std::string &prompt, const std::string &extension)
+{
+    // Filter: "GPX files (*.gpx)\0*.gpx\0\0".
+    const std::string pattern = "*" + extension;
+    std::string filter = prompt + " (" + pattern + ")";
+    filter.push_back('\0');
+    filter += pattern;
+    filter.push_back('\0');
+    filter.push_back('\0');
+    std::vector<char> buffer(64 * 1024, '\0');
+    OPENFILENAMEA dialog{};
+    dialog.lStructSize = sizeof dialog;
+    dialog.lpstrFilter = filter.c_str();
+    dialog.lpstrFile = buffer.data();
+    dialog.nMaxFile = static_cast<DWORD>(buffer.size());
+    dialog.lpstrTitle = prompt.c_str();
+    dialog.Flags = OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+    std::vector<std::string> files;
+    if (!GetOpenFileNameA(&dialog))
+        return files;
+    // One file: its full path. Several: the directory, then each name, every
+    // string ended by '\0' and the list by an empty one.
+    std::vector<std::string> parts;
+    for (const char *at = buffer.data(); *at; at += parts.back().size() + 1)
+        parts.emplace_back(at);
+    if (parts.size() == 1)
+        files.push_back(parts[0]);
+    else
+        for (size_t i = 1; i < parts.size(); ++i)
+            files.push_back(parts[0] + "/" + parts[i]);
+    for (std::string &file : files)
+        std::replace(file.begin(), file.end(), '\\', '/');
+    return files;
+}
+#else
 // The output lines of `command` (run by the shell).
 std::vector<std::string> Lines(const std::string &command)
 {
@@ -30,6 +75,7 @@ std::vector<std::string> Lines(const std::string &command)
     }
     return lines;
 }
+#endif
 
 bool EndsWith(std::string text, std::string suffix)
 {
@@ -45,6 +91,13 @@ bool EndsWith(std::string text, std::string suffix)
 
 std::vector<std::string> ChooseFiles(const std::string &prompt, const std::string &extension)
 {
+#if defined(_WIN32)
+    std::vector<std::string> files;
+    for (const std::string &file : OpenDialogFiles(prompt, extension))
+        if (EndsWith(file, extension))
+            files.push_back(file);
+    return files;
+#else
 #if defined(__APPLE__)
     // AppleScript's standard dialog; a cancel ends the script with an
     // error, so nothing is printed. The prompt carries no quotes.
@@ -65,6 +118,7 @@ std::vector<std::string> ChooseFiles(const std::string &prompt, const std::strin
         if (EndsWith(line, extension))
             files.push_back(line);
     return files;
+#endif
 }
 
 } // namespace ui

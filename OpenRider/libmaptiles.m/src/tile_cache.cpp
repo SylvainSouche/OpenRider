@@ -5,12 +5,21 @@
 
 #include <atomic>
 #include <cstdio>
-#include <dirent.h>
+#include <filesystem>
 #include <sys/stat.h>
-#include <unistd.h>
+#include <system_error>
 #include <unordered_map>
-#include <utime.h>
 #include <vector>
+#ifdef _MSC_VER  // the same POSIX names, in MSVC's own headers
+#include <process.h>
+#include <sys/utime.h>
+#ifndef S_ISDIR
+#define S_ISDIR(mode) (((mode) & _S_IFMT) == _S_IFDIR)
+#endif
+#else
+#include <unistd.h>
+#include <utime.h>
+#endif
 
 namespace maptiles {
 
@@ -19,13 +28,10 @@ namespace {
 // Appends every tile file under `dir` (recursively) to `out`.
 void ScanTiles(const std::string &dir, std::vector<CacheEntry> &out)
 {
-    DIR *directory = opendir(dir.c_str());
-    if (!directory)
-        return;
-    while (dirent *item = readdir(directory)) {
-        const std::string name = item->d_name;
-        if (name == "." || name == "..")
-            continue;
+    std::error_code ec;
+    for (auto it = std::filesystem::directory_iterator(dir, ec);
+         !ec && it != std::filesystem::directory_iterator(); it.increment(ec)) {
+        const std::string name = it->path().filename().string();
         const std::string path = dir + "/" + name;
         struct stat st;
         if (stat(path.c_str(), &st) != 0)
@@ -43,7 +49,6 @@ void ScanTiles(const std::string &dir, std::vector<CacheEntry> &out)
             out.push_back(CacheEntry{path, static_cast<uint64_t>(st.st_size), mtime});
         }
     }
-    closedir(directory);
 }
 
 } // namespace

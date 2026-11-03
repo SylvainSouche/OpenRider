@@ -5,6 +5,7 @@
 
 #include "app/dispatch.h"
 #include "app/graphs.h"
+#include "testing/temp_dir.h"
 
 #include <openrider/sdk/route_ranges.h>
 #include <openrider/sdk/segment_exchange.h>
@@ -367,8 +368,7 @@ ATF_TEST_CASE_BODY(small_parameter_change_rebuilds)
 ATF_TEST_CASE_WITHOUT_HEAD(gpx_types_confirmed_and_remembered);
 ATF_TEST_CASE_BODY(gpx_types_confirmed_and_remembered)
 {
-    char dir[] = "/tmp/openrider-types-XXXXXX";
-    const std::string file = std::string(mkdtemp(dir)) + "/outing_types.json";
+    const std::string file = testing::TempDir("types") + "/outing_types.json";
     {
         Fixture f(file);
         ATF_REQUIRE_EQ(f.model.outings.size(), 4u);
@@ -396,8 +396,7 @@ ATF_TEST_CASE_BODY(gpx_types_confirmed_and_remembered)
 ATF_TEST_CASE_WITHOUT_HEAD(files_imported_one_by_one);
 ATF_TEST_CASE_BODY(files_imported_one_by_one)
 {
-    char base[] = "/tmp/openrider-import-XXXXXX";
-    const std::string root = mkdtemp(base), folder = root + "/gpx", outside = root + "/chosen";
+    const std::string root = testing::TempDir("import"), folder = root + "/gpx", outside = root + "/chosen";
     std::filesystem::create_directories(folder);
     std::filesystem::create_directories(outside);
     std::ofstream(outside + "/a.gpx") << "2026-08-01 07:00:00\n";

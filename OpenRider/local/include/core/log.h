@@ -27,8 +27,15 @@ std::vector<std::string> ExpiredLogs(const std::vector<std::string> &names, std:
 /// @return the log file is open
 bool LogOpenSession(const std::string &dir);
 
+/// printf-style format checking where the compiler offers it (gcc, clang; not MSVC).
+#if defined(__GNUC__) || defined(__clang__)
+#define CORE_PRINTF_FORMAT(fmt, args) __attribute__((format(printf, fmt, args)))
+#else
+#define CORE_PRINTF_FORMAT(fmt, args)
+#endif
+
 /// Appends a timestamped printf-formatted line to the session log.
-void LogLine(const char *format, ...) __attribute__((format(printf, 1, 2)));
+void LogLine(const char *format, ...) CORE_PRINTF_FORMAT(1, 2);
 
 /// Path of the session log file, "" before LogOpenSession().
 std::string LogSessionPath();

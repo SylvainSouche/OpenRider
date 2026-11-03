@@ -7,10 +7,14 @@
 #include <openrider/plugin.h>
 #include <sqlite3.h>
 
+#include "testing/temp_dir.h"
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <string>
+#include <system_error>
 #include <vector>
 
 extern "C" const or_plugin_info *openrider_plugin(void);
@@ -19,9 +23,10 @@ namespace {
 
 std::string MakeFixture()
 {
-    char tmpl[] = "/tmp/openrider-gdb-XXXXXX";
-    std::string base = mkdtemp(tmpl);
-    std::system(("mkdir -p " + base + "/DBs " + base + "/FitFiles/Activities").c_str());
+    std::string base = testing::TempDir("gdb");
+    std::error_code ec;  // not std::system("mkdir -p"): no POSIX shell on Windows
+    std::filesystem::create_directories(base + "/DBs", ec);
+    std::filesystem::create_directories(base + "/FitFiles/Activities", ec);
     sqlite3 *db = nullptr;
     sqlite3_open((base + "/DBs/garmin_activities.db").c_str(), &db);
     sqlite3_exec(db,
