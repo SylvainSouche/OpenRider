@@ -45,7 +45,8 @@ double ParseTime(const std::string &text);
 /// both its neighbours, else any step back.
 GpxFile ParseGpx(const std::string &text);
 
-/// "YYYY-MM-DD HH:MM:SS" in local time of `epoch_s`.
+/// "YYYY-MM-DD HH:MM:SS" in local time of `epoch_s`; "" if it can't be written
+/// (NaN, or a date out of the C library's range: 0001-01-01 on Windows).
 std::string LocalTime(double epoch_s);
 
 } // namespace gpx

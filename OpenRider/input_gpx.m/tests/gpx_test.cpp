@@ -70,6 +70,19 @@ ATF_TEST_CASE_BODY(parses_points_and_extensions)
     ATF_REQUIRE_EQ(gpx::ParseTime("2022-11-20T12:06:48+01:00"), 1668942408.0);
 }
 
+ATF_TEST_CASE_WITHOUT_HEAD(impossible_dates_never_crash);
+ATF_TEST_CASE_BODY(impossible_dates_never_crash)
+{
+    // Real files hold dates such as 0001-01-01 and 1899-12-30. Whether a date
+    // that far from the epoch can be broken down depends on the C library
+    // (Windows' refuses): always the whole format, or blank.
+    for (const double epoch : {-1e7, -62135596800.0, 1e16, 1e18, 1e300}) {
+        const size_t size = gpx::LocalTime(epoch).size();
+        ATF_REQUIRE(size == 0 || size == 19);
+    }
+    ATF_REQUIRE_EQ(gpx::LocalTime(std::nan("")), "");
+}
+
 ATF_TEST_CASE_WITHOUT_HEAD(lists_and_loads_a_folder);
 ATF_TEST_CASE_BODY(lists_and_loads_a_folder)
 {
@@ -263,5 +276,6 @@ ATF_INIT_TEST_CASES(tcs)
     ATF_ADD_TEST_CASE(tcs, times_never_go_back);
     ATF_ADD_TEST_CASE(tcs, self_closing_points);
     ATF_ADD_TEST_CASE(tcs, parses_points_and_extensions);
+    ATF_ADD_TEST_CASE(tcs, impossible_dates_never_crash);
     ATF_ADD_TEST_CASE(tcs, lists_and_loads_a_folder);
 }
