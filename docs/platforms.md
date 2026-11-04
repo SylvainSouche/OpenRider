@@ -35,9 +35,12 @@ programs too (Bmake It builds ATF itself). MSVC output is native too: its
 narrower (Known limits). `gui.tst` (`openrider --frames 120`)
 opens the real window for a few seconds wherever a build has a GUI, a display
 and OpenGL 3.2 (GitHub's macOS runners have none, so it skips in CI): it shows up on the screen of whoever runs `bmake test`, with the user
-directories redirected to the test's own. The Windows runs had no fetched test
+directories redirected to the test's own. The counts above had no fetched test
 data, so `gpx_test:published_tracks` and the three `scale_test` cases skipped.
-The other platforms above were last run before `gui.tst` and the Windows port's
+Run apart (2026-11-04, 3,475 real tracks and 6,525 derived): `scale_test` passes
+on `cl.exe` and mingw-w64 clang; Cygwin gcc passes the scan and the overview, and
+its segment networks exceeded the case's 3,600 s timeout (one core kept busy; not
+found why; about 6 minutes on the native builds). The other platforms above were last run before `gui.tst` and the Windows port's
 source changes.
 
 Not covered: FreeBSD and NetBSD amd64 (no guest on an arm64 host), and running
