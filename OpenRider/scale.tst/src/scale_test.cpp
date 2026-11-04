@@ -49,6 +49,7 @@
 #define NOMINMAX
 #endif
 #define WIN32_LEAN_AND_MEAN
+#define PSAPI_VERSION 2  // GetProcessMemoryInfo from kernel32, no psapi library
 #include <windows.h>
 #include <psapi.h>
 #else
@@ -243,7 +244,7 @@ void EnsureDerived()
         std::snprintf(name, sizeof name, "/derived-%05zu.gpx", n);
         std::ofstream(derived + name, std::ios::binary) << text;
     }
-    std::ofstream(marker) << "2\n";
+    std::ofstream(marker, std::ios::binary) << "2\n";  // read back as written: no \r\n on Windows
 }
 
 // The GPX plugin opened on the scale directory, as the application opens it.

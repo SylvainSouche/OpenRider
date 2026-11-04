@@ -75,16 +75,14 @@ std::time_t TimeFromUtc(std::tm &tm)
 }
 
 // `t` broken down into local time, thread-safely (localtime_r is POSIX;
-// Windows has localtime_s, with its arguments swapped).
-std::tm BrokenDownLocal(std::time_t t)
+// Windows has localtime_s, with its arguments swapped); false if out of range.
+bool BrokenDownLocal(std::time_t t, std::tm &tm)
 {
-    std::tm tm{};
 #ifdef _WIN32
-    localtime_s(&tm, &t);
+    return localtime_s(&tm, &t) == 0;
 #else
-    localtime_r(&t, &tm);
+    return localtime_r(&t, &tm) != nullptr;
 #endif
-    return tm;
 }
 
 } // namespace
@@ -113,12 +111,17 @@ double ParseTime(const std::string &text)
 
 std::string LocalTime(double epoch_s)
 {
-    if (std::isnan(epoch_s))
+    if (!(std::fabs(epoch_s) < 1e17))  // NaN, or no year a tm can hold
         return "";
     const std::time_t t = static_cast<std::time_t>(std::floor(epoch_s));
-    const std::tm tm = BrokenDownLocal(t);
-    char text[24];
-    std::strftime(text, sizeof text, "%Y-%m-%d %H:%M:%S", &tm);
+    std::tm tm{};
+    if (!BrokenDownLocal(t, tm) || tm.tm_year < -1900 || tm.tm_year > 9999 - 1900)
+        return "";
+    // Not strftime: Windows' aborts on fields it refuses, and %Y pads the
+    // year on some C libraries only.
+    char text[32];
+    std::snprintf(text, sizeof text, "%04d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                  tm.tm_hour, tm.tm_min, tm.tm_sec);
     return text;
 }
 
