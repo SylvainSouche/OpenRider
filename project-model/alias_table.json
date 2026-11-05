@@ -1385,6 +1385,12 @@
     "status": "recorded",
     "type": "dec"
   },
+  "dec-version-numbering": {
+    "active": true,
+    "id": "1c06-6aec-80c5-28be",
+    "status": "recorded",
+    "type": "dec"
+  },
   "dec-vspeed-mh": {
     "active": true,
     "id": "0f87-6acd-0467-e34f",
