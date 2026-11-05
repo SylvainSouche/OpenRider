@@ -1,5 +1,12 @@
 # OpenRider
 
+[![Build](https://github.com/SylvainSouche/OpenRider/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/SylvainSouche/OpenRider/actions/workflows/build.yml)
+[![License: BSD-3-Clause](https://img.shields.io/github/license/SylvainSouche/OpenRider)](LICENSE)
+[![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C?logo=cplusplus&logoColor=white)](https://en.cppreference.com/w/cpp/20)
+[![Platforms: macOS, Linux, FreeBSD, NetBSD, Windows](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20FreeBSD%20%7C%20NetBSD%20%7C%20Windows-lightgrey)](docs/platforms.md)
+[![Built with Bmake It](https://img.shields.io/badge/built%20with-Bmake%20It-blue)](https://github.com/SylvainSouche/bmake-it)
+[![Status: prototype](https://img.shields.io/badge/status-prototype-orange)](#openrider)
+
 Manage, analyse and display outings (hiking, running, skiing, cycling…)
 recorded with Garmin devices. OpenRider reads [GarminDB](https://github.com/tcgoetz/GarminDB)'s
 databases and files (read-only) and shows each outing on a map with
